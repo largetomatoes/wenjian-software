@@ -1,4 +1,4 @@
-> 当前维护构建：**问间 3.14（321）**。独立发布、三端书籍同步与 Windows 安装版见 [发布说明](RELEASE_NOTES_3.14_321.md)，构建步骤见 [BUILDING.md](BUILDING.md)。
+> Windows 当前维护版：**问间 3.14（321.1）**，内部构建 **322**；[下载与发布说明](https://github.com/largetomatoes/wenjian-software/releases/tag/v3.14-build322) · [对应源码、构建与修改说明](WINDOWS-RELEASE.md)。Mac、Android 保持 **3.14（321）**，见[原发布说明](RELEASE_NOTES_3.14_321.md)。
 
 # 问间 · 3.14
 
@@ -37,7 +37,7 @@ Copyright (C) 2026 西林sirens。原版本：[largetomatoes/wenjian-software](h
 
 3.14 提供 Mac、Windows 和同证书签名的 Android 安装包。变更、升级顺序及验证范围见 [3.14（321）发布说明](RELEASE_NOTES_3.14_321.md)；可下载文件以 [GitHub Releases](https://github.com/largetomatoes/wenjian-software/releases) 的实际附件为准。
 
-从仓库的 **Releases** 下载对应系统的安装包。Mac（Apple 芯片）使用 `Wenjian-*-macOS-arm64.zip`，解压后把“问间”拖入“应用程序”；Windows x64 使用 `Wenjian-*-Windows-x64.zip`，解压后运行 `Wenjian.exe`。Android 8.0+ 使用 `Wenjian-*-Android.apk`，移动版以阅读和笔记为主；PDF 需要 WebView 111+。当前构建没有 Apple 公证或 Windows 商业代码签名，系统首次启动时可能要求手动允许。
+从仓库的 **Releases** 下载对应系统的安装包。Mac（Apple 芯片）使用 `Wenjian-*-macOS-arm64.zip`，解压后把“问间”拖入“应用程序”；Windows x64 推荐使用 `Wenjian-*-Windows-x64-Setup.exe` 安装，也可使用 `Wenjian-*-Windows-x64.zip`，解压后运行 `Wenjian.exe`。Android 8.0+ 使用 `Wenjian-*-Android.apk`，移动版以阅读和笔记为主；PDF 需要 WebView 111+。当前构建没有 Apple 公证或 Windows 商业代码签名，系统首次启动时可能要求手动允许。
 
 应用本身不需要登录。未配置云备份时，笔记和电子书只保存在本机；已有的独立“问间同步”目录仍保存笔记，不会改动 Obsidian 的目录。问间会核对并复制旧目录中的原书到应用自己的本地书库，之后导入的新书也保存在此处。启用三端同步后，书籍原件会另行上传到所选的云端资料库；旧目录中的原书暂时保留，方便回退。若原数据目录暂时不可用，应用会停止启动，避免误建空白资料库。
 
