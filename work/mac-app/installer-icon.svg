@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 256 256">
+  <defs>
+    <linearGradient id="blue" x2=".8" y2="1"><stop stop-color="#3968ed"/><stop offset="1" stop-color="#2244b4"/></linearGradient>
+    <linearGradient id="paper" x2="0" y2="1"><stop stop-color="#fff"/><stop offset="1" stop-color="#e3ecff"/></linearGradient>
+  </defs>
+  <rect x="12" y="12" width="232" height="232" rx="54" fill="url(#blue)"/>
+  <rect x="13" y="13" width="230" height="230" rx="53" fill="none" stroke="#fff" stroke-opacity=".18" stroke-width="2"/>
+  <!-- The four panes are Wenjian's existing mark. Keep it readable at 16 px. -->
+  <path d="M66 58h112a8 8 0 0 1 8 8v112a8 8 0 0 1-8 8H66a8 8 0 0 1-8-8V66a8 8 0 0 1 8-8Z M58 122h128 M122 58v128" fill="none" stroke="url(#paper)" stroke-width="11" stroke-linejoin="round"/>
+  <rect x="158" y="158" width="86" height="86" rx="27" fill="#f3cb7b" stroke="#2449be" stroke-width="8"/>
+  <path d="M201 178v34m-13-13 13 13 13-13m-30 24h34" fill="none" stroke="#263b69" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

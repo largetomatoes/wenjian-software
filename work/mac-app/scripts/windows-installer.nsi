@@ -3,20 +3,29 @@ RequestExecutionLevel user
 !include "MUI2.nsh"
 !include "LogicLib.nsh"
 !include "x64.nsh"
-Name "问间 ${APP_VERSION}（${APP_BUILD}）"
+!include "FileFunc.nsh"
+!ifndef APP_DISPLAY_BUILD
+ !define APP_DISPLAY_BUILD "${APP_BUILD}"
+!endif
+Name "问间 ${APP_VERSION}（${APP_DISPLAY_BUILD}）"
 OutFile "${OUT_FILE}"
 InstallDir "$LOCALAPPDATA\Programs\Wenjian"
-Icon "..\AppIcon-win.ico"
-SetCompressor /SOLID lzma
+; MUI sets Icon again when inserting its first page: configure its own variables.
+!define MUI_ICON "..\InstallerIcon-win.ico"
+!define MUI_UNICON "..\AppIcon-win.ico"
+SetCompressor lzma
 SetCompressorDictSize 32
 VIProductVersion "3.14.${APP_BUILD}.0"
 VIAddVersionKey "ProductName" "问间"
 VIAddVersionKey "FileDescription" "问间离线安装程序"
 VIAddVersionKey "FileVersion" "${APP_VERSION}.${APP_BUILD}"
+VIAddVersionKey "LegalCopyright" "Wenjian authors"
 !define MUI_ABORTWARNING
 !define MUI_FINISHPAGE_RUN "$INSTDIR\Wenjian.exe"
 !define MUI_FINISHPAGE_RUN_TEXT "打开问间"
 !insertmacro MUI_PAGE_WELCOME
+!define MUI_PAGE_CUSTOMFUNCTION_LEAVE CheckInstallDirectory
+!insertmacro MUI_PAGE_DIRECTORY
 !insertmacro MUI_PAGE_INSTFILES
 !insertmacro MUI_PAGE_FINISH
 !insertmacro MUI_UNPAGE_CONFIRM
@@ -35,20 +44,83 @@ Function .onInit
   MessageBox MB_ICONSTOP "已安装更新的构建，请使用最新安装包。" /SD IDOK
   Abort
  ${EndIf}
+ ReadRegStr $1 HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\Wenjian" "InstallLocation"
+ ${If} $1 != ""
+  IfFileExists "$1\Wenjian.exe" 0 +2
+  StrCpy $INSTDIR $1
+ ${EndIf}
  SetShellVarContext current
+FunctionEnd
+Function CheckInstallDirectory
+ ; The installer replaces its entire program directory. Never accept an unrelated folder.
+ ; NSIS GetFullPathName rejects a not-yet-created folder; Win32 also normalizes new paths.
+ System::Call 'kernel32::GetFullPathNameW(w "$INSTDIR", i ${NSIS_MAX_STRLEN}, w .r2, p 0) i.r3'
+ ${If} $3 == 0
+ ${OrIf} $3 >= ${NSIS_MAX_STRLEN}
+  Goto invalid_directory
+ ${EndIf}
+ StrCpy $INSTDIR $2
+ ${GetRoot} "$INSTDIR" $2
+ ${If} $INSTDIR == "$2\"
+ ${OrIf} $INSTDIR == "$2"
+ ${OrIf} $INSTDIR == "$WINDIR"
+ ${OrIf} $INSTDIR == "$PROFILE"
+ ${OrIf} $INSTDIR == "$PROGRAMFILES"
+ ${OrIf} $INSTDIR == "$PROGRAMFILES64"
+ ${OrIf} $INSTDIR == "$APPDATA"
+ ${OrIf} $INSTDIR == "$LOCALAPPDATA"
+ ${OrIf} $INSTDIR == "$DOCUMENTS"
+ ${OrIf} $INSTDIR == "$DESKTOP"
+ ${OrIf} $INSTDIR == "$TEMP"
+  Goto invalid_directory
+ ${EndIf}
+ IfFileExists "$INSTDIR\Wenjian.exe" 0 check_empty_directory
+ IfFileExists "$INSTDIR\resources\app.asar" check_directory_writable invalid_directory
+ check_empty_directory:
+ FindFirst $2 $3 "$INSTDIR\*"
+ check_directory_entry:
+ ${If} $3 == ""
+  FindClose $2
+  Goto check_directory_writable
+ ${EndIf}
+ ${If} $3 != "."
+ ${AndIf} $3 != ".."
+  FindClose $2
+  Goto invalid_directory
+ ${EndIf}
+ FindNext $2 $3
+ Goto check_directory_entry
+ check_directory_writable:
+ ClearErrors
+ CreateDirectory "$INSTDIR"
+ System::Call 'kernel32::GetCurrentProcessId() i.r2'
+ FileOpen $3 "$INSTDIR\.wenjian-write-test-$2" w
+ IfErrors unwritable_directory
+ FileClose $3
+ Delete "$INSTDIR\.wenjian-write-test-$2"
+ Return
+ invalid_directory:
+ SetErrorLevel 2
+ MessageBox MB_ICONEXCLAMATION "请选择一个空的问间专用文件夹，或已有的问间程序目录，例如 D:\Apps\Wenjian。" /SD IDOK
+ Abort
+ unwritable_directory:
+ SetErrorLevel 2
+ MessageBox MB_ICONEXCLAMATION "无法写入所选安装目录，请选择当前账户可以写入的文件夹。" /SD IDOK
+ Abort
 FunctionEnd
 Function CheckClosed
  retry:
  IfFileExists "$INSTDIR\Wenjian.exe" 0 done
  System::Call 'kernel32::CreateFileW(w "$INSTDIR\Wenjian.exe", i 0x80000000, i 0, p 0, i 3, i 0, p 0) p.r0'
  ${If} $0 == -1
-  MessageBox MB_RETRYCANCEL|MB_ICONEXCLAMATION "请先在问间中保存内容并退出，再点击重试。" /SD IDCANCEL IDRETRY retry
+  MessageBox MB_RETRYCANCEL|MB_ICONEXCLAMATION "问间仍在运行。若已收起到托盘，请先从托盘菜单退出，再点击重试。" /SD IDCANCEL IDRETRY retry
   Abort
  ${EndIf}
  System::Call 'kernel32::CloseHandle(p r0)'
  done:
 FunctionEnd
 Section "问间" SEC_MAIN
+ Call CheckInstallDirectory
  Call CheckClosed
  System::Call 'kernel32::GetCurrentProcessId() i.r1'
  StrCpy $Stage "$INSTDIR.install-${APP_BUILD}-$1"
@@ -71,7 +143,7 @@ Section "问间" SEC_MAIN
  Rename "$Stage" "$INSTDIR"
  IfErrors restore_previous
  WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\Wenjian" "DisplayName" "问间"
- WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\Wenjian" "DisplayVersion" "${APP_VERSION}（${APP_BUILD}）"
+ WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\Wenjian" "DisplayVersion" "${APP_VERSION}（${APP_DISPLAY_BUILD}）"
  WriteRegDWORD HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\Wenjian" "Build" ${APP_BUILD}
  WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\Wenjian" "InstallLocation" "$INSTDIR"
  WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\Wenjian" "UninstallString" '$\"$INSTDIR\Uninstall.exe$\"'

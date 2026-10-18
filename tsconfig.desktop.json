@@ -1,0 +1,20 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "incremental": false
+  },
+  "include": [
+    "app/page.tsx",
+    "components/**/*.tsx",
+    "lib/**/*.ts",
+    "hooks/**/*.ts",
+    "work/mac-app/local-spa/main.tsx"
+  ],
+  "exclude": [
+    "node_modules",
+    "webapp",
+    "mobile",
+    "android",
+    "outputs"
+  ]
+}

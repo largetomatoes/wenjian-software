@@ -1,20 +1,22 @@
 'use client';
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import {useEffect,useRef,useState} from 'react';
+import {waitForReaderIdle} from '@/lib/reader-work';
 import {Loader2,Search,X} from 'lucide-react';
 import {Button} from '@/components/ui/button';
 import {findBookText,readingTextNodes,rangeForMatch,type BookSearchHit} from '@/lib/book-search';
 import type {LibraryBook,Notebook} from '@/lib/notebook';
 
-type Props={book:LibraryBook;ready:boolean;getPdf:()=>any;getEpub:()=>any;getCache:()=>Notebook['ocrCache'];onResult:(hit:BookSearchHit)=>Promise<void>;onClear:()=>void};
-export function BookSearch({book,ready,getPdf,getEpub,getCache,onResult,onClear}:Props){
+type Props={book:LibraryBook;ready:boolean;getPdf:()=>any;getEpub:()=>any;getCache:()=>Notebook['ocrCache'];getCurrentPage?:()=>number;onResult:(hit:BookSearchHit)=>Promise<void>;onClear:()=>void};
+export function BookSearch({book,ready,getPdf,getEpub,getCache,getCurrentPage,onResult,onClear}:Props){
  const [expanded,setExpanded]=useState(false),[query,setQuery]=useState(''),[busy,setBusy]=useState(false),[hits,setHits]=useState<BookSearchHit[]>([]),[status,setStatus]=useState(''),[error,setError]=useState('');
- const generation=useRef(0),pdfText=useRef(new Map<number,string>()),input=useRef<HTMLInputElement>(null);
- useEffect(()=>()=>{generation.current++;},[]);
- const stop=()=>{generation.current++;setBusy(false);};
+ const generation=useRef(0),pdfText=useRef(new Map<number,string>()),input=useRef<HTMLInputElement>(null),request=useRef<AbortController|null>(null);
+ useEffect(()=>()=>{generation.current++;request.current?.abort();},[]);
+ const stop=()=>{generation.current++;request.current?.abort();setBusy(false);};
  function close(){stop();setExpanded(false);onClear();}
  async function search(event:React.FormEvent){
   event.preventDefault();const needle=query.trim();if(!needle||!ready)return;
+  request.current?.abort();const controller=new AbortController();request.current=controller;
   const run=++generation.current,isCurrent=()=>generation.current===run;
   setBusy(true);setHits([]);setError('');onClear();
   const results:BookSearchHit[]=[];let skipped=0,failed=0,nativePages=0,scanned=0,total=0;
@@ -23,11 +25,11 @@ export function BookSearch({book,ready,getPdf,getEpub,getCache,onResult,onClear}
    if(book.format==='pdf'&&!pdf||book.format==='epub'&&!epub)throw Error('书籍还在打开，请稍后搜索。');
    const sections=epub?.spine?.spineItems||[];total=book.format==='pdf'?pdf.numPages:sections.length;
    for(let i=0;i<total;i++){
-    if(!isCurrent())return;
+    await waitForReaderIdle(controller.signal,250);if(!isCurrent())return;
     try{
      if(book.format==='pdf'){
       const page=i+1,cached=cache.find(item=>item.page===page);let text=pdfText.current.get(page);
-      if(text===undefined){const source=await pdf.getPage(page),content=await source.getTextContent();text=content.items.map((item:{str?:string;hasEOL?:boolean})=>(item.str||'')+(item.hasEOL?'\n':' ')).join('');if(!isCurrent())return;pdfText.current.set(page,text!);}
+      if(text===undefined){const source=await pdf.getPage(page),content=await source.getTextContent();text=content.items.map((item:{str?:string;hasEOL?:boolean})=>(item.str||'')+(item.hasEOL?'\n':' ')).join('');if(!isCurrent())return;pdfText.current.set(page,text!);while(pdfText.current.size>128||[...pdfText.current.values()].reduce((sum,value)=>sum+value.length,0)>2_000_000)pdfText.current.delete(pdfText.current.keys().next().value!);if(page!==getCurrentPage?.())source.cleanup();}
       const readable=!!text!.trim()&&!/[\uFFFD\u0000-\u0008]/.test(text!);
       if(readable)nativePages++;
       const value=cached?.text&&(cached.preferOcr||!readable)?cached.text:readable?text!:cached?.text||'';

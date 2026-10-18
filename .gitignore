@@ -70,6 +70,7 @@ next-env.d.ts
 !/work/mac-app/AppIcon-win.ico
 !/work/mac-app/native-Info.plist
 !/work/mac-app/seed.json
+!/work/mac-app/windows-release.json
 !/work/mac-app/package.json
 !/work/mac-app/package-lock.json
 !/work/mac-app/scripts/
@@ -112,3 +113,8 @@ next-env.d.ts
 /webapp/public/
 /webapp/.host-workspace/
 /webapp/host-dist/
+
+!/work/mac-app/asar-src/windows-tray.cjs
+!/work/mac-app/installer-icon.svg
+!/work/mac-app/InstallerIcon-win.ico
+!/work/mac-app/scripts/build-windows-installer-icon.mjs

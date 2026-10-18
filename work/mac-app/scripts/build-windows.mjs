@@ -10,8 +10,11 @@ const spaRoot = path.join(macAppRoot, 'local-spa');
 const spaDist = path.join(spaRoot, 'dist');
 const stage = path.join(macAppRoot, 'windows-stage');
 const resourceStage = path.join(macAppRoot, 'windows-resources');
-const outputRoot = path.join(macAppRoot, 'release', 'windows');
+const releaseRoot=path.resolve(process.env.WENJIAN_WINDOWS_OUTPUT_DIR||path.join(macAppRoot,'release'));
+const outputRoot = path.join(releaseRoot, 'windows');
 const prepareOnly = process.argv.includes('--prepare-only');
+const release = JSON.parse(await readFile(path.join(macAppRoot, 'windows-release.json'), 'utf8'));
+if (!Number.isSafeInteger(release.build) || release.build < 1 || !/^[0-9]+(?:[.][0-9]+)*$/.test(release.displayBuild)) throw Error('Windows 发布版本无效');
 
 async function requireFile(filePath) {
   if (!(await stat(filePath).catch(() => null))?.isFile()) throw new Error(`缺少构建文件：${filePath}`);
@@ -57,13 +60,14 @@ function buildSpa() {
   const vite = path.join(projectRoot, 'node_modules', 'vite', 'bin', 'vite.js');
   execFileSync(process.execPath, [vite, 'build', '--config', path.join(spaRoot, 'vite.config.mjs')], {
     cwd: projectRoot,
+    env:{...process.env,WENJIAN_BUILD_PLATFORM:'windows'},
     stdio: 'inherit',
   });
 }
 
 async function prepare() {
   buildSpa();
-  for (const name of ['index.html', 'reader/pdf/pdf.worker.min.mjs', 'reader/ocr/worker.min.js', 'reader/ocr/chi_sim.traineddata.gz', 'reader/ocr/eng.traineddata.gz']) {
+  for (const name of ['index.html', 'reader/pdf/pdf.worker.min.mjs', 'reader/ocr/worker.min.js', 'reader/ocr/lstm-v1/chi_sim.traineddata.gz', 'reader/ocr/lstm-v1/eng.traineddata.gz']) {
     await requireFile(path.join(spaDist, name));
   }
   await requireFile(path.join(macAppRoot, 'seed.json'));
@@ -89,7 +93,9 @@ async function prepare() {
   await requireFile(wizard);
   await cp(wizard, path.join(resourceStage, 'static', 'assets', 'cloud-import.js'));
   const htmlPath = path.join(resourceStage, 'static', 'index.html');
-  const html = await readFile(htmlPath, 'utf8');
+  let html = await readFile(htmlPath, 'utf8');
+  html=html.replace('</head>','<link rel="preload" href="/fonts/NotoSansSC-variable.woff2" as="font" type="font/woff2" crossorigin><link rel="stylesheet" href="/fonts/windows-fonts.css"></head>');
+  await writeFile(htmlPath,html,'utf8');
   if (!html.includes('cloud-import.js')) await writeFile(htmlPath, html.replace('</body>', '<script charset="utf-8" src="/fonts/windows-reader-fonts.js"></script><script charset="utf-8" src="/assets/cloud-import.js"></script></body>'), 'utf8');
   const dependencies = ['pdf-lib', 'pako', 'tslib', '@pdf-lib/standard-fonts', '@pdf-lib/upng'];
   for (const dependency of dependencies) {
@@ -97,7 +103,13 @@ async function prepare() {
   }
   const manifestPath = path.join(stage, 'package.json');
   const manifest = JSON.parse(await readFile(manifestPath, 'utf8'));
-  manifest.description = '问间本地笔记应用';
+  manifest.description = '问间本地思考与阅读应用';
+  manifest.version = release.packageVersion;
+  manifest.releaseVersion = release.version;
+  manifest.buildVersion = String(release.build);
+  manifest.displayBuild = release.displayBuild;
+  if(process.env.WENJIAN_WINDOWS_BUILD){if(!/^\d+$/.test(process.env.WENJIAN_WINDOWS_BUILD))throw Error('Windows build 必须是整数');manifest.buildVersion=process.env.WENJIAN_WINDOWS_BUILD;}
+  if(process.env.WENJIAN_WINDOWS_TRIAL)manifest.windowsPerformanceTrial=process.env.WENJIAN_WINDOWS_TRIAL;
   manifest.productName = '问间';
   manifest.author = '问间';
   await writeFile(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
@@ -132,8 +144,9 @@ if (prepareOnly) {
   for (const name of ['Wenjian.exe', 'resources/app.asar', 'resources/static/index.html', 'resources/seed.json']) {
     await requireFile(path.join(appRoot, name));
   }
-  const archive = path.join(macAppRoot, 'release', `Wenjian-${version}-Windows-x64.zip`);
-  execFileSync('python3', [path.join(macAppRoot, 'scripts/archive-windows.py'), appRoot, archive], { stdio: 'inherit',env:{...process.env,PYTHONUTF8:'1',PYTHONIOENCODING:'utf-8'} });
+  const builtManifest = JSON.parse(await readFile(path.join(stage, 'package.json'), 'utf8'));
+  const archive = path.join(releaseRoot, `Wenjian-${version}-build${builtManifest.buildVersion}-Windows-x64.zip`);
+  execFileSync(process.env.PYTHON||'python3', [path.join(macAppRoot, 'scripts/archive-windows.py'), appRoot, archive], { stdio: 'inherit',env:{...process.env,PYTHONUTF8:'1',PYTHONIOENCODING:'utf-8'} });
   execFileSync(process.execPath,[path.join(macAppRoot,'scripts/build-windows-installer.mjs'),appRoot],{stdio:'inherit'});
   console.log(`问间 Windows x64 ${version} 已打包：${appRoot}`);
 }

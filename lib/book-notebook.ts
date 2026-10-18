@@ -27,6 +27,7 @@ export function notebookBooks(data:Notebook):BookNotes[] {
 }
 export function chapterNotes(entries:BookNote[], book?:LibraryBook):ChapterNotes[] {
  const groups=new Map<string,ChapterNotes>();
+ const seen=new Map<string,Set<string>>();
  const add=(chapter:string,key='chapter:'+chapter,title=chapter)=>{if(!groups.has(key))groups.set(key,{key,title,chapter,entries:[]});return groups.get(key)!;};
  // Saved PDF chapter boundaries are also available for new chapter-level thoughts.
  for(const chapter of [...(book?.pdfChapters||[])].sort((a,b)=>a.startPage-b.startPage))if(tidy(chapter.title))add(tidy(chapter.title));
@@ -34,7 +35,8 @@ export function chapterNotes(entries:BookNote[], book?:LibraryBook):ChapterNotes
   const chapter=tidy(entry.kind==='reading'&&entry.source?entry.source.chapter:entry.note.chapter);
   const whole=!chapter&&entry.kind==='reading'&&entry.note.scope==='book';
   const group=chapter?add(chapter):add('',whole?'whole':'unfiled',whole?'全书思考':'未标章节');
-  if(!group.entries.some(item=>item.kind===entry.kind&&item.note.id===entry.note.id))group.entries.push(entry);
+  let ids=seen.get(group.key);if(!ids){ids=new Set();seen.set(group.key,ids);}
+  const id=entry.kind+':'+entry.note.id;if(!ids.has(id)){ids.add(id);group.entries.push(entry);}
  }
  const order=(book?.pdfChapters||[]).slice().sort((a,b)=>a.startPage-b.startPage).map(c=>tidy(c.title));
  return [...groups.values()].sort((a,b)=>{

@@ -1,3 +1,4 @@
+import {waitForReaderIdle} from '../reader-work';
 import {jsonEqual} from '../value-equal';
 import {prepareDesktopSync,withCloudLease,readManifest} from './protocol';
 import {capture,materialize,newSyncState,project,resolveConflict,stable,unionOperations,type Operation,type SyncState} from './core';
@@ -22,6 +23,7 @@ export async function updateSync(change:(state:SyncState)=>SyncState):Promise<En
  throw Error('本机正在连续保存，请稍后重试。');
 }
 let running:Promise<Envelope>|null=null;
+export function isSyncRunning(){return running!==null;}
 export type SyncMode='join'|'merge'|'local';
 export function syncNow(onProgress?:(progress:SyncProgress)=>void,mode?:SyncMode,rootId?:string):Promise<Envelope>{if(running)return mode?Promise.reject(Error('另一项同步正在进行，请完成后再选择资料库基准。')):running;running=run(onProgress,mode,rootId).finally(()=>{running=null;});return running;}
 async function run(progress?: (progress:SyncProgress)=>void,mode?:SyncMode,rootId?:string):Promise<Envelope>{
@@ -93,7 +95,7 @@ async function runJournal(progress?:(progress:SyncProgress)=>void,epoch='legacy'
  }
  throw Error('本机正在连续保存，稍后会重新同步。');
 }
-export async function syncBooks(snapshot:Envelope,progress?:(progress:SyncProgress)=>void):Promise<Envelope>{
+export async function syncBooks(snapshot:Envelope,progress?:(progress:SyncProgress)=>void,options:{background?:boolean}={}):Promise<Envelope>{
  const connection=await syncApi<{bookPolicy?:string}>('identity');const onDemand=connection.bookPolicy==='on-demand';
  const target=snapshot.sync?.target;if(!target)throw Error('请先完成笔记同步，再同步书籍。');
  const books=snapshot.data.libraryBooks.filter(book=>book.storedFile&&['pdf','epub'].includes(book.format));
@@ -104,6 +106,7 @@ export async function syncBooks(snapshot:Envelope,progress?:(progress:SyncProgre
  catch(error){const issue=error instanceof Error?error.message:'书籍目录核对未完成';await updateSync(state=>{if(state.target!==target)throw Error('同步连接已变化。');return {...state,books:{errors:Object.fromEntries(books.map(book=>[book.id,issue]))}};});throw error;}
  const remote=new Set(index.keys);
  for(const [position,book] of books.entries()){
+  if(options.background)await waitForReaderIdle();
   try{
    const local=await syncApi<{available:boolean;matchesManifest?:boolean}>('book',{action:'status',id:book.id});
    const present=!!book.cloudFile&&remote.has(book.cloudFile.key);

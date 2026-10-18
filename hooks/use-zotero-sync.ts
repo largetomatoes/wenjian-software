@@ -1,6 +1,7 @@
 'use client';
 
 import {useCallback,useEffect,useRef,useState} from 'react';
+import {readerIsBusy} from '@/lib/reader-work';
 import type {Notebook} from '@/lib/notebook';
 import {type ZoteroCatalog} from '@/lib/zotero';
 
@@ -11,13 +12,14 @@ type Options={enabled:boolean;data:Notebook;saving:boolean;applyCatalog:(catalog
 export function useZoteroSync({enabled,data,saving,applyCatalog}:Options){
  const [status,setStatus]=useState<ZoteroConnectionStatus>({state:'connecting'});
  const current=useRef({enabled,data,saving,applyCatalog});
- const pending=useRef<ZoteroCatalog|null>(null);
+ const pending=useRef<ZoteroCatalog|null>(null),deferred=useRef(false);
  const request=useRef<AbortController|null>(null);
  const applying=useRef(false),lastAttempt=useRef(0),generation=useRef(0);
  useEffect(()=>{current.current={enabled,data,saving,applyCatalog};},[enabled,data,saving,applyCatalog]);
 
  const apply=useCallback(async()=>{
   if(!current.current.enabled||current.current.saving||applying.current||!pending.current)return;
+  if(readerIsBusy()){deferred.current=true;return;}deferred.current=false;
   const catalog=pending.current,epoch=generation.current;
   applying.current=true;
   try{
@@ -30,6 +32,7 @@ export function useZoteroSync({enabled,data,saving,applyCatalog}:Options){
 
  const refresh=useCallback(async(force=false)=>{
   if(!current.current.enabled||document.visibilityState==='hidden'||request.current||pending.current||applying.current)return;
+  if(!force&&readerIsBusy()){deferred.current=true;return;}deferred.current=false;
   if(!force&&Date.now()-lastAttempt.current<10000)return;
   lastAttempt.current=Date.now();
   const controller=new AbortController(),epoch=generation.current;
@@ -55,9 +58,9 @@ export function useZoteroSync({enabled,data,saving,applyCatalog}:Options){
   const epoch=generation.current;
   const start=window.setTimeout(()=>void refresh(),1000);
   const timer=window.setInterval(()=>{if(pending.current)void apply();else void refresh();},60000);
-  const focus=()=>void refresh();
-  window.addEventListener('focus',focus);document.addEventListener('visibilitychange',focus);
-  return()=>{generation.current=epoch+1;request.current?.abort();request.current=null;pending.current=null;window.clearTimeout(start);window.clearInterval(timer);window.removeEventListener('focus',focus);document.removeEventListener('visibilitychange',focus);};
+  const focus=()=>{if(pending.current)void apply();else void refresh();},idle=()=>{if(deferred.current||pending.current)focus();};
+  window.addEventListener('focus',focus);document.addEventListener('visibilitychange',focus);window.addEventListener('wenjian:reader-idle',idle);
+  return()=>{generation.current=epoch+1;request.current?.abort();request.current=null;pending.current=null;window.clearTimeout(start);window.clearInterval(timer);window.removeEventListener('focus',focus);document.removeEventListener('visibilitychange',focus);window.removeEventListener('wenjian:reader-idle',idle);};
  },[enabled,refresh,apply]);
  useEffect(()=>{if(enabled&&!saving&&pending.current){const timer=window.setTimeout(()=>void apply(),0);return()=>window.clearTimeout(timer);}},[enabled,saving,data,apply]);
  return {status,refresh:()=>void refresh(true)};

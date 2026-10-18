@@ -7,7 +7,7 @@ import {CardCollectionPanel,CardEditor} from '@/components/card-collection-panel
 import {AuthorLetter} from '@/components/author-letter';
 import {AppSettings} from '@/components/app-settings';
 import {RecordRevisionEditor} from '@/components/record-revision-editor';
-import {lazy,Suspense,useEffect,useRef,useState,useMemo} from 'react';
+import {lazy,Suspense,useEffect,useRef,useState,useMemo,useCallback} from 'react';
 import {deletionPlan} from '@/lib/deletion';
 import {AlertDialog,AlertDialogContent,AlertDialogTitle,AlertDialogDescription} from '@/components/ui/alert-dialog';
 import {CrossBlockPicker} from '@/components/cross-block-picker';
@@ -21,6 +21,7 @@ const LibraryReader=lazy(()=>import('@/components/library-reader').then(module=>
 import {CoreOnboarding,CoreQuestionSettings} from '@/components/core-question-settings';
 import {LibraryEntry} from '@/components/library-entry';
 import {useZoteroSync} from '@/hooks/use-zotero-sync';
+import {shareNotebook} from '@/lib/reader-ui-state';
 import {useOcrCache} from '@/hooks/use-ocr-cache';
 import type {OcrCacheEntry} from '@/lib/notebook';
 import type {CacheSaveResult} from '@/lib/ocr-save-queue';
@@ -56,7 +57,8 @@ function when(at:string){return at?new Date(at).toLocaleString('zh-CN',{year:'nu
 function short(text:string,length=50){return text.length>length?text.slice(0,length)+'…':text;}
 export default function Home(){return <><NotebookHome/><AuthorLetter/></>;}
 function NotebookHome(){
- const [storedData,setData]=useState<Notebook>({notes:[],cards:[],readingNotes:[],crossThoughts:[],thoughtReplies:[],manuscripts:[],libraryBooks:[],libraryHighlights:[],ocrCache:[],bookThoughts:[],links:[],dismissedSuggestions:[]}),[loading,setLoading]=useState(true),[saving,setSaving]=useState(false),[sharing,setSharing]=useState(false),[error,setError]=useState(''),[message,setMessage]=useState('');
+ const [storedData,setStoredData]=useState<Notebook>({notes:[],cards:[],readingNotes:[],crossThoughts:[],thoughtReplies:[],manuscripts:[],libraryBooks:[],libraryHighlights:[],ocrCache:[],bookThoughts:[],links:[],dismissedSuggestions:[]}),[loading,setLoading]=useState(true),[saving,setSaving]=useState(false),[sharing,setSharing]=useState(false),[error,setError]=useState(''),[message,setMessage]=useState('');
+ const setData=useCallback((incoming:Notebook)=>setStoredData(previous=>shareNotebook(previous,incoming)),[]);
  const data=useMemo(()=>visibleNotebook(storedData),[storedData]);
  const [pageChoice,setPageChoice]=useState<{id:string;thoughtId?:string;replyId?:string}|null>(null);
  const [pageId,setPageId]=useState('page-world');
@@ -75,11 +77,11 @@ function NotebookHome(){
  const [libraryInitialReadingId,setLibraryInitialReadingId]=useState<string|null>(null);
  const [deviceSyncOpen,setDeviceSyncOpen]=useState(false);
  const [maintenanceOpen,setMaintenanceOpen]=useState(false);
+ const [settingsOpen,setSettingsOpen]=useState(false),[coreOpen,setCoreOpen]=useState(false),[zoteroConsentOpen,setZoteroConsentOpen]=useState(false);
  const [maintenanceContext,setMaintenanceContext]=useState<MaintenanceContext|undefined>(),[undoReceipt,setUndoReceipt]=useState<string|null>(null);
  useEffect(()=>{const maintain=(e:Event)=>{setMaintenanceContext((e as CustomEvent).detail);setMaintenanceOpen(true);};const settings=()=>setSettingsOpen(true);const key=(e:KeyboardEvent)=>{if(e.metaKey&&e.key===','){e.preventDefault();settings();}};window.addEventListener('wenjian:maintain',maintain);window.addEventListener('wenjian:settings',settings);window.addEventListener('keydown',key);return()=>{window.removeEventListener('wenjian:maintain',maintain);window.removeEventListener('wenjian:settings',settings);window.removeEventListener('keydown',key);};},[]);
  useEffect(()=>{if(!undoReceipt)return;const timer=setTimeout(()=>setUndoReceipt(null),12000);return()=>clearTimeout(timer);},[undoReceipt]);
  useEffect(()=>{const active={reader:libraryOpen,comparison:!!compareRequest,manuscripts:manuscriptsOpen,search:searchOpen,cloud:cloudOpen,maintenance:maintenanceOpen};setLoaded(previous=>{const next={...previous};let changed=false;for(const [key,open] of Object.entries(active))if(open&&!next[key]){next[key]=true;changed=true;}return changed?next:previous;});},[libraryOpen,compareRequest,manuscriptsOpen,searchOpen,cloudOpen,maintenanceOpen]);
- const [settingsOpen,setSettingsOpen]=useState(false),[coreOpen,setCoreOpen]=useState(false),[zoteroConsentOpen,setZoteroConsentOpen]=useState(false);
  const [crossPicker,setCrossPicker]=useState(false),[editingCross,setEditingCross]=useState<string|null>(null);
  const [replyingThoughtId,setReplyingThoughtId]=useState<string|null>(null),[focusedThoughtId,setFocusedThoughtId]=useState<string|null>(null),[replyText,setReplyText]=useState('');
  const [captureKind,setCaptureKind]=useState<CardKind>('idea'),[cardFilter,setCardFilter]=useState<'all'|CardKind>('all'),[connectionFilter,setConnectionFilter]=useState<'all'|'unlinked'|'linked'>('all'),[placingCard,setPlacingCard]=useState<string|null>(null),[placeParent,setPlaceParent]=useState(ROOT),[placeTitle,setPlaceTitle]=useState('');

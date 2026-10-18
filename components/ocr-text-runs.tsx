@@ -1,9 +1,9 @@
 'use client';
-import {useLayoutEffect,useMemo,useRef} from 'react';
+import {memo,useLayoutEffect,useMemo,useRef} from 'react';
 import type {OcrLine} from '@/lib/notebook';
 import {ocrSelectionRuns} from '@/lib/ocr-selection';
 
-export function OcrTextRuns({lines,width,height}:{lines:OcrLine[];width:number;height:number}){
+export const OcrTextRuns=memo(function OcrTextRuns({lines,width,height}:{lines:OcrLine[];width:number;height:number}){
  const root=useRef<HTMLDivElement>(null);
  const runs=useMemo(()=>ocrSelectionRuns(lines),[lines]);
  useLayoutEffect(()=>{
@@ -18,4 +18,4 @@ export function OcrTextRuns({lines,width,height}:{lines:OcrLine[];width:number;h
   }
  },[runs,width,height]);
  return <div ref={root} className="ocr-text-runs">{runs.map((run,index)=><span key={index} data-ocr-line={run.line} style={{left:`${run.x0*100}%`,top:`${run.y0*100}%`,fontSize:`${Math.max(4,(run.y1-run.y0)*height)}px`,height:`${(run.y1-run.y0)*height}px`}}>{run.text+run.suffix}</span>)}</div>;
-}
+});

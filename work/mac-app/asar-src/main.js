@@ -7,7 +7,7 @@ const RELEASE_VERSION=require('./package.json').releaseVersion||require('./packa
 const {detachThoughtBook}=require('./book-thought-sources.cjs');
 const { validSettings, validateCoreTransition, validateReadingTransition } = require('./notebook-settings.cjs');
 const {validOcrEntry,mergeOcrPage}=require('./ocr-cache.cjs');
-let notebookQueue=Promise.resolve(),storeRevisionHint=null;
+let notebookQueue=Promise.resolve(),storeRevisionHint=null,libraryFileIndex=null;
 function serializeNotebook(operation){const result=notebookQueue.then(operation);notebookQueue=result.catch(()=>{});return result;}
 const {allowedReleaseUrl,cachedPublicReleases}=require('./app-updates.cjs');
 const { app, BrowserWindow, Menu, dialog, shell, session, safeStorage } = require('electron');
@@ -25,9 +25,11 @@ const {isolateLegacyNotebook}=require('./local-sync-migration.cjs');
 const {createNutstoreClient,validateNutstoreConfig,nutstoreTarget,canCorrectUnconfirmedSync,validBackupName}=require('./nutstore-sync.cjs');
 const { prepareLocalLibrary } = require('./library-location');
 const { importLibraryFile } = require('./library-import');
+const bookDownloads=require('./book-downloads.cjs').createBookDownloads();
 const { readZoteroCatalog } = require('./zotero-local');
 
 let mainWindow = null;
+let windowsTray=null;
 let server = null;
 let localPort = null;
 let dataPath = null;
@@ -54,7 +56,7 @@ app.commandLine.appendSwitch('proxy-bypass-list', 'localhost;127.0.0.1;[::1]');
 app.commandLine.appendSwitch('host-resolver-rules', 'MAP * 0.0.0.0, EXCLUDE localhost, EXCLUDE 127.0.0.1, EXCLUDE [::1]');
 app.setName('问间');
 if (process.env.WENJIAN_TEST_DATA_DIR) app.setPath('userData', process.env.WENJIAN_TEST_DATA_DIR);
-app.setAboutPanelOptions({ applicationName: '问间', applicationVersion: RELEASE_VERSION, version: RELEASE_VERSION, copyright: '围绕核心问题的本地笔记应用' });
+app.setAboutPanelOptions({ applicationName: '问间', applicationVersion: RELEASE_VERSION+(require('./package.json').displayBuild?'（'+require('./package.json').displayBuild+'）':''), version: RELEASE_VERSION, copyright: '围绕核心问题的本地笔记应用' });
 
 async function resolveStorageDirectory() {
   const localDir = app.getPath('userData');
@@ -104,7 +106,11 @@ async function readStore() {
   const value = parseJsonUtf8(await fsp.readFile(dataPath));
   value.data = normalizeNotebookData(value.data || {});
   if (!Number.isInteger(value.version) || !validNotebookData(value.data)) throw new Error('本地数据格式不正确');
-  const after=await fsp.stat(dataPath);if(statSignature(before)===statSignature(after))storeRevisionHint={signature:statSignature(after),version:value.version,syncRevision:value.syncRevision||0};else storeRevisionHint=null;
+  const after=await fsp.stat(dataPath);if(statSignature(before)===statSignature(after)){
+    const signature=statSignature(after);storeRevisionHint={signature,version:value.version,syncRevision:value.syncRevision||0};
+    // Keep only file metadata: range requests must not parse every saved note/OCR page.
+    libraryFileIndex={signature,books:new Map(value.data.libraryBooks.map(book=>[book.id,{storedFile:book.storedFile,format:book.format}]))};
+  }else {storeRevisionHint=null;libraryFileIndex=null;}
   return value;
 }
 // A previousValue is reused only inside the same serialized notebook transaction.
@@ -281,9 +287,9 @@ async function handleStatic(request, response, pathname) {
   const resolved = path.resolve(staticRoot, requested);
   if (resolved !== path.join(staticRoot, 'index.html') && !resolved.startsWith(`${staticRoot}${path.sep}`)) { response.writeHead(403); response.end(); return; }
   try {
-    const body = await fsp.readFile(resolved);
-    response.writeHead(200, { 'Content-Type': mimeTypes[path.extname(resolved)] || 'application/octet-stream', 'Cache-Control': pathname === '/' ? 'no-store' : 'public, max-age=31536000, immutable' });
-    response.end(body);
+    const info = await fsp.stat(resolved);if(!info.isFile()){response.writeHead(404);response.end();return;}
+    response.writeHead(200, { 'Content-Type': mimeTypes[path.extname(resolved)] || 'application/octet-stream', 'Content-Length':info.size, 'Cache-Control': pathname === '/' ? 'no-store' : 'public, max-age=31536000, immutable' });
+    const stream=fs.createReadStream(resolved);stream.on('error',()=>response.destroy());response.on('close',()=>stream.destroy());stream.pipe(response);
   } catch { response.writeHead(404); response.end('Not found'); }
 }
 async function handleShare(request, response) {
@@ -360,8 +366,8 @@ async function handleLibraryFile(request, response, pathname) {
   try {
     if (request.method !== 'GET') { response.writeHead(405); response.end(); return; }
     const id = decodeURIComponent(pathname.slice('/api/library/file/'.length));
-    const store = await readStore();
-    const book = (store.data.libraryBooks || []).find((entry) => entry.id === id);
+    const signature=statSignature(await fsp.stat(dataPath));
+    const book=libraryFileIndex?.signature===signature?libraryFileIndex.books.get(id):(await readStore()).data.libraryBooks.find(entry=>entry.id===id);
     if (!book || !book.storedFile || book.format === 'reference' || path.basename(book.storedFile) !== book.storedFile || !/\.(pdf|epub)$/i.test(book.storedFile)) { response.writeHead(404); response.end(); return; }
     const filePath = path.join(libraryDir, book.storedFile);
     const stat = await fsp.stat(filePath);
@@ -375,11 +381,11 @@ async function handleLibraryFile(request, response, pathname) {
       const end = match[2] ? Math.min(Number(match[2]), stat.size - 1) : stat.size - 1;
       if (start > end || start >= stat.size) { response.writeHead(416, { 'Content-Range': `bytes */${stat.size}` }); response.end(); return; }
       response.writeHead(206, { 'Content-Type': contentType, 'Content-Length': end - start + 1, 'Content-Range': `bytes ${start}-${end}/${stat.size}`, 'Accept-Ranges': 'bytes', 'Cache-Control': 'no-store' });
-      fs.createReadStream(filePath, { start, end }).pipe(response);
+      const stream=fs.createReadStream(filePath,{start,end});stream.on('error',()=>response.destroy());response.on('close',()=>stream.destroy());stream.pipe(response);
       return;
     }
     response.writeHead(200, { 'Content-Type': contentType, 'Content-Length': stat.size, 'Accept-Ranges': 'bytes', 'Cache-Control': 'no-store' });
-    fs.createReadStream(filePath).pipe(response);
+    const stream=fs.createReadStream(filePath);stream.on('error',()=>response.destroy());response.on('close',()=>stream.destroy());stream.pipe(response);
   } catch { response.writeHead(404); response.end(); }
 }
 
@@ -735,7 +741,7 @@ async function handleDeviceSync(request,response,url) {
       if(input.action==='status'){const stat=await fsp.stat(destination).catch(error=>error.code==='ENOENT'?null:Promise.reject(error));return jsonReply(response,200,{available:!!stat?.isFile()&&stat.size>0,matchesManifest:!book.cloudFile||stat?.size===book.cloudFile.size});}
       if(ORGANIZATION_TRIAL)return jsonReply(response,423,{error:input.action==='download'?'本机还没有这本书的原件。跨端同步恢复后可下载，已有本地书籍仍可直接阅读。':TRIAL_SYNC_NOTICE});
       const client=await active();
-      if(input.action==='download'){await client.downloadBook(book.cloudFile,destination);return jsonReply(response,200,{ok:true});}
+      if(input.action==='download'){await bookDownloads.run(`${destination}:${book.cloudFile?.sha256}`,()=>client.downloadBook(book.cloudFile,destination));return jsonReply(response,200,{ok:true});}
       if(input.action==='upload'){
         const cloudFile=await client.uploadBook(destination,book.format);
         return await serializeNotebook(async()=>{if(restoringBackup)throw Error('正在保护资料，书籍清单稍后继续保存。');const current=await readStore();if(current.sync?.target!==input.target)throw new Error('同步连接已变化，书籍清单暂未写入。');if(!current.data.libraryBooks.some(b=>b.id===book.id&&b.storedFile===book.storedFile))throw Error('书籍原件已变化，请重新同步。');const data={...current.data,libraryBooks:current.data.libraryBooks.map(b=>b.id===book.id&&b.storedFile===book.storedFile?{...b,cloudFile}:b)};await writeStore({...current,version:current.version+1,data},current);return jsonReply(response,200,{cloudFile});});
@@ -774,7 +780,8 @@ async function handleAppUpdates(request,response,url){
       }
       throw Error('更新操作无效。');
     }
-    if(pathname==='/api/app/info'&&request.method==='GET')return jsonReply(response,200,{version:RELEASE_VERSION,build:String(require('./package.json').buildVersion||''),platform:process.platform,arch:process.arch});
+    if(pathname==='/api/app/info'&&request.method==='GET')return jsonReply(response,200,{version:RELEASE_VERSION,build:String(require('./package.json').buildVersion||''),displayBuild:String(require('./package.json').displayBuild||require('./package.json').buildVersion||''),platform:process.platform,arch:process.arch});
+    if(pathname==='/api/app/reader-budget'&&request.method==='GET'){const memory=process.getSystemMemoryInfo(),workingKB=app.getAppMetrics().reduce((sum,item)=>sum+item.memory.workingSetSize,0);return jsonReply(response,200,{allowPrefetch:process.platform==='win32'&&(memory.available??memory.free)>=1048576&&workingKB<900*1024});}
     if(pathname==='/api/app/releases'&&request.method==='GET')return jsonReply(response,200,await cachedPublicReleases(path.join(app.getPath('userData'),'update-check-cache.json'),url.searchParams.get('manual')==='1'));
     if(pathname==='/api/app/open'&&request.method==='POST'){
       const value=await requestBody(request);
@@ -890,6 +897,7 @@ function setMenu() {
         mainWindow.webContents.executeJavaScript('window.dispatchEvent(new Event("wenjian-open-cloud"))').catch(() => {});
       } },
       { label: '显示本地数据文件', click: () => shell.showItemInFolder(dataPath) }, { type: 'separator' },
+      ...(process.platform==='win32'?[{label:'性能信息（本机）…',click:async()=>{const metrics=app.getAppMetrics(),memory=process.getSystemMemoryInfo(),report=JSON.stringify({version:RELEASE_VERSION,build:require('./package.json').buildVersion,performanceTrial:require('./package.json').windowsPerformanceTrial||null,platform:process.platform,arch:process.arch,electron:process.versions.electron,graphics:app.getGPUFeatureStatus(),systemMemoryKB:memory,processes:metrics.map(item=>({type:item.type,cpu:item.cpu,memory:item.memory}))},null,2);const result=await dialog.showMessageBox(mainWindow,{type:'info',title:'Windows 性能信息',message:'当前应用的本机运行信息',detail:report,buttons:['复制信息','关闭'],defaultId:1,cancelId:1});if(result.response===0)require('electron').clipboard.writeText(report);}}]:[]),
       ...platformItems, { role: 'quit', label: '退出问间' }
     ]},
     { label: '编辑', submenu: [{ role: 'undo', label: '撤销' }, { role: 'redo', label: '重做' }, { type: 'separator' }, { role: 'cut', label: '剪切' }, { role: 'copy', label: '复制' }, { role: 'paste', label: '粘贴' }, { role: 'selectAll', label: '全选' }] },
@@ -898,8 +906,9 @@ function setMenu() {
   ]));
 }
 function createWindow() {
-  mainWindow = new BrowserWindow({ width: 1440, height: 920, minWidth: 820, minHeight: 620, title: '问间', ...(process.platform === 'darwin' ? { titleBarStyle: 'hiddenInset' } : {}), backgroundColor: '#f7f8fb', show: false, webPreferences: { contextIsolation: true, nodeIntegration: false, sandbox: true, spellcheck: true } });
-  mainWindow.webContents.on('will-prevent-unload',event=>{if(installingUpdate)event.preventDefault();});
+  mainWindow = new BrowserWindow({ width: 1440, height: 920, minWidth: 820, minHeight: 620, title: '问间', ...(process.platform === 'darwin' ? { titleBarStyle: 'hiddenInset' } : {}), backgroundColor: '#f7f8fb', show: false, webPreferences: { contextIsolation: true, nodeIntegration: false, sandbox: true, spellcheck: process.platform!=='win32', backgroundThrottling:true } });
+  mainWindow.webContents.on('will-prevent-unload',async event=>{if(installingUpdate){event.preventDefault();return;}if(process.platform==='win32'&&windowsTray?.isQuitting()){windowsTray.cancelQuit();windowsTray.show();await dialog.showMessageBox(mainWindow,{type:'warning',title:'内容尚未提交',message:'当前编辑器仍有未提交内容，问间已取消退出。',detail:'请先保存或关闭正在编辑的内容，再从托盘菜单退出。收起到托盘不需要关闭这些内容。',buttons:['返回编辑']});}});
+  if(process.platform==='win32'){if(!windowsTray)windowsTray=require('./windows-tray.cjs').createWindowsTray({app,...require('electron'),getWindow:()=>mainWindow,isUpdating:()=>installingUpdate,prepareQuit:async()=>{if(cloudBusy)throw Error('云端备份尚未结束，请稍后退出。');if(mainWindow&&!mainWindow.isDestroyed()){let timeout;try{await Promise.race([mainWindow.webContents.executeJavaScript('window.__wenjianPrepareClose ? window.__wenjianPrepareClose() : Promise.resolve(true)'),new Promise((_,reject)=>{timeout=setTimeout(()=>reject(Error('Saving timeout')),8000);})]);}finally{clearTimeout(timeout);}}await draftQueue;await notebookQueue;}});windowsTray.attach(mainWindow);}
   mainWindow.once('ready-to-show', () => mainWindow.show());
   mainWindow.loadURL(`http://127.0.0.1:${localPort}/`).catch((error) => { console.error(error); dialog.showErrorBox('问间无法打开', '本地页面载入失败，请重新打开问间。'); });
 }
@@ -907,7 +916,7 @@ function createWindow() {
 const gotLock = app.requestSingleInstanceLock();
 if (!gotLock) app.quit();
 else {
-  app.on('second-instance', () => { if (mainWindow) { if (mainWindow.isMinimized()) mainWindow.restore(); mainWindow.focus(); } });
+  app.on('second-instance', () => { if (mainWindow) { if(windowsTray){windowsTray.show();return;}if (mainWindow.isMinimized()) mainWindow.restore(); mainWindow.show(); mainWindow.focus(); } });
   app.whenReady().then(async () => {
     session.defaultSession.webRequest.onBeforeRequest({ urls: ['http://*/*', 'https://*/*', 'ws://*/*', 'wss://*/*'] }, (details, callback) => {
       try {
@@ -944,5 +953,6 @@ else {
   }).catch((error) => { console.error(error); dialog.showErrorBox('问间无法启动', error.message || '本地数据未能载入。'); app.quit(); });
   app.on('activate', () => { if (BrowserWindow.getAllWindows().length === 0 && localPort) createWindow(); });
 }
-app.on('before-quit', () => { if (server) server.close(); });
+app.on('before-quit',event=>{if(process.platform==='win32'&&windowsTray&&!windowsTray.isQuitting()&&!installingUpdate){event.preventDefault();void windowsTray.quit();return;}if(process.platform!=='win32'&&server)server.close();});
+app.on('will-quit',()=>{windowsTray?.dispose();if(server)server.close();});
 app.on('window-all-closed', () => { if (process.platform !== 'darwin') app.quit(); });

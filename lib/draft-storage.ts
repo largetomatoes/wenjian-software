@@ -48,7 +48,11 @@ export async function readDraft<T>(key: string, fallback: T): Promise<T> {
 }
 
 /** Persist a JSON-serializable draft; reject so the UI can report any failure. */
-export async function writeDraft(key: string, value: unknown): Promise<void> {
+const pendingDraftWrites=new Set<Promise<void>>();
+const draftWriteErrors=new Map<string,unknown>();
+export async function flushDraftWrites(){while(pendingDraftWrites.size)await Promise.all([...pendingDraftWrites]);if(draftWriteErrors.size)throw draftWriteErrors.values().next().value;}
+export function writeDraft(key:string,value:unknown):Promise<void>{const job=persistDraft(key,value);pendingDraftWrites.add(job);job.then(()=>{draftWriteErrors.delete(key);},error=>{draftWriteErrors.set(key,error);}).finally(()=>pendingDraftWrites.delete(job));return job;}
+async function persistDraft(key: string, value: unknown): Promise<void> {
   try {
     localKey(key);
     const serialized = JSON.stringify(value);

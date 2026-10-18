@@ -56,3 +56,19 @@ assert.equal(selectUpdate([old,independent],{platform:'win32',arch:'x64',version
 assert.equal(selectUpdate([independent,old],{platform:'win32',arch:'x64',version:'3.14',build:'321'}).state,'current');
 assert.equal(selectUpdate([{...independent,body:'<!-- wenjian-build:322 -->'}],{platform:'win32',arch:'x64',version:'3.14',build:'320'}).state,'empty');
 console.log('PASS: independent build Release sorted by build, tag/body mismatch rejected');
+
+const windowsPatch={...independent,tag_name:'v3.14-build322',html_url:independent.html_url.replace('321','322'),body:'<!-- wenjian-build:322 -->\n<!-- wenjian-display-build:321.1 -->\n<!-- wenjian-platforms:win32 -->',assets:independent.assets.map(a=>({...a,name:a.name.replace('321','322'),browser_download_url:a.browser_download_url.replaceAll('321','322')}))};
+const upgraded=selectUpdate([windowsPatch,independent],{platform:'win32',arch:'x64',version:'3.14',build:'321'});
+assert.equal(upgraded.state,'available');assert.equal(upgraded.build,322);assert.equal(upgraded.displayBuild,'321.1');
+assert.equal(selectUpdate([windowsPatch,independent],{platform:'win32',arch:'x64',version:'3.14',build:'322'}).state,'current');
+assert.equal(selectUpdate([windowsPatch,independent],{platform:'win32',arch:'x64',version:'3.14',build:'325'}).state,'ahead');
+assert.equal(selectUpdate([windowsPatch,independent],{platform:'darwin',arch:'arm64',version:'3.14',build:'321'}).state,'current');
+assert.equal(selectUpdate([windowsPatch,independent],{platform:'android',arch:'universal',version:'3.14',build:'321'}).state,'current');
+// The shipped 321 discovery logic must still find the Windows update without
+// learning the new display-build and platform metadata first.
+const legacyModule={exports:{}};
+const {execFileSync}=await import('node:child_process');
+const legacySource=execFileSync('git',['show','17ec495:lib/app-updates.ts'],{encoding:'utf8'});
+vm.runInNewContext(ts.transpileModule(legacySource,{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText,{module:legacyModule,exports:legacyModule.exports,URL});
+assert.equal(legacyModule.exports.selectUpdate([windowsPatch,independent],{platform:'win32',arch:'x64',version:'3.14',build:'321'}).download,windowsPatch.assets[0].browser_download_url);
+console.log('PASS: integer 322 upgrade from actual 321 parser, display revision 321.1, no downgrade from test 325, platform-specific releases for new clients');

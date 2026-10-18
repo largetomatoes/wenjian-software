@@ -4,6 +4,8 @@ $artifacts=(Resolve-Path $ArtifactDirectory).Path
 $setup=@(Get-ChildItem $artifacts -Filter '*Windows-x64-Setup.exe')
 $zip=@(Get-ChildItem $artifacts -Filter '*Windows-x64.zip')
 if($setup.Count -ne 1 -or $zip.Count -ne 1){throw 'Exactly one installer and update zip required'}
+$expectedBuild=[int]([regex]::Match($setup[0].Name,'-build([0-9]+)-').Groups[1].Value)
+if($expectedBuild -lt 1){throw 'Invalid build in installer filename'}
 $installed=Join-Path $env:LOCALAPPDATA 'Programs\Wenjian'
 $data=Join-Path $env:APPDATA '问间'
 if((Test-Path $installed) -or (Test-Path $data)){throw 'This test requires an empty disposable Windows runner'}
@@ -40,7 +42,7 @@ try{
  Check ($install.ExitCode -eq 0) 'Silent installation succeeds without administrator privileges'
  Check (Test-Path (Join-Path $installed 'Uninstall.exe')) 'Uninstaller is installed'
  $run=Launch (Join-Path $installed 'Wenjian.exe')
- Check ($run.info.build -eq '321') 'Installed app identifies build 321'
+ Check ([int]$run.info.build -eq $expectedBuild) 'Installed app identifies the release build'
  $book=Invoke-RestMethod ($run.origin+'/api/notebook')
  Check ($book.data.cards.id -contains 'installation-fixture') 'Installed app reuses portable notebook without migration loss'
  $font=Invoke-WebRequest ($run.origin+'/fonts/NotoSansSC-variable.woff2')
@@ -62,7 +64,7 @@ try{
  New-Item -ItemType Directory -Force $cache | Out-Null
  $nonce=[guid]::NewGuid().ToString()
  $confirmation=Join-Path $cache ('boot-'+$nonce+'.json')
- $spec=@{directory=$cache;zip=$zip[0].FullName;target=$installed;pid=2147483647;platform='win32';exe=(Join-Path $installed 'Wenjian.exe');version='3.14';build=321;nonce=$nonce;confirmation=$confirmation}
+ $spec=@{directory=$cache;zip=$zip[0].FullName;target=$installed;pid=2147483647;platform='win32';exe=(Join-Path $installed 'Wenjian.exe');version='3.14';build=$expectedBuild;nonce=$nonce;confirmation=$confirmation}
  $config=Join-Path $cache 'install-fixture.json'
  $jobJson=$spec|ConvertTo-Json
  [IO.File]::WriteAllText($config,$jobJson,[Text.UTF8Encoding]::new($false))

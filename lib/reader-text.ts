@@ -1,4 +1,7 @@
 // Normalize machine-extracted text only; never rewrite a saved quotation.
+// Shared by Mac and Windows: finish the current page while the user reads it.
+// Input does not restart OCR; page/book/visibility changes cancel stale work.
+export const OCR_START_DELAY_MS = 650;
 export const OCR_VERSION = 2;
 export function cleanReadingText(value:string):string {
  return value.replace(/\r\n?/g,'\n').replace(/[\t\u00a0 ]+/g,' ')

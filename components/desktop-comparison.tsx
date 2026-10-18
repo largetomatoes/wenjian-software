@@ -45,6 +45,7 @@ export function DesktopComparison({request,onClose,...reader}:Props){
   setDraft(next);setLeftRequest(next.left);setRightRequest(next.right);setActivePane(next.lastActive);setEnlarged(null);setReady(true);setPicker(!next.right);
  }).catch(cause=>{if(!cancelled)setError(`对照草稿读取失败：${cause.message}`);});return()=>{cancelled=true;};},[request]);
  useEffect(()=>{if(!ready)return;const timer=setTimeout(()=>void persist(draft).catch(cause=>setError(`草稿尚未保存：${cause.message}`)),250);return()=>clearTimeout(timer);},[draft,ready,persist]);
+ useEffect(()=>{if(!ready)return;const flush=(event:Event)=>(event as CustomEvent<{jobs:Promise<unknown>[]}>).detail.jobs.push(persist(draftRef.current));window.addEventListener('wenjian:flush-drafts',flush);return()=>window.removeEventListener('wenjian:flush-drafts',flush);},[ready,persist]);
  useEffect(()=>{const flush=()=>{if(ready)void persist(draftRef.current);};window.addEventListener('pagehide',flush);return()=>window.removeEventListener('pagehide',flush);},[ready,persist]);
  useEffect(()=>{if(!ready||document.documentElement.dataset.wenjianWeb!=='true')return;const media=matchMedia('(min-width:1000px) and (min-height:540px)');const update=()=>setDraft(current=>current.layoutPreference==='manual'?current:{...current,stacked:!media.matches});media.addEventListener('change',update);return()=>media.removeEventListener('change',update);},[ready]);
  const positionLeft=useCallback((source:BookThoughtSource)=>setDraft(current=>({...current,left:source})),[]);
