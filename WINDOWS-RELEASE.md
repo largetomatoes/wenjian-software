@@ -66,6 +66,6 @@ node work/mac-app/scripts/build-windows.mjs
 
 ## 验证边界
 
-上游提供了 Windows 10/11、Ryzen 7 4800H 的测试记录，覆盖连续滚动 OCR、输入、扫描缓存、长笔记与安装包。本轮在 Mac 隔离目录重新构建，核对安装器和 ZIP 内全部文件哈希、UTF-8、空白资料库和签名，并用 GitHub Windows runner 检查最终发布包的实际安装、启动、覆盖、更新替换及卸载保留资料。
+上游提供了 Windows 10/11、Ryzen 7 4800H 的测试记录，覆盖连续滚动 OCR、输入、扫描缓存、长笔记与安装包。本轮在 Mac 隔离目录重新构建，核对安装器和 ZIP 内全部文件哈希、UTF-8、空白资料库和签名，Windows 运行验证参考上游已经完成的实机测试。最终 322 包的远程 Windows 复测按使用者要求停止，没有把未完成的检查记为通过；本轮完成的范围与上游记录见 Release 附件 verification-322.json 和 upstream-verification-322.json。
 
 性能数据不应推广为所有 Windows 电脑上的速度或内存保证。真实坚果云网络速度未做本轮性能评测。完整桌面类型检查使用 `tsconfig.desktop.json`；独立 Web App 托管代码不属于本次 Windows 构建目标。
