@@ -104,7 +104,7 @@ export async function syncBooks(snapshot:Envelope,progress?:(progress:SyncProgre
  // One listing repairs old references without spending one HEAD request per book.
  let index:{keys:string[]};try{index=books.length?await syncApi<{keys:string[]}>('remote',{action:'book-index',target}):{keys:[]};if(!Array.isArray(index.keys)||index.keys.some(key=>!/^books\/[a-f0-9]{64}\.(pdf|epub)$/.test(key)))throw Error('云端书籍目录不完整，请稍后重试。');}
  catch(error){const issue=error instanceof Error?error.message:'书籍目录核对未完成';await updateSync(state=>{if(state.target!==target)throw Error('同步连接已变化。');return {...state,books:{errors:Object.fromEntries(books.map(book=>[book.id,issue]))}};});throw error;}
- const statuses=isWindowsReader()?await syncApi<{statuses:Record<string,{available:boolean;matchesManifest?:boolean}>}>('book-statuses',{}).then(r=>r.statuses).catch(()=>null):null;
+ const statuses=await syncApi<{statuses:Record<string,{available:boolean;matchesManifest?:boolean}>}>('book-statuses',{}).then(r=>r.statuses).catch(()=>null);
  const remote=new Set(index.keys);
  for(const [position,book] of books.entries()){
   if(options.background)await waitForReaderIdle();

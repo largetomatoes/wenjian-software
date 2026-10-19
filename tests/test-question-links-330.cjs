@@ -1,0 +1,14 @@
+const {test}=require('node:test'),assert=require('node:assert/strict'),{load,plain}=require('./load-ts.cjs');
+const model=load('lib/notebook.ts'),{questionChoices,questionPath}=load('lib/question-links.ts'),{projectGraph}=load('lib/graph-projection.ts'),{layoutGraph}=load('lib/graph-layout.ts'),{crossRoutes}=load('lib/graph-cross-routes.ts');
+test('questions remain nested, crosses are independent N-way junctions and keep every path',()=>{
+ const data=structuredClone(model.initialNotebook),root=data.notes[0];data.setupCompleted=true;
+ for(let i=0;i<12;i++){data.notes.push({...root,id:'q'+i,parent:root.id,title:'branch '+i,order:i+1});data.notes.push({...root,id:'leaf'+i,parent:'q'+i,title:'leaf '+i,order:1});}
+ for(let i=0;i<10;i++)data.crossThoughts.push({id:'x'+i,title:'Cross '+i,order:i+1,anchorIds:Array.from({length:i+2},(_,j)=>'leaf'+j),anchorRevisions:[],text:'',origin:'',source:'',at:'',thoughts:[]});
+ data.notes.push({...root,id:'cross-child',parent:'x0',title:'Cross child',order:1});
+ const original=JSON.stringify(data),choices=questionChoices(data),group=choices.find(c=>c.key==='crosses');assert.equal(choices[0].children.length,12);assert.equal(choices[0].children[0].children[0].id,'leaf0');assert.equal(group.children.length,10);assert.equal(group.children[9].anchors.length,11);assert(group.children[9].anchors.every(a=>a.label.includes('branch')));assert.equal(group.children[0].children[0].id,'cross-child');assert(!choices[0].children.some(n=>n.kind==='cross'));assert(questionPath(data,'leaf3').includes('branch 3 / leaf 3'));
+ const projection=projectGraph(data),positions=layoutGraph(data,projection),routes=crossRoutes(projection.edges,positions);assert.equal(routes.size,data.crossThoughts.reduce((sum,c)=>sum+c.anchorIds.length,0));assert.equal(new Set(routes.values()).size,routes.size);assert([...routes.values()].every(path=>!path.includes('NaN')));assert.equal(JSON.stringify(data),original);
+ const other=model.addQuestionPage(data,'Other page',[],'other').data;other.notes.push({...root,id:'other-child',parent:'other',title:'Other child',order:1});other.crossThoughts[0].anchorIds.push('other-child');const cross=questionChoices(other).find(c=>c.key==='crosses').children[0];assert(cross.anchors.some(a=>a.label.includes('Other page / Other child')));
+});
+test('EPUB page lookup preserves source CFIs, rejects invalid page numbers and changes key with layout',()=>{
+ const {pageAtCfi,pageTarget,epubIndexKey}=load('lib/epub-navigation.ts'),pages=[{cfi:'a',section:0,page:1},{cfi:'d',section:0,page:2},{cfi:'h',section:1,page:1}];assert.equal(pageAtCfi(pages,'f',(a,b)=>a.localeCompare(b)),2);assert.equal(pageTarget(pages,3),'h');for(const n of [0,-1,4,1.5,NaN])assert.throws(()=>pageTarget(pages,n));const book={spine:{spineItems:[{href:'a.xhtml'}]}};assert.notEqual(epubIndexKey(book,800,600,'book'),epubIndexKey(book,400,600,'book'));assert.equal(pages[2].cfi,'h');
+});

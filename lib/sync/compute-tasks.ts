@@ -3,6 +3,8 @@ import {jsonEqual} from '../value-equal';
 import type {Notebook} from '../notebook';
 // Pure calculations shared by the worker and the existing non-Windows path.
 export const calculations={
+ serialize:({value}:{value:unknown})=>JSON.stringify(value),
+ parse:({text}:{text:string})=>JSON.parse(text) as unknown,
  capture:({state,data}:{state:SyncState;data:Notebook})=>capture(state,data),
  materialize:({state,data}:{state:SyncState;data:Notebook})=>materialize(state,data),
  project:({data}:{data:Notebook})=>project(data),

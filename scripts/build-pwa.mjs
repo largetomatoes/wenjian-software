@@ -2,7 +2,7 @@ import {spawnSync} from 'node:child_process';
 import {cp,mkdir,readFile,writeFile,readdir,rm} from 'node:fs/promises';
 import crypto from 'node:crypto';
 import path from 'node:path';
-const result=spawnSync(process.execPath,['node_modules/vite/bin/vite.js','build','--config','webapp/vite.config.mjs'],{stdio:'inherit'});if(result.status!==0)process.exit(result.status||1);
+const result=spawnSync(process.execPath,['node_modules/vite/bin/vite.js','build','--config','webapp/vite.config.mjs','--configLoader','native'],{stdio:'inherit'});if(result.status!==0)process.exit(result.status||1);
 const source=path.resolve('webapp/dist'),publicDir=path.resolve('webapp/public');
 for(const name of ['assets','reader','read'])await rm(path.join(publicDir,name),{recursive:true,force:true});
 await mkdir(path.join(publicDir,'read'),{recursive:true});

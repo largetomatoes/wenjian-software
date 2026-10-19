@@ -1,3 +1,4 @@
+import {compute} from '../lib/sync/compute';
 import {beginWebLease,endWebLease} from './lease';
 import {dbGet,dbPut,dbDelete,dbKeys} from './storage';
 import * as webCloud from './nutstore';
@@ -28,10 +29,10 @@ const webChannel=!isNative&&typeof BroadcastChannel!=='undefined'?new BroadcastC
 webChannel?.addEventListener('message',()=>{void mobileViewSnapshot().then(value=>window.dispatchEvent(new CustomEvent('wenjian-sync-updated',{detail:value}))).catch(()=>{});});
 let queue:Promise<unknown>=Promise.resolve(),cached:Store|undefined;
 const copy=<T,>(value:T):T=>structuredClone(value);
-async function peekStore():Promise<Store>{if(cached)return cached;const text=isNative?(chunked?await readChunkedStore(native):(await native.readStore()).text):await dbGet<string>('store');if(text){const value=JSON.parse(text);if(!Number.isSafeInteger(value.version)||!Array.isArray(value.data?.notes))throw Error('本机资料读取失败，未创建空白资料覆盖它。');cached={...value,data:normalize(value.data),drafts:value.drafts||{}};}else cached={version:0,data:copy(initialNotebook),drafts:{},sync:newSyncState()};return cached!;}
+async function peekStore():Promise<Store>{if(cached)return cached;const text=isNative?(chunked?await readChunkedStore(native):(await native.readStore()).text):await dbGet<string>('store');if(text){const value=await compute('parse',{text}) as Store;if(!Number.isSafeInteger(value.version)||!Array.isArray(value.data?.notes))throw Error('本机资料读取失败，未创建空白资料覆盖它。');cached={...value,data:normalize(value.data),drafts:value.drafts||{}};}else cached={version:0,data:copy(initialNotebook),drafts:{},sync:newSyncState()};return cached!;}
 const authoringView=(store:Store):Store=>({version:store.version,syncRevision:store.syncRevision,data:store.data,drafts:store.drafts});
 async function readStore(viewOnly=false):Promise<Store>{const store=await peekStore();return copy(viewOnly?authoringView(store):store);}
-async function writeStore(value:Store){if(cached&&jsonEqual(cached,value))return cached;const text=JSON.stringify(value);if(isNative){if(chunked)await writeChunkedStore(native,text);else await native.writeStore({text});}else await dbPut('store',text);cached=value;if(!isNative){window.dispatchEvent(new Event('wenjian-web-saved'));webChannel?.postMessage({version:value.version});}return value;}
+async function writeStore(value:Store){if(cached&&jsonEqual(cached,value))return cached;const text=await compute('serialize',{value});if(isNative){if(chunked)await writeChunkedStore(native,text);else await native.writeStore({text});}else await dbPut('store',text);cached=value;if(!isNative){window.dispatchEvent(new Event('wenjian-web-saved'));webChannel?.postMessage({version:value.version});}return value;}
 
 function serial<T>(operation:()=>Promise<T>):Promise<T>{const run=async()=>{if(!isNative){return navigator.locks.request('wenjian-web-store',()=>{cached=undefined;return operation();});}return operation();};const result=queue.then(run);queue=result.catch(()=>{});return result;}
 export async function mobileSnapshot(){return serial(readStore);}
@@ -63,6 +64,7 @@ export function installMobileApi(){
    const current=await serial(peekStore),book=current.data.libraryBooks.find(b=>b.id===payload.id);if(!book)throw Error('没有找到这本书');
    if(payload.action==='status'){const info=isNative?await native.bookInfo({name:book.storedFile}):await dbGet<Blob>('book/'+book.storedFile);return {available:!!info&&(isNative?!!(info as {available?:boolean}).available:(info as Blob).size>0),matchesManifest:!book.cloudFile||info?.size===book.cloudFile.size};}
   }
+  if(path==='book-statuses'){const current=await serial(peekStore),statuses:Record<string,{available:boolean;matchesManifest:boolean}>={};for(const book of current.data.libraryBooks.filter(book=>book.format!=='reference'&&!!book.storedFile)){const found=await available(book);statuses[book.id]={available:found,matchesManifest:found};}return {statuses};}
   if(path==='identity')return isNative?native.getSyncIdentity():webCloud.identity();
   if(path==='remote'){if(!isNative)return (await webCloud.currentClient(payload.target)).remote(payload);try{return await native.remote(payload);}catch(error){const text=error instanceof Error?error.message:String(error);const match=/（(401|403|429|503|507)）/.exec(text);throw Object.assign(Error(text),{code:match?Number(match[1]):undefined});}}
   const response=await window.fetch('/api/sync/'+path,body===undefined?{}:{method:'POST',body:JSON.stringify(body)}),result=await response.json() as {error?:string;code?:number};if(!response.ok)throw Object.assign(Error(result.error||'同步没有完成'),{status:response.status,code:result.code});return result;
@@ -70,7 +72,7 @@ export function installMobileApi(){
  window.fetch=async(input,init)=>{
  const url=typeof input==='string'?input:input instanceof URL?input.toString():input.url;const route=new URL(url,location.origin).pathname;if(!route.startsWith('/api/')||route==='/api/webdav')return originalFetch(input,init);
  try{const payload=typeof init?.body==='string'?JSON.parse(init.body):{},method=init?.method||'GET';
-  if(route==='/api/app/info')return json(isNative?{...await App.getInfo(),platform:'android',arch:'universal'}:{version:PREVIEW_VERSION,build:'web-1',platform:'web',arch:'universal'});
+  if(route==='/api/app/info')return json(isNative?{...await App.getInfo(),platform:'android',arch:'universal'}:{version:PREVIEW_VERSION,build:'330',displayBuild:'330',platform:'web',arch:'universal'});
   if(route==='/api/app/releases'){if(!isNative)return json([]);if(isNative)return json((await native.appReleases()).releases);const response=await originalFetch('/api/app/releases');return response;}
   if(route==='/api/app/update'){
    if(!isNative)return json({state:'idle'});
@@ -97,7 +99,7 @@ export function installMobileApi(){
    if(route==='/api/sync/revision'){if(!cached)await readStore();return json({version:cached!.version,syncRevision:cached!.syncRevision||0});}
    const current=await peekStore();
    if(route==='/api/sync/local'||route==='/api/notebook'&&method==='GET')return json(current);
-   if(route==='/api/drafts'){if(method==='GET')return json({drafts:current.drafts});if(method==='PUT'&&typeof payload.key==='string'){await writeStore({...current,drafts:{...current.drafts,[payload.key]:payload.value}});return json({ok:true});}}
+   if(route==='/api/drafts'){if(method==='GET'){const key=new URL(url,location.origin).searchParams.get('key');return json(key?{found:Object.hasOwn(current.drafts,key),value:current.drafts[key]??null}:{drafts:current.drafts});}if(method==='PUT'&&typeof payload.key==='string'){await writeStore({...current,drafts:{...current.drafts,[payload.key]:payload.value}});return json({ok:true});}}
    if(route==='/api/sync/commit')return json(await commitSync(payload));
    if(route==='/api/notebook/maintenance'){
     const trash=current.localTrash||[];

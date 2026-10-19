@@ -34,12 +34,12 @@ const { readZoteroCatalog } = require('./zotero-local');
 
 let cpuSpeedLimit=100;
 powerMonitor?.on('speed-limit-change',(_event,info)=>{cpuSpeedLimit=info?.limit??100;});
-function currentReaderBudget(){const memory=process.getSystemMemoryInfo();return require('./windows-reader-budget.cjs').readerBudget({totalKB:memory.total,availableKB:memory.available??memory.free,onBattery:powerMonitor.isOnBatteryPower(),cpuLimit:cpuSpeedLimit});}
+function currentReaderBudget(){const memory=process.getSystemMemoryInfo(),available=memory.available??memory.free;const budget=require('./windows-reader-budget.cjs').readerBudget({totalKB:memory.total,availableKB:available,onBattery:powerMonitor.isOnBatteryPower(),cpuLimit:cpuSpeedLimit});if(process.platform==='darwin'&&available>=1024*1024&&cpuSpeedLimit>=70){const roomy=memory.total>=14*1024*1024;return {...budget,canvasPixels:roomy?12_000_000:8_000_000,cachePixels:roomy?24_000_000:16_000_000};}return budget;}
 let ocrModels;
 async function handleWindowsModel(request,response,pathname){
- if(process.platform!=='win32'||request.method!=='GET')return jsonReply(response,404,{error:'Not found'});
+ if(!['win32','darwin'].includes(process.platform)||request.method!=='GET')return jsonReply(response,404,{error:'Not found'});
  const match=/^\/api\/reader\/ocr\/(chi_sim|eng)\.traineddata$/.exec(pathname);if(!match)return jsonReply(response,404,{error:'Not found'});
- try{ocrModels??=require('./windows-ocr-models.cjs').createModelCache({source:path.join(process.resourcesPath,'static','reader','ocr','lstm-v1'),directory:path.join(app.getPath('userData'),'ocr-models','lstm-v1')});
+ try{ocrModels??=require('./windows-ocr-models.cjs').createModelCache({source:path.join(process.resourcesPath,'static','reader','ocr',...(process.platform==='win32'?['lstm-v1']:[])),directory:path.join(app.getPath('userData'),'ocr-models',process.platform==='win32'?'lstm-v1':'full-v1')});
  const file=await ocrModels(match[1]),info=await fsp.stat(file);response.writeHead(200,{'Content-Type':'application/octet-stream','Content-Length':info.size,'Cache-Control':'public, max-age=31536000, immutable'});const stream=fs.createReadStream(file);stream.on('error',()=>response.destroy());response.on('close',()=>stream.destroy());stream.pipe(response);
  }catch(error){console.error('OCR model cache:',error);if(!response.headersSent)jsonReply(response,500,{error:'本机识别模型未能读取，请重试。'});else response.destroy();}
 }
@@ -939,7 +939,7 @@ function setMenu() {
         mainWindow.webContents.executeJavaScript('window.dispatchEvent(new Event("wenjian-open-cloud"))').catch(() => {});
       } },
       { label: '显示本地数据文件', click: () => shell.showItemInFolder(dataPath) }, { type: 'separator' },
-      ...(process.platform==='win32'?[{label:'性能信息（本机）…',click:async()=>{const metrics=app.getAppMetrics(),memory=process.getSystemMemoryInfo(),report=JSON.stringify({version:RELEASE_VERSION,build:require('./package.json').buildVersion,performanceTrial:require('./package.json').windowsPerformanceTrial||null,platform:process.platform,arch:process.arch,electron:process.versions.electron,graphics:app.getGPUFeatureStatus(),gpu:await app.getGPUInfo('basic').catch(()=>null),readerBudget:currentReaderBudget(),graphicsPreference:windowsPerformance?.status(),systemMemoryKB:memory,processes:metrics.map(item=>({type:item.type,cpu:item.cpu,memory:item.memory}))},null,2);const result=await dialog.showMessageBox(mainWindow,{type:'info',title:'Windows 性能信息',message:'当前应用的本机运行信息',detail:report,buttons:['复制信息','关闭'],defaultId:1,cancelId:1});if(result.response===0)require('electron').clipboard.writeText(report);}}]:[]),
+      ...(['win32','darwin'].includes(process.platform)?[{label:'性能信息（本机）…',click:async()=>{const metrics=app.getAppMetrics(),memory=process.getSystemMemoryInfo(),report=JSON.stringify({version:RELEASE_VERSION,build:require('./package.json').buildVersion,performanceTrial:require('./package.json').windowsPerformanceTrial||null,platform:process.platform,arch:process.arch,electron:process.versions.electron,graphics:app.getGPUFeatureStatus(),gpu:await app.getGPUInfo('basic').catch(()=>null),readerBudget:currentReaderBudget(),graphicsPreference:windowsPerformance?.status(),systemMemoryKB:memory,processes:metrics.map(item=>({type:item.type,cpu:item.cpu,memory:item.memory}))},null,2);const result=await dialog.showMessageBox(mainWindow,{type:'info',title:'性能信息',message:'当前应用的本机运行信息',detail:report,buttons:['复制信息','关闭'],defaultId:1,cancelId:1});if(result.response===0)require('electron').clipboard.writeText(report);}}]:[]),
       ...platformItems, { role: 'quit', label: '退出问间' }
     ]},
     { label: '编辑', submenu: [{ role: 'undo', label: '撤销' }, { role: 'redo', label: '重做' }, { type: 'separator' }, { role: 'cut', label: '剪切' }, { role: 'copy', label: '复制' }, { role: 'paste', label: '粘贴' }, { role: 'selectAll', label: '全选' }] },
@@ -949,7 +949,7 @@ function setMenu() {
 }
 function createWindow() {
   mainWindow = new BrowserWindow({ width: 1440, height: 920, minWidth: 820, minHeight: 620, title: '问间', ...(process.platform === 'darwin' ? { titleBarStyle: 'hiddenInset' } : {}), backgroundColor: '#f7f8fb', show: false, webPreferences: { contextIsolation: true, nodeIntegration: false, sandbox: true, spellcheck: process.platform!=='win32', backgroundThrottling:true } });
-  mainWindow.webContents.on('will-prevent-unload',async event=>{if(installingUpdate){event.preventDefault();return;}if(process.platform==='win32'&&windowsTray?.isQuitting()){windowsTray.cancelQuit();windowsTray.show();await dialog.showMessageBox(mainWindow,{type:'warning',title:'内容尚未提交',message:'当前编辑器仍有未提交内容，问间已取消退出。',detail:'请先保存或关闭正在编辑的内容，再从托盘菜单退出。收起到托盘不需要关闭这些内容。',buttons:['返回编辑']});}});
+  mainWindow.webContents.on('will-prevent-unload',async event=>{if(installingUpdate||process.platform==='darwin'&&nativeQuitReady){event.preventDefault();return;}if(process.platform==='win32'&&windowsTray?.isQuitting()){windowsTray.cancelQuit();windowsTray.show();await dialog.showMessageBox(mainWindow,{type:'warning',title:'内容尚未提交',message:'当前编辑器仍有未提交内容，问间已取消退出。',detail:'请先保存或关闭正在编辑的内容，再从托盘菜单退出。收起到托盘不需要关闭这些内容。',buttons:['返回编辑']});}});
   if(process.platform==='win32'){if(!windowsTray)windowsTray=require('./windows-tray.cjs').createWindowsTray({app,...require('electron'),getWindow:()=>mainWindow,isUpdating:()=>installingUpdate,prepareQuit:async()=>{if(cloudBusy)throw Error('云端备份尚未结束，请稍后退出。');if(mainWindow&&!mainWindow.isDestroyed()){let timeout;try{await Promise.race([mainWindow.webContents.executeJavaScript('window.__wenjianPrepareClose ? window.__wenjianPrepareClose() : Promise.resolve(true)'),new Promise((_,reject)=>{timeout=setTimeout(()=>reject(Error('Saving timeout')),8000);})]);}finally{clearTimeout(timeout);}}await draftQueue;await notebookQueue;await checkpointLocalData();}});windowsTray.attach(mainWindow);}
   mainWindow.once('ready-to-show', () => mainWindow.show());
   mainWindow.loadURL(`http://127.0.0.1:${localPort}/`).catch((error) => { console.error(error); dialog.showErrorBox('问间无法打开', '本地页面载入失败，请重新打开问间。'); });
@@ -984,7 +984,7 @@ else {
     } else {
       if (!fs.existsSync(dataPath)) throw new Error('坚果云目录中的笔记暂时不可用。问间已停止启动，避免打开空白资料库。');
     }
-    if(process.platform==='win32'&&storageMode==='local'){const {createWindowsData}=require('./windows-data.cjs');windowsData=createWindowsData(dataPath);windowsDrafts=createWindowsData(draftsPath,'draft');}
+    if(['win32','darwin'].includes(process.platform)&&storageMode==='local'){const {createWindowsData}=require('./windows-data.cjs');windowsData=createWindowsData(dataPath);windowsDrafts=createWindowsData(draftsPath,'draft');}
     const store = await readStore();
     await appUpdater().init();
     libraryDir = await prepareLocalLibrary({ storageDir, userDataDir: app.getPath('userData'), books: store.data.libraryBooks, storageMode });
@@ -996,6 +996,7 @@ else {
   }).catch((error) => { console.error(error); dialog.showErrorBox('问间无法启动', error.message || '本地数据未能载入。'); app.quit(); });
   app.on('activate', () => { if (BrowserWindow.getAllWindows().length === 0 && localPort) createWindow(); });
 }
-app.on('before-quit',event=>{if(process.platform==='win32'&&windowsTray&&!windowsTray.isQuitting()&&!installingUpdate){event.preventDefault();void windowsTray.quit();return;}if(process.platform!=='win32'&&server)server.close();});
+let nativeQuitReady=false,nativeQuitPending=false;
+app.on('before-quit',event=>{if(process.platform==='win32'&&windowsTray&&!windowsTray.isQuitting()&&!installingUpdate){event.preventDefault();void windowsTray.quit();return;}if(process.platform==='darwin'&&server&&!installingUpdate&&!nativeQuitReady){event.preventDefault();if(nativeQuitPending)return;nativeQuitPending=true;void(async()=>{try{if(mainWindow&&!mainWindow.isDestroyed())await mainWindow.webContents.executeJavaScript('window.__wenjianPrepareClose ? window.__wenjianPrepareClose() : Promise.resolve(true)');await draftQueue;await notebookQueue;await checkpointLocalData();nativeQuitReady=true;app.quit();}catch(error){dialog.showErrorBox('尚未退出',error.message||'保存尚未完成，请重试退出。');}finally{nativeQuitPending=false;}})();return;}if(process.platform!=='win32'&&server)server.close();});
 app.on('will-quit',()=>{windowsTray?.dispose();if(server)server.close();});
 app.on('window-all-closed', () => { if (process.platform !== 'darwin') app.quit(); });

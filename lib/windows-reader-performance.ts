@@ -1,5 +1,6 @@
 export type ReaderBudget={canvasPixels:number;cachePixels:number;ocrIdleMs:number;allowPrefetch:boolean;onBattery:boolean;cpuLimit:number};
 export let readerBudget:ReaderBudget={canvasPixels:6_000_000,cachePixels:12_000_000,ocrIdleMs:180000,allowPrefetch:false,onBattery:false,cpuLimit:100};
+export function configurePortableReader(){readerBudget={canvasPixels:3_000_000,cachePixels:6_000_000,ocrIdleMs:60000,allowPrefetch:false,onBattery:true,cpuLimit:100};}
 export function installReaderBudget(){
  let running=false;const refresh=async()=>{if(running||document.hidden)return;running=true;try{const response=await fetch('/api/app/reader-budget');if(!response.ok)return;const next=await response.json() as ReaderBudget;if(!Number.isFinite(next.canvasPixels)||!Number.isFinite(next.cachePixels))return;const changed=readerBudget.canvasPixels!==next.canvasPixels||readerBudget.cachePixels!==next.cachePixels;readerBudget=next;if(changed)window.dispatchEvent(new Event('wenjian:reader-budget'));}catch{}finally{running=false;}};
  void refresh();setInterval(()=>void refresh(),30000);document.addEventListener('visibilitychange',()=>void refresh());window.addEventListener('focus',()=>void refresh());

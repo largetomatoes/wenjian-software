@@ -27,7 +27,7 @@ function plistValue(contents, name) {
 
 function buildSpa() {
   const vite = path.join(projectRoot, 'node_modules', 'vite', 'bin', 'vite.js');
-  execFileSync(process.execPath, [vite, 'build', '--config', path.join(spaRoot, 'vite.config.mjs')], {
+  execFileSync(process.execPath, [vite, 'build', '--config', path.join(spaRoot, 'vite.config.mjs'), '--configLoader', 'native'], {
     cwd: projectRoot,
     stdio: 'inherit',
   });
@@ -98,7 +98,7 @@ if (prepareOnly) {
     await mkdir(resources, {recursive:true});
     for (const name of ['Frameworks', 'MacOS', 'PkgInfo']) await cp(path.join(source, name), path.join(contents, name), {recursive:true, verbatimSymlinks:true});
     const plist = JSON.parse(execFileSync('/usr/bin/plutil', ['-convert', 'json', '-o', '-', path.join(source, 'Info.plist')], {encoding:'utf8'}));
-    Object.assign(plist, {CFBundleShortVersionString:version, CFBundleVersion:buildVersion, CFBundleIdentifier:appBundleId, CFBundleIconFile:'AppIcon.icns'});
+    Object.assign(plist, {CFBundleName:'问间',CFBundleDisplayName:'问间',CFBundleShortVersionString:version, CFBundleVersion:buildVersion, CFBundleIdentifier:appBundleId, CFBundleIconFile:'AppIcon.icns'});
     await asar.createPackage(stage, path.join(resources, 'app.asar'));
     const header = asar.getRawHeader(path.join(resources, 'app.asar'));
     plist.ElectronAsarIntegrity = {'Resources/app.asar':{algorithm:'SHA256', hash:crypto.createHash('sha256').update(header.headerString).digest('hex')}};

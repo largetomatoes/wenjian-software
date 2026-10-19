@@ -1,4 +1,4 @@
-> Windows 当前维护版：**问间 3.14（321.1）**，内部构建 **322**；[下载与发布说明](https://github.com/largetomatoes/wenjian-software/releases/tag/v3.14-build322) · [对应源码、构建与修改说明](WINDOWS-RELEASE.md)。Mac、Android 保持 **3.14（321）**，见[原发布说明](RELEASE_NOTES_3.14_321.md)。
+> 当前版本：**问间 3.14（330）**。Mac、Windows、Android 与 iPhone / iPad Web App 统一更新；[下载与发布说明](https://github.com/largetomatoes/wenjian-software/releases/tag/v3.14-build330) · [本次改动](RELEASE_NOTES_3.14_330.md) · [构建说明](BUILDING.md)。
 
 # 问间 · 3.14
 
@@ -35,7 +35,7 @@ Copyright (C) 2026 西林sirens。原版本：[largetomatoes/wenjian-software](h
 
 ## 下载与安装
 
-3.14 提供 Mac、Windows 和同证书签名的 Android 安装包。变更、升级顺序及验证范围见 [3.14（321）发布说明](RELEASE_NOTES_3.14_321.md)；可下载文件以 [GitHub Releases](https://github.com/largetomatoes/wenjian-software/releases) 的实际附件为准。
+3.14（330）提供 Mac、可选择安装磁盘的 Windows 安装版、便携 ZIP 和同证书签名的 Android 安装包；iPhone / iPad 使用 [Web App](https://reader.wenjian-app.workers.dev/read/)。变更及验证范围见 [本次发布说明](RELEASE_NOTES_3.14_330.md)。
 
 从仓库的 **Releases** 下载对应系统的安装包。Mac（Apple 芯片）使用 `Wenjian-*-macOS-arm64.zip`，解压后把“问间”拖入“应用程序”；Windows x64 推荐使用 `Wenjian-*-Windows-x64-Setup.exe` 安装，也可使用 `Wenjian-*-Windows-x64.zip`，解压后运行 `Wenjian.exe`。Android 8.0+ 使用 `Wenjian-*-Android.apk`，移动版以阅读和笔记为主；PDF 需要 WebView 111+。当前构建没有 Apple 公证或 Windows 商业代码签名，系统首次启动时可能要求手动允许。
 
@@ -158,4 +158,4 @@ Android 2.4.2（build 48）：双书对照与共同思考、卡片分类与问�
 
 ## iPhone / iPad Web App
 
-[打开问间 Web App](https://wenjian-ios-reader.liyibo2432023353.chatgpt.site)：公开使用，无需 ChatGPT 登录。每人连接自己的坚果云，资料保存在自己的浏览器与云盘。Safari 添加到主屏幕后，从图标接入资料库。iPad 支持侧栏、网格书架和横屏原文／笔记并排。详见 [Web 使用、隐私与构建说明](WEBAPP.md)。本次为 Web 增量更新，原生安装包继续为 3.14（321）。
+[打开问间 Web App](https://reader.wenjian-app.workers.dev/read/)：公开使用，无需 ChatGPT 登录。每人连接自己的坚果云，资料保存在自己的浏览器与云盘。Safari 添加到主屏幕后，从图标接入资料库。iPad 支持侧栏、网格书架和横屏原文／笔记并排。详见 [Web 使用、隐私与构建说明](WEBAPP.md)。本次为 Web 增量更新，原生安装包继续为 3.14（321）。

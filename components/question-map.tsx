@@ -8,6 +8,8 @@ import { projectGraph } from '@/lib/graph-projection';
 import { GRAPH_NODE_HEIGHT, GRAPH_NODE_WIDTH, layoutGraph, type GraphPosition } from '@/lib/graph-layout';
 import { fitGraph, wheelCamera, zoomAt, type GraphCamera } from '@/lib/graph-camera';
 import { pinchCamera, touchPair } from '@/lib/graph-touch';
+import {CrossConnections} from './cross-connections';
+import {crossRoutes} from '@/lib/graph-cross-routes';
 
 const initialCamera: GraphCamera = { x: 40, y: 100, zoom: 1 };
 
@@ -27,6 +29,9 @@ export const QuestionMap = memo(function QuestionMap({ data, loading, onOpen, on
   const [camera, setCamera] = useState(savedCamera||initialCamera);
   const [viewport, setViewport] = useState({ width: 900, height: 650 });
   const [dragging, setDragging] = useState(false);
+  const [crossFocus,setCrossFocus]=useState<string|null>(null);
+  const focusedCross=data.crossThoughts.find(c=>c.id===crossFocus);
+  const relatedIds=useMemo(()=>new Set(focusedCross?[focusedCross.id,...focusedCross.anchorIds]:[]),[focusedCross]);
   const touches = useRef(new Map<number, { x: number; y: number }>());
   const pinch = useRef<{ camera: GraphCamera; pair: ReturnType<typeof touchPair> } | null>(null);
   const tap = useRef<{ id: string | null; x: number; y: number; moved: boolean } | null>(null);
@@ -35,6 +40,7 @@ export const QuestionMap = memo(function QuestionMap({ data, loading, onOpen, on
   const structure = useMemo(() => ({ notes, cards, crossThoughts, links }), [notes, cards, crossThoughts, links]);
   const projection = useMemo(() => projectGraph(structure), [structure]);
   const positions = useMemo(() => layoutGraph(structure, projection), [structure, projection]);
+  const routedCrosses=useMemo(()=>crossRoutes(projection.edges,positions),[projection,positions]);
   const items = useMemo(() => {
     const visible = new Set(projection.visibleIds);
     return [
@@ -47,6 +53,8 @@ export const QuestionMap = memo(function QuestionMap({ data, loading, onOpen, on
     const values = Object.values(positions);
     return { left: Math.min(0, ...values.map(p => p.x)), top: Math.min(0, ...values.map(p => p.y)), right: Math.max(GRAPH_NODE_WIDTH, ...values.map(p => p.x + GRAPH_NODE_WIDTH)), bottom: Math.max(GRAPH_NODE_HEIGHT, ...values.map(p => p.y + GRAPH_NODE_HEIGHT)) };
   }, [positions]);
+  const viewBounds={left:-camera.x/camera.zoom-GRAPH_NODE_WIDTH,top:-camera.y/camera.zoom-GRAPH_NODE_HEIGHT,right:(viewport.width-camera.x)/camera.zoom+GRAPH_NODE_WIDTH,bottom:(viewport.height-camera.y)/camera.zoom+GRAPH_NODE_HEIGHT};
+  const inView=(p:GraphPosition)=>p.x+GRAPH_NODE_WIDTH>=viewBounds.left&&p.x<=viewBounds.right&&p.y+GRAPH_NODE_HEIGHT>=viewBounds.top&&p.y<=viewBounds.bottom;
 
   // Coalesce only active gestures. There is no idle animation or layout loop.
   const moveCamera = useCallback((next: GraphCamera) => {
@@ -153,31 +161,37 @@ export const QuestionMap = memo(function QuestionMap({ data, loading, onOpen, on
         {projection.edges.map(edge => {
           const a = positions[edge.from], b = positions[edge.to];
           if (!a || !b || edge.from === edge.to) return null;
+          if(Math.max(a.x,b.x)+GRAPH_NODE_WIDTH<viewBounds.left||Math.min(a.x,b.x)>viewBounds.right||Math.max(a.y,b.y)+GRAPH_NODE_HEIGHT<viewBounds.top||Math.min(a.y,b.y)>viewBounds.bottom)return null;
           let path: string;
           if (edge.kind === 'hierarchy') {
             const ax = a.x + GRAPH_NODE_WIDTH, bx = b.x, ay = a.y + GRAPH_NODE_HEIGHT / 2, by = b.y + GRAPH_NODE_HEIGHT / 2;
             const mid = (ax + bx) / 2;
             path = `M${ax} ${ay} C${mid} ${ay},${mid} ${by},${bx} ${by}`;
+          } else if(edge.kind==='cross'&&routedCrosses.has(edge.id)){
+            path=routedCrosses.get(edge.id)!;
           } else {
             const start = boundary(a, b), end = boundary(b, a);
             path = `M${start.x} ${start.y} L${end.x} ${end.y}`;
           }
-          return <path key={edge.id} d={path} className={`edge ${edge.kind}`} fill="none" pointerEvents="none"><title>{edge.type}</title></path>;
+          return <path key={edge.id} d={path} className={`edge ${edge.kind}${focusedCross?(edge.kind==='cross'&&edge.to===focusedCross.id?' is-cross-focus':' is-cross-muted'):''}`} fill="none" pointerEvents="none"><title>{edge.type}</title></path>;
         })}
         {items.map(item => {
           const position = positions[item.id];
-          if (!position) return null;
+          if (!position||!inView(position)) return null;
           return <g key={item.id} data-node={item.id} role="button" tabIndex={0} aria-label={`${item.label}：${item.text}`}
-            className={`map-node ${item.kind}${item.id === rootId ? ' root-node' : ''}`} transform={`translate(${position.x} ${position.y})`}
+            className={`map-node ${item.kind}${item.id === rootId ? ' root-node' : ''}${relatedIds.has(item.id)?' is-cross-related':''}`} transform={`translate(${position.x} ${position.y})`}
+            onMouseEnter={()=>{if(item.kind==='cross')setCrossFocus(item.id);}} onFocus={()=>{if(item.kind==='cross')setCrossFocus(item.id);}}
             onClick={() => { if (Date.now() > ignoreClickUntil.current) onOpen(item.id); }} onKeyDown={event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); onOpen(item.id); } }}>
             <title>{item.label} · {item.text}</title>
             <rect className="node-surface" width={GRAPH_NODE_WIDTH} height={GRAPH_NODE_HEIGHT} rx="10" />
-            <foreignObject x="18" y="12" width={GRAPH_NODE_WIDTH - 36} height="23"><div className="node-tag">{item.label}</div></foreignObject>
-            <foreignObject x="18" y="40" width={GRAPH_NODE_WIDTH - 36} height="75"><div className="node-words">{item.text}</div></foreignObject>
+            {camera.zoom>=.25&&<><foreignObject x="18" y="12" width={GRAPH_NODE_WIDTH - 36} height="23"><div className="node-tag">{item.kind==='cross'&&camera.zoom<.6?`${crossNumber(data.crossThoughts.find(c=>c.id===item.id)!)} · ${data.crossThoughts.find(c=>c.id===item.id)?.anchorIds.length} 个关联`:item.label}</div></foreignObject>
+            <foreignObject x="18" y="40" width={GRAPH_NODE_WIDTH - 36} height={item.kind==='cross'?53:75}><div className="node-words">{item.text}</div></foreignObject>
+            {item.kind==='cross'&&<foreignObject x="18" y="98" width={GRAPH_NODE_WIDTH-36} height="20"><div style={{fontSize:11,color:'#748464'}}>同时关联 {data.crossThoughts.find(c=>c.id===item.id)?.anchorIds.length||0} 个问题 · 查看全部路径</div></foreignObject>}</>}
           </g>;
         })}
       </g>
     </svg>
+    {focusedCross&&<aside className="graph-cross-focus"><header><strong>{focusedCross.title||'交叉思考'}</strong><button type="button" aria-label="关闭交叉路径预览" onClick={()=>setCrossFocus(null)}>×</button></header><CrossConnections data={data} cross={focusedCross} onOpen={onOpen}/></aside>}
     {loading && <div className="map-loading"><Loader2 className="spin" />读取中</div>}
     <div className="map-controls">
       <Button variant="ghost" size="icon" aria-label="缩小关系图" title="缩小" onClick={() => resize(cameraRef.current.zoom / 1.2)}><Minus /></Button>

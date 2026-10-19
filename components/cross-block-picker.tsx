@@ -1,4 +1,5 @@
 "use client";
+import {QuestionLinkPicker} from './question-link-picker';
 import {useState} from 'react';
 import {Dialog,DialogContent,DialogTitle,DialogDescription} from '@/components/ui/dialog';
 import {Checkbox} from '@/components/ui/checkbox';
@@ -21,8 +22,7 @@ export function CrossBlockPicker({data,editing,saving,error,onClose,onSave}:{dat
  const shownBlocks=blocks.filter(n=>label(n.id).includes(query.trim()));
  const toggle=(id:string)=>setIds(current=>current.includes(id)?current.filter(x=>x!==id):current.length<30?[...current,id]:current);
  return <Dialog open onOpenChange={open=>{if(!open&&!saving)onClose();}}><DialogContent className="cross-dialog block-picker"><DialogTitle>{editing?'调整关联板块':'选择关联板块'}</DialogTitle><DialogDescription>选择两个或多个板块，上下级板块也可以同时选择。</DialogDescription>
- <Input aria-label="查找板块" placeholder="查找编号或板块名称" value={query} onChange={e=>setQuery(e.target.value)}/>
- <div className="block-options">{shownBlocks.map((n,index)=>{const previous=shownBlocks[index-1];return <div key={n.id}>{(index===0||previous?.kind!==n.kind)&&<div className="block-group-title">{n.kind==='question'?'问题板块':'关联主题'}</div>}<label className={'block-option '+(ids.includes(n.id)?'is-selected':'')+(n.disabled?' is-disabled':'')} style={{paddingLeft:14+Math.min(4,n.depth)*18}}><Checkbox checked={ids.includes(n.id)} onCheckedChange={()=>!n.disabled&&toggle(n.id)} disabled={saving||n.disabled||(!ids.includes(n.id)&&ids.length>=30)} aria-label={label(n.id)}/><span className="block-number">{n.code}</span><span>{n.title}{n.disabled&&<small>会形成循环关联</small>}</span></label></div>})}{!shownBlocks.length&&<p>没有匹配的板块</p>}</div>
+ <QuestionLinkPicker data={data} selected={ids} onChange={setIds} disabled={saving} disabledIds={blocks.filter(n=>n.disabled).map(n=>n.id).concat(editing?[editing.id]:[])} initialOpen/>
  <div className="picked-blocks"><span aria-live="polite">已选 {ids.length} 个</span>{ids.map(id=><Button type="button" key={id} variant="outline" size="sm" disabled={saving} onClick={()=>toggle(id)} aria-label={`取消选择 ${label(id)}`}>{label(id)}<X size={14}/></Button>)}</div>
  {!editing&&<label className="block-title">交叉板块标题<Input value={title} onChange={e=>setTitle(e.target.value)} maxLength={300} placeholder="例如：语言与诚实"/></label>}
  {error&&<p className="error-banner" role="alert">{error}</p>}<div className="form-actions"><Button variant="ghost" disabled={saving} onClick={onClose}>取消</Button><Button disabled={saving||ids.length<2||(!editing&&!title.trim())} onClick={()=>void onSave(title.trim(),ids)}>{saving?'保存中…':editing?'保存关联':'进入笔记'}</Button></div></DialogContent></Dialog>;

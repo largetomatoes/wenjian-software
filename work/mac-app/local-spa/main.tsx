@@ -8,6 +8,9 @@ import '../../../app/globals.css';
 import '../../../components/desktop-polish.css';
 
 // Only Windows bundles these fonts. Mac keeps PingFang / Songti from macOS.
+document.documentElement.dataset.wenjianOptimized='true';
+if(!navigator.userAgent.includes('Windows'))document.documentElement.dataset.wenjianPlatform='mac';
+installReaderWorkScheduling();installReaderBudget();installWindowsCloseProtocol();
 if(navigator.userAgent.includes('Windows')){installWindowsCloseProtocol();document.documentElement.dataset.wenjianPlatform='windows';installReaderWorkScheduling();installReaderBudget();if(!document.querySelector('link[href="/fonts/windows-fonts.css"]')){const link=document.createElement('link');link.rel='stylesheet';link.href='/fonts/windows-fonts.css';document.head.appendChild(link);}}
 
 createRoot(document.getElementById('root')!).render(<React.StrictMode><Home /></React.StrictMode>);

@@ -8,7 +8,7 @@
 
 ```sh
 git clone https://github.com/largetomatoes/wenjian-software.git
-cd mac-
+cd wenjian-software
 git checkout <发行页面标明的完整提交或标签>
 npm ci
 ```
@@ -109,7 +109,7 @@ Android 可在 `android` 目录运行 `./gradlew :app:lintRelease :app:testRelea
 - 商业发行或收费服务按约定事先获得的有效书面授权，且仍提供对应源码。
 
 公开构建材料不包含个人笔记、原书、云凭据、私钥或本机缓存。
-本次只补充许可与构建文档，未重新构建、替换已安装应用或重新发布旧安装包。
+历史版本是否重新构建，以各次 Release 对应的标签和修改记录为准。
 
 
 ## 3.14（319）维护说明
@@ -162,3 +162,28 @@ Windows CI 工作流 `windows-release-smoke.yml` 从指定 Release 下载构建�
 独立 Release 名称为 `问间 3.14（321）`，标签 `v3.14-build321`。签名更新清单 payload 中增加 `tag`，须与 version/build 一致；附件名称 `Wenjian-3.14-build321-平台`。Windows 签名自动更新载荷仍为 ZIP，Setup.exe 是首次及手动覆盖安装入口。320 及以前需要手动覆盖升级一次，不能仅修改远端发现信息解决。
 
 诊断采集只记录本地阶段、异常类型/代码位置与内存统计，默认不会发送。物理 Android 实机验证仍需连接用户设备。
+
+## 3.14（330）统一发布
+
+对应标签 `v3.14-build330`，显示版本与原生内部构建号均为 3.14 / 330。修改记录见 `RELEASE_NOTES_3.14_330.md`，实施与验证范围见 `docs/release-330-plan.md`。本次使用 Node.js 26.5、Electron 44.3.0、NSIS 3.x、Java 21、Android Platform 36 / Build Tools 36.0.0。第三方依赖由锁文件确定。
+
+根依赖及 `work/mac-app` 依赖准备完成后，依次构建桌面平台，避免并发覆盖共同 SPA 暂存目录：
+
+```sh
+node work/mac-app/scripts/build-mac.mjs
+node work/mac-app/scripts/build-windows.mjs
+node node_modules/vite/bin/vite.js build --config mobile/vite.config.mjs --configLoader native
+node node_modules/@capacitor/cli/bin/capacitor sync android
+cd android
+./gradlew assembleRelease lintRelease
+```
+
+`WENJIAN_ELECTRON_ZIP_DIR` 可指向包含完整官方 Electron 归档的缓存目录，应先对照官方 SHASUMS256 核验；不需要复制已安装应用作为构建来源。Windows 安装程序保留目录与磁盘选择，UTF-8 源码生成 Unicode 安装程序。Mac 仍为本机临时签名，非 Apple 开发者签名或公证。
+
+Android 签名步骤沿用上文的环境变量及 `scripts/package-android.mjs`。仅作者持有的正式私钥可覆盖更新官方应用；自建版本使用自己的身份与证书。Capacitor 生成的本机绝对依赖路径不应提交，公开 `android/capacitor.settings.gradle` 使用相对 node_modules 路径。
+
+Web App 执行 `npm run build:pwa`，独立静态资源及受限 WebDAV 中转执行 `npm run build:web-app`。`npm run deploy:web-app` 需要部署者自己的 Cloudflare Workers 登录与子域名；部署代码不包含用户云账号。对外版本信息同为 3.14（330），既有主屏幕应用通过更新提示替换静态缓存。
+
+正式归档统一命名 `Wenjian-3.14-build330-平台`。发布说明包含 `wenjian-build:330`、`wenjian-display-build:330`、`wenjian-platforms:darwin,win32,android` 元数据；使用原更新私钥生成 `update-manifest-330.json`，Mac/Windows ZIP 与 Android APK 均记录准确大小和 SHA-256。另附安装版 EXE、完整源码归档与 SHA256SUMS.txt。Windows 内置更新仍使用 ZIP。
+
+330 新增的纯逻辑及交互检查：`node tests/test-question-links-330.cjs`、`node tests/test-release330-ui.cjs`；后者需要可用的桌面 Electron 测试运行时及 Chrome，使用隔离虚构资料。已有移动 API、恢复与三设备同步检查继续适用。平台模拟和静态构建不等同于所有设备的实测。

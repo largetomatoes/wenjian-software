@@ -1,3 +1,4 @@
+import {compute} from '../lib/sync/compute';
 import {jsonEqual} from '../lib/value-equal';
 import {readChunkedStore,writeChunkedStore,type StoreChunks} from './native-store';
 import {setSyncTransport} from '../lib/sync/client';
@@ -25,10 +26,10 @@ const copy=<T,>(value:T):T=>structuredClone(value);
 function database(){return new Promise<IDBDatabase>((resolve,reject)=>{const request=indexedDB.open('wenjian-mobile-preview',1);request.onupgradeneeded=()=>request.result.createObjectStore('files');request.onsuccess=()=>resolve(request.result);request.onerror=()=>reject(request.error);});}
 async function dbGet<T>(key:string):Promise<T|undefined>{const db=await database();try{return await new Promise((resolve,reject)=>{const request=db.transaction('files').objectStore('files').get(key);request.onsuccess=()=>resolve(request.result);request.onerror=()=>reject(request.error);});}finally{db.close();}}
 async function dbPut(key:string,value:unknown){const db=await database();try{await new Promise<void>((resolve,reject)=>{const tx=db.transaction('files','readwrite');tx.objectStore('files').put(value,key);tx.oncomplete=()=>resolve();tx.onerror=()=>reject(tx.error);tx.onabort=()=>reject(tx.error);});}finally{db.close();}}
-async function peekStore():Promise<Store>{if(cached)return cached;const text=isNative?(chunked?await readChunkedStore(native):(await native.readStore()).text):await dbGet<string>('store');if(text){const value=JSON.parse(text);if(!Number.isSafeInteger(value.version)||!Array.isArray(value.data?.notes))throw Error('本机资料读取失败，未创建空白资料覆盖它。');cached={...value,data:normalize(value.data),drafts:value.drafts||{}};}else cached={version:0,data:copy(initialNotebook),drafts:{},sync:newSyncState()};return cached!;}
+async function peekStore():Promise<Store>{if(cached)return cached;const text=isNative?(chunked?await readChunkedStore(native):(await native.readStore()).text):await dbGet<string>('store');if(text){const value=await compute('parse',{text}) as Store;if(!Number.isSafeInteger(value.version)||!Array.isArray(value.data?.notes))throw Error('本机资料读取失败，未创建空白资料覆盖它。');cached={...value,data:normalize(value.data),drafts:value.drafts||{}};}else cached={version:0,data:copy(initialNotebook),drafts:{},sync:newSyncState()};return cached!;}
 const authoringView=(store:Store):Store=>({version:store.version,syncRevision:store.syncRevision,data:store.data,drafts:store.drafts});
 async function readStore(viewOnly=false):Promise<Store>{const store=await peekStore();return copy(viewOnly?authoringView(store):store);}
-async function writeStore(value:Store){if(cached&&jsonEqual(cached,value))return cached;const text=JSON.stringify(value);if(isNative){if(chunked)await writeChunkedStore(native,text);else await native.writeStore({text});}else await dbPut('store',text);cached=value;return value;}
+async function writeStore(value:Store){if(cached&&jsonEqual(cached,value))return cached;const text=await compute('serialize',{value});if(isNative){if(chunked)await writeChunkedStore(native,text);else await native.writeStore({text});}else await dbPut('store',text);cached=value;return value;}
 
 function serial<T>(operation:()=>Promise<T>):Promise<T>{const result=queue.then(()=>operation());queue=result.catch(()=>{});return result;}
 export async function mobileSnapshot(){return serial(readStore);}
@@ -59,6 +60,7 @@ export function installMobileApi(){
    const current=await serial(peekStore),book=current.data.libraryBooks.find(b=>b.id===payload.id);if(!book)throw Error('没有找到这本书');
    if(payload.action==='status'){const info=isNative?await native.bookInfo({name:book.storedFile}):await dbGet<Blob>('book/'+book.storedFile);return {available:!!info&&(isNative?!!(info as {available?:boolean}).available:(info as Blob).size>0),matchesManifest:!book.cloudFile||info?.size===book.cloudFile.size};}
   }
+  if(path==='book-statuses'){const current=await serial(peekStore),statuses:Record<string,{available:boolean;matchesManifest:boolean}>={};for(const book of current.data.libraryBooks.filter(book=>book.format!=='reference'&&!!book.storedFile)){const found=await available(book);statuses[book.id]={available:found,matchesManifest:found};}return {statuses};}
   if(path==='identity')return isNative?native.getSyncIdentity():{provider:'oss',configured:false,target:''};
   if(path==='remote'){if(!isNative)throw Error('预览版本不连接云端');try{return await native.remote(payload);}catch(error){const text=error instanceof Error?error.message:String(error);const match=/（(401|403|429|503|507)）/.exec(text);throw Object.assign(Error(text),{code:match?Number(match[1]):undefined});}}
   const response=await window.fetch('/api/sync/'+path,body===undefined?{}:{method:'POST',body:JSON.stringify(body)}),result=await response.json() as {error?:string;code?:number};if(!response.ok)throw Object.assign(Error(result.error||'同步没有完成'),{status:response.status,code:result.code});return result;
@@ -93,7 +95,7 @@ export function installMobileApi(){
    if(route==='/api/sync/revision'){if(!cached)await readStore();return json({version:cached!.version,syncRevision:cached!.syncRevision||0});}
    const current=await peekStore();
    if(route==='/api/sync/local'||route==='/api/notebook'&&method==='GET')return json(current);
-   if(route==='/api/drafts'){if(method==='GET')return json({drafts:current.drafts});if(method==='PUT'&&typeof payload.key==='string'){await writeStore({...current,drafts:{...current.drafts,[payload.key]:payload.value}});return json({ok:true});}}
+   if(route==='/api/drafts'){if(method==='GET'){const key=new URL(url,location.origin).searchParams.get('key');return json(key?{found:Object.hasOwn(current.drafts,key),value:current.drafts[key]??null}:{drafts:current.drafts});}if(method==='PUT'&&typeof payload.key==='string'){await writeStore({...current,drafts:{...current.drafts,[payload.key]:payload.value}});return json({ok:true});}}
    if(route==='/api/sync/commit')return json(await commitSync(payload));
    if(route==='/api/notebook/maintenance'){
     const trash=current.localTrash||[];

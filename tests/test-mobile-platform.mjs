@@ -21,6 +21,7 @@ function load(file,imports={},globals={}){
 const folders=load('lib/library-folders.ts');
 const notebook=load('lib/notebook.ts',{'./library-folders':folders,'./page-organization.cjs':organization});
 const core=load('lib/sync/core.ts');const equality=load('lib/value-equal.ts');const storeChunks=load('mobile/native-store.ts');
+const calculations=load('lib/sync/compute-tasks.ts',{'./core':core,'../value-equal':equality});const compute={compute:async(task,input)=>calculations.calculate(task,input)};
 const updates=load('lib/app-updates.ts');
 const original={id:'book-1',title:'中文书籍 📖',author:'测试作者',format:'pdf',storedFile:'中文原件.pdf',originalName:'中文原件.pdf',addedAt:'2026-10-13T00:00:00.000Z',progress:{page:3},inReadingLibrary:true};
 const cloudFile={key:'books/'+ 'a'.repeat(64)+'.pdf',sha256:'a'.repeat(64),size:128};
@@ -50,6 +51,7 @@ function device({android=false,initial}={}){
  state.module=load('mobile/platform.ts',{
   '@capacitor/app':{App:{}},'@capacitor/core':{Capacitor:{isNativePlatform:()=>true,getPlatform:()=>android?'android':'ios',convertFileSrc:uri=>uri},registerPlugin:name=>{assert.equal(name,'WenjianStorage');return native;}},
   '../lib/value-equal':equality,'./native-store':storeChunks,'../lib/sync/client':{setSyncTransport:fn=>{state.syncTransport=fn;}},'../lib/sync/protocol':{setLeaseRecovery:fn=>{state.leaseRecovery=fn;}},'../lib/record-archives.cjs':archives,'../lib/notebook-settings.cjs':settings,'../lib/maintenance.cjs':maintenance,'../lib/app-updates':updates,'../lib/notebook':notebook,'../lib/ocr-cache.cjs':ocrCache,'../lib/sync/core':core,
+  '../lib/sync/compute':compute,
   '../lib/reader-platform':{setReaderPlatform:platform=>{state.reader=platform;}},
  },{window,location:{origin:'https://localhost'}});
  state.module.installMobileApi();
@@ -163,7 +165,7 @@ test('Android large-store sync uses bounded bridge messages and a direct object 
  const phone=device({android:true,initial:{version:1,syncRevision:1,data,sync,drafts:{reader:{text:'不可丢失的草稿🙂'}}}});phone.bookInfo.set(original.storedFile,{available:true,size:128,uri:'file:///fixture.pdf'});
  const a=await phone.syncTransport('local'),b=await phone.syncTransport('local');assert.equal(a,b,'internal snapshots are shared immutable values, without whole-envelope JSON roundtrips');
  const snapshot=await phone.module.mobileViewSnapshot();snapshot.data.notes[0].title='outside change';assert.notEqual((await phone.syncTransport('local')).data.notes[0].title,'outside change','public authoring views remain isolated');
- const proto={};const api=load('lib/sync/client.ts',{'../value-equal':equality,'./core':core,'./protocol':proto},{window:{dispatchEvent(){}},CustomEvent});api.setSyncTransport(phone.syncTransport);
+ const proto={};const api=load('lib/sync/client.ts',{'./compute':compute,'../reader-work':{waitForReaderIdle:async()=>{}},'../value-equal':equality,'./core':core,'./protocol':proto},{window:{dispatchEvent(){}},CustomEvent});api.setSyncTransport(phone.syncTransport);
  const done=await api.syncNow();assert.equal(done.sync.pending.length,0);assert.equal(done.data.ocrCache.length,367);assert.equal(done.drafts.reader.text,'不可丢失的草稿🙂');assert(phone.bridge.maxReadBytes<=65536);assert(phone.bridge.maxWriteChars<=48*1024);assert(phone.bridge.reads>100&&phone.bridge.writes>100);assert.equal(phone.store.data.ocrCache[366].text,data.ocrCache[366].text);
  const before=await phone.module.mobileSnapshot(),nextSync={...before.sync,lastSync:'2026-10-16T01:00:00Z'};phone.failSave=true;await assert.rejects(phone.syncTransport('commit',commit(before,nextSync)),/disk full/);assert(phone.aborted);assert.equal((await phone.module.mobileSnapshot()).sync.lastSync,before.sync.lastSync,'failed native persistence does not advance cache or overwrite the durable store');
  console.log('Large synthetic store bytes:',serialized,'native maximum read bytes:',phone.bridge.maxReadBytes,'maximum write chars:',phone.bridge.maxWriteChars);

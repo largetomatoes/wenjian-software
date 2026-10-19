@@ -15,7 +15,7 @@ export class ReaderWork {
  }
 }
 export const readerWork=new ReaderWork();
-const windows=()=>typeof document!=='undefined'&&document.documentElement?.dataset?.wenjianPlatform==='windows';
+const windows=()=>typeof document!=='undefined'&&(document.documentElement?.dataset?.wenjianOptimized==='true'||document.documentElement?.dataset?.wenjianPlatform==='windows');
 export const readerIsBusy=()=>windows()&&readerWork.busy();
 export async function waitForReaderIdle(signal?:AbortSignal,quietMs=650,includeRendering=true){
  if(!windows())return;
@@ -28,7 +28,9 @@ export function yieldReaderPaint(signal:AbortSignal){
  return new Promise<void>((resolve,reject)=>{let first=0,second=0;const clean=()=>{clearTimeout(timer);cancelAnimationFrame(first);cancelAnimationFrame(second);signal.removeEventListener('abort',abort);};const abort=()=>{clean();reject(new DOMException('Reading work cancelled','AbortError'));};const finish=()=>{clean();if(signal.aborted)reject(new DOMException('Reading work cancelled','AbortError'));else resolve();};const timer=setTimeout(finish,60);signal.addEventListener('abort',abort,{once:true});if(signal.aborted){abort();return;}first=requestAnimationFrame(()=>{second=requestAnimationFrame(finish);});});
 }
 export function beginReaderRender(){if(!windows())return()=>{};const release=readerWork.beginRender();return()=>{release();setTimeout(()=>window.dispatchEvent(new Event('wenjian:reader-idle')),700);};}
+let installed=false;
 export function installReaderWorkScheduling(){
+ if(installed)return;installed=true;
  let timer:ReturnType<typeof setTimeout>;const activity=(event:Event)=>{const element=event.target instanceof Element?event.target:event.target instanceof Node?event.target.parentElement:null;if(!element?.closest('.reader-workspace,.book-thoughts-sheet,.book-search-panel'))return;readerWork.activity();window.dispatchEvent(new Event('wenjian:reader-active'));clearTimeout(timer);timer=setTimeout(()=>window.dispatchEvent(new Event('wenjian:reader-idle')),700);};
  for(const type of ['wheel','scroll','pointerdown','keydown'])document.addEventListener(type,activity,{passive:true,capture:true});
 }

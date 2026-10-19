@@ -2,7 +2,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import {useEffect,useRef,useState} from 'react';
 import {waitForReaderIdle} from '@/lib/reader-work';
-import {isWindowsReader} from '@/lib/windows-reader-performance';
+import {isOptimizedReader} from '@/lib/reader-performance';
 import {Loader2,Search,X} from 'lucide-react';
 import {Button} from '@/components/ui/button';
 import {findBookText,readingTextNodes,rangeForMatch,type BookSearchHit} from '@/lib/book-search';
@@ -13,7 +13,7 @@ export function BookSearch({book,ready,getPdf,getEpub,getCache,getCurrentPage,on
  const [expanded,setExpanded]=useState(false),[query,setQuery]=useState(''),[busy,setBusy]=useState(false),[hits,setHits]=useState<BookSearchHit[]>([]),[status,setStatus]=useState(''),[error,setError]=useState('');
  const generation=useRef(0),pdfText=useRef(new Map<number,string>()),input=useRef<HTMLInputElement>(null),request=useRef<AbortController|null>(null);
  useEffect(()=>()=>{generation.current++;request.current?.abort();},[]);
- useEffect(()=>{const hidden=()=>{if(isWindowsReader()&&document.hidden){generation.current++;request.current?.abort();setBusy(false);setStatus('搜索已暂停，回到阅读后可重新查找。');}};document.addEventListener('visibilitychange',hidden);return()=>document.removeEventListener('visibilitychange',hidden);},[]);
+ useEffect(()=>{const hidden=()=>{if(isOptimizedReader()&&document.hidden){generation.current++;request.current?.abort();setBusy(false);setStatus('搜索已暂停，回到阅读后可重新查找。');}};document.addEventListener('visibilitychange',hidden);return()=>document.removeEventListener('visibilitychange',hidden);},[]);
  const stop=()=>{generation.current++;request.current?.abort();setBusy(false);};
  function close(){stop();setExpanded(false);onClear();}
  async function search(event:React.FormEvent){
@@ -47,7 +47,7 @@ export function BookSearch({book,ready,getPdf,getEpub,getCache,getCurrentPage,on
      }
     }catch{failed++;}
     if(!isCurrent())return;scanned=i+1;
-    if(isWindowsReader())await new Promise(resolve=>setTimeout(resolve,0));
+    if(isOptimizedReader())await new Promise(resolve=>setTimeout(resolve,0));
     if(i%8===0||i===total-1){setHits(results.slice(0,200));setStatus(`正在搜索 ${scanned} / ${total} ${book.format==='pdf'?'页':'节'}`);await new Promise(resolve=>setTimeout(resolve,0));}
     if(results.length>200)break;
    }

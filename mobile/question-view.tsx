@@ -1,3 +1,4 @@
+import {CrossConnections} from '../components/cross-connections';
 import {MobileQuestionEditor} from './question-editor';
 import {cardQuestion} from '../lib/card-collection';
 import { useState } from 'react';
@@ -42,6 +43,7 @@ export function MobileQuestions({ data, graphData=data,rootId=ROOT,viewKey,selec
       <header className="mobile-detail-header"><button type="button" aria-label="返回关系图" onClick={() => onSelect(null)}><ArrowLeft size={22}/></button><div><DialogDescription>{selected && boardLabel(data, selected)}</DialogDescription><DialogTitle>{selected && itemText(data, selected)}</DialogTitle></div></header>
       <div className="mobile-question-scroll" key={selected}>
         {(note?.body || cross?.text || card?.text) && <section className="mobile-original"><h3>最初记录</h3><p>{note?.body || cross?.text || card?.text}</p>{item?.origin && <small>{item.origin}</small>}{item?.source && <small>来源：{item.source}</small>}</section>}
+        {cross&&<CrossConnections data={data} cross={cross} onOpen={onSelect}/>}
         {note?.parent && row(note.parent)}
         {!!children.length && <section><h3>子问题与回答</h3>{children.map(item => row(item.id))}</section>}
         {!!related.size && <section><h3><Network size={16}/>关联主题</h3>{[...related].filter(id => itemText(data, id)).map(row)}</section>}
