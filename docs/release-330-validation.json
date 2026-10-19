@@ -1,0 +1,158 @@
+{
+  "version": "3.14",
+  "build": 330,
+  "date": "2026-10-19",
+  "sourceTag": "v3.14-build330",
+  "functionalSourceCommit": "8f87a2db70500bd1148140330042a9d56735bc38",
+  "packages": {
+    "version": "3.14",
+    "build": 330,
+    "checks": [
+      {
+        "platform": "win32",
+        "build": "330",
+        "blankSeed": true,
+        "nativeSourcesMatch": true,
+        "workers": true,
+        "hierarchicalLinks": true,
+        "epubPagination": true
+      },
+      {
+        "platform": "darwin",
+        "build": "330",
+        "blankSeed": true,
+        "nativeSourcesMatch": true,
+        "workers": true,
+        "hierarchicalLinks": true,
+        "epubPagination": true
+      }
+    ],
+    "macAdHocSignatureValid": true,
+    "windowsX64": true,
+    "installerDirectoryChoice": true,
+    "files": [
+      {
+        "file": "Wenjian-3.14-build330-macOS-arm64.zip",
+        "size": 187032838,
+        "sha256": "c1444072095e0bac04f94e69429767e245d6d098967a0eede9636255b7689912"
+      },
+      {
+        "file": "Wenjian-3.14-build330-Windows-x64.zip",
+        "size": 206408155,
+        "sha256": "69a8fc402fda675d454804b2c6e4d2dc04a01d762afeea670ca2b5174493231c"
+      },
+      {
+        "file": "Wenjian-3.14-build330-Windows-x64-Setup.exe",
+        "size": 153632629,
+        "sha256": "7597b0055575ee8ebdcfe8da99c2c1d0c321c360d2d8286845a02f26aa9ca4dc"
+      },
+      {
+        "file": "Wenjian-3.14-build330-Android.apk",
+        "size": 59290423,
+        "sha256": "096be4fb998ace48d366d64a6639c9e6fae8238a0c3898419e4aad4651665447"
+      }
+    ]
+  },
+  "compatibility": {
+    "build": 330,
+    "legacyParsers": [
+      "v3.14-build321",
+      "v3.14-build322"
+    ],
+    "upgradesFrom": [
+      321,
+      322,
+      323,
+      325
+    ],
+    "platforms": [
+      "darwin",
+      "win32",
+      "android"
+    ],
+    "discoveryAndSignatureCases": 24,
+    "alreadyInstalledRefused": true,
+    "passed": true
+  },
+  "windowsInstallation": {
+    "platform": "Windows",
+    "installer": "Wenjian-3.14-build330-Windows-x64-Setup.exe",
+    "checks": [
+      "Portable version reads existing AppData notebook",
+      "Silent installation succeeds without administrator privileges",
+      "Uninstaller is installed",
+      "Installed app identifies the release build",
+      "Installed app reuses portable notebook without migration loss",
+      "Offline Chinese sans font is served in Windows",
+      "Offline Chinese serif font is served in Windows",
+      "Typography CSS is packaged",
+      "Reinstall replaces existing installation successfully",
+      "Existing content survives covering installation",
+      "Production ZIP update helper replaces installed app and confirms startup",
+      "ZIP update preserves installed uninstaller",
+      "Updated program is running",
+      "Uninstall preserves notebook data",
+      "Uninstall preserves original fixture content"
+    ],
+    "success": true,
+    "run": "https://github.com/largetomatoes/wenjian-software/actions/runs/39248500448"
+  },
+  "desktopUI": {
+    "mac": {
+      "host": "darwin",
+      "simulation": false,
+      "checks": [
+        "Association picker initially folds roots; nested expansion and independent four-way cross paths",
+        "Graph focus highlights all four spokes without changing the question tree",
+        "EPUB full-book pagination completes in background",
+        "Nested TOC jumps within a chapter file; supplied original page labels are preserved",
+        "Numeric page jump reaches the requested whole-book reading page",
+        "Window resize repaginates and retains CFI-based progress",
+        "Real Mac quit flushes the latest unsubmitted reader draft and checkpoints local data"
+      ],
+      "errors": [],
+      "pages": 63
+    },
+    "windowsBranches": {
+      "host": "darwin",
+      "simulation": true,
+      "checks": [
+        "Association picker initially folds roots; nested expansion and independent four-way cross paths",
+        "Graph focus highlights all four spokes without changing the question tree",
+        "EPUB full-book pagination completes in background",
+        "Nested TOC jumps within a chapter file; supplied original page labels are preserved",
+        "Numeric page jump reaches the requested whole-book reading page",
+        "Window resize repaginates and retains CFI-based progress"
+      ],
+      "errors": [],
+      "pages": 81
+    },
+    "resizeAnchorRemainsVisible": true
+  },
+  "web": {
+    "production": "https://reader.wenjian-app.workers.dev/read/",
+    "deployment": "e77c23ab-55ca-413b-a21a-fe55b10dac27",
+    "offlineReload": true,
+    "cardPreserved": true,
+    "ipadMockSync": true,
+    "phoneAndTabletSizes": true
+  },
+  "android": {
+    "build": 330,
+    "releaseBuild": true,
+    "lintPassed": true,
+    "originalCertificateVerified": true,
+    "handsetTested": false
+  },
+  "typeChecks": [
+    "desktop",
+    "mobile",
+    "webapp"
+  ],
+  "boundaries": [
+    "No Windows laptop driver benchmark",
+    "No Android handset execution",
+    "No iOS Safari hardware execution",
+    "Simulated cloud data only"
+  ]
+}

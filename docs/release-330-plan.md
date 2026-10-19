@@ -23,9 +23,9 @@
 | 5 | EPUB 全书阅读页及数字跳页 | 后台分页、缓存、取消、重排、双栏与手机检查 | 完成 |
 | 6 | Mac/Windows/Android/Web 的适用性能优化 | 保留各平台模型、原生储存和图形策略 | 完成 |
 | 7 | 数据、安全恢复、同步与旧版更新兼容 | 笔记、书籍、草稿、批注与 CFI 不丢失 | 完成 |
-| 8 | 分端构建，签名、身份、安装与包内容核验 | Windows 保留磁盘选择；Android 沿用原签名；Mac 校验应用结构 | 最终打包核验中 |
-| 9 | Web App 发布、缓存更新、统一 GitHub Release | 真实四端文件与入口、完整源码、更新说明与签名清单齐全 | Web 已部署，Release 准备中 |
-| 10 | 官网更新 | 所有下载指向 330，Mac 第一且绿色，说明面向使用者 | 页面与尺寸检查完成，待 Release 发布后推送 |
+| 8 | 分端构建，签名、身份、安装与包内容核验 | Windows 保留磁盘选择；Android 沿用原签名；Mac 校验应用结构 | 完成 |
+| 9 | Web App 发布、缓存更新、统一 GitHub Release | 真实四端文件与入口、完整源码、更新说明与签名清单齐全 | 完成 |
+| 10 | 官网更新 | 所有下载指向 330，Mac 第一且绿色，说明面向使用者 | 完成 |
 
 ## 平台策略
 
@@ -51,3 +51,15 @@ ELK 的多端连接与汇合点：https://eclipse.dev/elk/documentation/tooldeve
 - Mac 原生进程已执行交互检查；Windows 应用分支在 Mac 模拟执行不等于 Windows 硬件性能实测。Windows 安装验收另由 GitHub Windows runner 执行。Android 构建、lint、原证书与包资源检查不等于全型号手机实测；Chrome 平板尺寸检查不等于 iOS Safari 实机验收。
 - 桌面主项目、mobile、webapp 分别进行 TypeScript 检查。主项目排除独立 Web host 的模板与生成目录；该 host 使用部署脚本在独立暂存工程中构建，浏览器端继续单独检查。
 - 正式 Worker 的首次加载／离线重开检查发现：计算桥可能在 service worker 接管前加载，遗漏运行期缓存。已将动态程序分块加入安装期完整缓存；此项通过正式入口的全新资料测试重新验证，不依赖旧浏览器 HTTP 缓存。
+
+## 最终发行记录
+
+统一标签：`v3.14-build330`。原生构建号与显示构建号均为 330。最终包的 GitHub 大小及 SHA-256 与本机校验报告逐项一致，签名清单使用既有公钥验证；321、322 的实际旧代码对 321/322/323/325 → 330 的三平台发现与签名检查共 24 项通过。
+
+最终 Windows 安装、覆盖安装、字体加载、生产 ZIP 更新与卸载保留资料检查：[Windows runner 39248500448](https://github.com/largetomatoes/wenjian-software/actions/runs/39248500448)，通过。早先草稿只读下载检查失败后，改用两个已核验的软件包短期地址完成验收，不扩大工作流权限；短期输入文件已清除。
+
+Web 正式入口为 https://reader.wenjian-app.workers.dev/read/ ，本次部署版本 ID `e77c23ab-55ca-413b-a21a-fe55b10dac27`。最终正式环境检查通过首次使用、保存与断网重开；Mac/Windows 的重排前原文 CFI 仍在重排后可见范围内，强化检查通过。
+
+发布页：https://github.com/largetomatoes/wenjian-software/releases/tag/v3.14-build330 。官网：https://largetomatoes.github.io/wenjian-web/ ，更新版本说明、统一下载链接、Mac 第一绿色入口与安装引导。iPhone/iPad 提供 Web App，不提供未签署的原生 IPA。
+
+未替换个人 Mac 应用，未读取或改写个人云端资料。真实 Win 轻薄本、Android 手机与 iOS Safari 的长期使用效果仍由使用者继续验收，不能用构建或模拟测试代替。
