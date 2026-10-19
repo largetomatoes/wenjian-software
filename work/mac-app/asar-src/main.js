@@ -10,7 +10,7 @@ const {validOcrEntry,mergeOcrPage}=require('./ocr-cache.cjs');
 let notebookQueue=Promise.resolve(),storeRevisionHint=null,libraryFileIndex=null;
 function serializeNotebook(operation){const result=notebookQueue.then(operation);notebookQueue=result.catch(()=>{});return result;}
 const {allowedReleaseUrl,cachedPublicReleases}=require('./app-updates.cjs');
-const { app, BrowserWindow, Menu, dialog, shell, session, safeStorage } = require('electron');
+const { app, BrowserWindow, Menu, dialog, shell, session, safeStorage, powerMonitor } = require('electron');
 const fs = require('node:fs');
 const fsp = require('node:fs/promises');
 const http = require('node:http');
@@ -19,7 +19,11 @@ const crypto = require('node:crypto');
 const { URL } = require('node:url');
 let pdfExporter;
 const createAnnotatedPdf=(...args)=>{pdfExporter??=require('./pdf-export');return pdfExporter.createAnnotatedPdf(...args);};
-const { MAGIC: BACKUP_MAGIC, exportCompleteBackup, inspectCompleteBackup, restoreCompleteBackup } = require('./complete-backup');
+const { MAGIC: BACKUP_MAGIC, exportCompleteBackup: exportCompleteBackupFile, inspectCompleteBackup, restoreCompleteBackup: restoreCompleteBackupFile } = require('./complete-backup');
+let windowsData=null,windowsDrafts=null;
+async function checkpointLocalData(){await windowsData?.call('checkpoint');await windowsDrafts?.call('checkpoint');}
+async function restoreCompleteBackup(options){await checkpointLocalData();return restoreCompleteBackupFile(options);}
+async function exportCompleteBackup(options){await checkpointLocalData();return exportCompleteBackupFile(options);}
 const { createOssArchiveClient, validateOssConfig } = require('./oss-cloud');
 const {isolateLegacyNotebook}=require('./local-sync-migration.cjs');
 const {createNutstoreClient,validateNutstoreConfig,nutstoreTarget,canCorrectUnconfirmedSync,validBackupName}=require('./nutstore-sync.cjs');
@@ -28,6 +32,17 @@ const { importLibraryFile } = require('./library-import');
 const bookDownloads=require('./book-downloads.cjs').createBookDownloads();
 const { readZoteroCatalog } = require('./zotero-local');
 
+let cpuSpeedLimit=100;
+powerMonitor?.on('speed-limit-change',(_event,info)=>{cpuSpeedLimit=info?.limit??100;});
+function currentReaderBudget(){const memory=process.getSystemMemoryInfo();return require('./windows-reader-budget.cjs').readerBudget({totalKB:memory.total,availableKB:memory.available??memory.free,onBattery:powerMonitor.isOnBatteryPower(),cpuLimit:cpuSpeedLimit});}
+let ocrModels;
+async function handleWindowsModel(request,response,pathname){
+ if(process.platform!=='win32'||request.method!=='GET')return jsonReply(response,404,{error:'Not found'});
+ const match=/^\/api\/reader\/ocr\/(chi_sim|eng)\.traineddata$/.exec(pathname);if(!match)return jsonReply(response,404,{error:'Not found'});
+ try{ocrModels??=require('./windows-ocr-models.cjs').createModelCache({source:path.join(process.resourcesPath,'static','reader','ocr','lstm-v1'),directory:path.join(app.getPath('userData'),'ocr-models','lstm-v1')});
+ const file=await ocrModels(match[1]),info=await fsp.stat(file);response.writeHead(200,{'Content-Type':'application/octet-stream','Content-Length':info.size,'Cache-Control':'public, max-age=31536000, immutable'});const stream=fs.createReadStream(file);stream.on('error',()=>response.destroy());response.on('close',()=>stream.destroy());stream.pipe(response);
+ }catch(error){console.error('OCR model cache:',error);if(!response.headersSent)jsonReply(response,500,{error:'本机识别模型未能读取，请重试。'});else response.destroy();}
+}
 let mainWindow = null;
 let windowsTray=null;
 let server = null;
@@ -56,6 +71,7 @@ app.commandLine.appendSwitch('proxy-bypass-list', 'localhost;127.0.0.1;[::1]');
 app.commandLine.appendSwitch('host-resolver-rules', 'MAP * 0.0.0.0, EXCLUDE localhost, EXCLUDE 127.0.0.1, EXCLUDE [::1]');
 app.setName('问间');
 if (process.env.WENJIAN_TEST_DATA_DIR) app.setPath('userData', process.env.WENJIAN_TEST_DATA_DIR);
+const windowsPerformance=process.platform==='win32'?require('./windows-performance-settings.cjs').createPerformanceSettings({directory:app.getPath('userData'),app}):null;
 app.setAboutPanelOptions({ applicationName: '问间', applicationVersion: RELEASE_VERSION+(require('./package.json').displayBuild?'（'+require('./package.json').displayBuild+'）':''), version: RELEASE_VERSION, copyright: '围绕核心问题的本地笔记应用' });
 
 async function resolveStorageDirectory() {
@@ -100,8 +116,9 @@ function normalizeNotebookData(data) {
   return { ...data, thoughtReplies: data.thoughtReplies || [], manuscripts: data.manuscripts || [], libraryBooks: (data.libraryBooks || []).map((book) => ({ ...book, pdfChapters: (book.pdfChapters || []).filter((chapter) => chapter && typeof chapter.title === 'string' && Number.isInteger(chapter.startPage) && chapter.startPage > 0) })), libraryHighlights: data.libraryHighlights || [], ocrCache: data.ocrCache || [], bookThoughts: (data.bookThoughts || []).map((entry) => ({ ...entry, scope: entry.scope || 'book', locator: entry.locator || '', quote: entry.quote || undefined, chapter: entry.chapter || undefined, questionIds: entry.questionIds || [], thoughts: entry.thoughts || [] })), links: data.links || [], dismissedSuggestions: data.dismissedSuggestions || [] };
 }
 function statSignature(stat){return [dataPath,stat.ino,stat.size,stat.mtimeMs,stat.ctimeMs].join(':');}
-async function readStoreRevision(){const stat=await fsp.stat(dataPath),signature=statSignature(stat);if(storeRevisionHint?.signature===signature)return {version:storeRevisionHint.version,syncRevision:storeRevisionHint.syncRevision};const current=await readStore();return {version:current.version,syncRevision:current.syncRevision||0};}
+async function readStoreRevision(){if(windowsData)return windowsData.call('revision');const stat=await fsp.stat(dataPath),signature=statSignature(stat);if(storeRevisionHint?.signature===signature)return {version:storeRevisionHint.version,syncRevision:storeRevisionHint.syncRevision};const current=await readStore();return {version:current.version,syncRevision:current.syncRevision||0};}
 async function readStore() {
+  if(windowsData){const value=await windowsData.call('read');value.data=normalizeNotebookData(value.data);if(!validNotebookData(value.data))throw Error('本地数据格式不正确');return value;}
   const before=await fsp.stat(dataPath);
   const value = parseJsonUtf8(await fsp.readFile(dataPath));
   value.data = normalizeNotebookData(value.data || {});
@@ -115,10 +132,11 @@ async function readStore() {
 }
 // A previousValue is reused only inside the same serialized notebook transaction.
 async function writeStore(value,previousValue) {
-  const previous=previousValue||parseJsonUtf8(await fsp.readFile(dataPath));
+  const previous=previousValue||(windowsData?await windowsData.call('read'):parseJsonUtf8(await fsp.readFile(dataPath)));
   if(value.localTrash===undefined&&previous.localTrash)value={...value,localTrash:previous.localTrash};
   if(value.sync===undefined&&previous.sync)value={...value,sync:previous.sync,syncRevision:previous.syncRevision||0};
   if(previous.version===value.version&&(previous.syncRevision||0)===(value.syncRevision||0)&&JSON.stringify(previous)===JSON.stringify(value))return;
+  if(windowsData){await windowsData.call('write',{value});return;}
   const temporary = `${dataPath}.new`;
   const backup = `${dataPath}.backup`;
   const backupTemporary = `${backup}.new-${crypto.randomUUID()}`;
@@ -145,6 +163,7 @@ async function requestBody(request,maximum=128*1024*1024) {
 }
 
 async function readDrafts() {
+  if(windowsDrafts)return windowsDrafts.call('read');
   let bytes;
   try { bytes = await fsp.readFile(draftsPath); }
   catch (error) { if (error.code === 'ENOENT') return {}; throw error; }
@@ -154,6 +173,7 @@ async function readDrafts() {
   return value;
 }
 async function writeDrafts(value) {
+  if(windowsDrafts)return windowsDrafts.call('write',{value});
   const bytes = Buffer.from(`${JSON.stringify(value)}\n`, 'utf8');
   if (bytes.length > MAX_DRAFT_BYTES) throw new Error('草稿超过 32 MB，请先整理后再保存。');
   const temporary = `${draftsPath}.new-${crypto.randomUUID()}`;
@@ -169,6 +189,8 @@ async function handleDrafts(request, response) {
   try {
     if (request.method === 'GET') {
       await draftQueue;
+      const key=new URL(request.url,'http://localhost').searchParams.get('key');
+      if(windowsDrafts&&key)return jsonReply(response,200,await windowsDrafts.call('draft-get',{key}));
       return jsonReply(response, 200, { drafts: await readDrafts() });
     }
     if (request.method !== 'PUT') return jsonReply(response, 405, { error: '不支持的操作。' });
@@ -179,6 +201,7 @@ async function handleDrafts(request, response) {
       return jsonReply(response, 400, { error: '草稿名称不正确。' });
     }
     const operation = draftQueue.then(async () => {
+      if(windowsDrafts){await windowsDrafts.call('draft-set',input);return;}
       const drafts = { ...(await readDrafts()) };
       if (input.value === null) delete drafts[input.key];
       else drafts[input.key] = input.value;
@@ -250,6 +273,13 @@ async function handleApi(request, response) {
     if (request.method === 'GET') {const current=await readStore();return jsonReply(response,200,{version:current.version,data:current.data,storage:storageMode,storageDirectory:storageDir});}
     if (restoringBackup) return jsonReply(response, 423, { error: '正在恢复备份，请稍候。' });
     const input = await requestBody(request);
+    if(windowsData&&request.method==='PATCH'&&input.delta===true){
+      if(input.kind==='progress'){
+        if(!Array.isArray(input.items)||input.items.length>100||!input.items.every(item=>item&&typeof item.id==='string'&&item.progress&&typeof item.progress==='object'&&!Array.isArray(item.progress)&&Object.entries(item.progress).every(([key,value])=>key==='cfi'?typeof value==='string'&&value.length<20000:key==='rotation'?[0,90,180,270].includes(value):key==='percentage'?typeof value==='number'&&Number.isFinite(value)&&value>=0&&value<=1:['page','totalPages'].includes(key)&&Number.isSafeInteger(value)&&value>0)))return jsonReply(response,400,{error:'阅读进度格式不正确。'});
+      }else if(!validOcrEntry(input.entry))return jsonReply(response,400,{error:'本页识别结果格式不正确。'});
+      const result=await windowsData.call(input.kind==='progress'?'progress':'ocr',input);
+      return jsonReply(response,result.conflict?409:result.missing?404:200,result);
+    }
     const current = await readStore();
     if (!Number.isInteger(input.version) || input.version !== current.version) return jsonReply(response, 409, { error: '另一窗口已保存新内容。请先复制当前输入，再重新载入。' });
     if(request.method==='PATCH'){
@@ -367,7 +397,7 @@ async function handleLibraryFile(request, response, pathname) {
     if (request.method !== 'GET') { response.writeHead(405); response.end(); return; }
     const id = decodeURIComponent(pathname.slice('/api/library/file/'.length));
     const signature=statSignature(await fsp.stat(dataPath));
-    const book=libraryFileIndex?.signature===signature?libraryFileIndex.books.get(id):(await readStore()).data.libraryBooks.find(entry=>entry.id===id);
+    const book=windowsData?(await windowsData.call('books')).find(entry=>entry.id===id):libraryFileIndex?.signature===signature?libraryFileIndex.books.get(id):(await readStore()).data.libraryBooks.find(entry=>entry.id===id);
     if (!book || !book.storedFile || book.format === 'reference' || path.basename(book.storedFile) !== book.storedFile || !/\.(pdf|epub)$/i.test(book.storedFile)) { response.writeHead(404); response.end(); return; }
     const filePath = path.join(libraryDir, book.storedFile);
     const stat = await fsp.stat(filePath);
@@ -735,8 +765,13 @@ async function handleDeviceSync(request,response,url) {
     });
     const active=()=>activeSyncClient(input.target);
     if(route==='remote')return jsonReply(response,200,await (await active()).syncRemote(input));
+    if(route==='book-statuses'){
+      const books=windowsData?await windowsData.call('books'):(await readStore()).data.libraryBooks;const statuses={};
+      for(const book of books){if(!book.storedFile||path.basename(book.storedFile)!==book.storedFile)continue;const stat=await fsp.stat(path.join(libraryDir,book.storedFile)).catch(error=>error.code==='ENOENT'?null:Promise.reject(error));statuses[book.id]={available:!!stat?.isFile()&&stat.size>0,matchesManifest:!book.cloudFile||stat?.size===book.cloudFile.size};}
+      return jsonReply(response,200,{statuses});
+    }
     if(route==='book'){
-      const book=(await readStore()).data.libraryBooks.find(b=>b.id===input.id);if(!book||!['pdf','epub'].includes(book.format)||!book.storedFile||path.basename(book.storedFile)!==book.storedFile)throw new Error('未找到书籍原文件。');
+      const book=(windowsData?await windowsData.call('books'):(await readStore()).data.libraryBooks).find(b=>b.id===input.id);if(!book||!['pdf','epub'].includes(book.format)||!book.storedFile||path.basename(book.storedFile)!==book.storedFile)throw new Error('未找到书籍原文件。');
       const destination=path.join(libraryDir,book.storedFile);
       if(input.action==='status'){const stat=await fsp.stat(destination).catch(error=>error.code==='ENOENT'?null:Promise.reject(error));return jsonReply(response,200,{available:!!stat?.isFile()&&stat.size>0,matchesManifest:!book.cloudFile||stat?.size===book.cloudFile.size});}
       if(ORGANIZATION_TRIAL)return jsonReply(response,423,{error:input.action==='download'?'本机还没有这本书的原件。跨端同步恢复后可下载，已有本地书籍仍可直接阅读。':TRIAL_SYNC_NOTICE});
@@ -757,7 +792,7 @@ function appUpdater(){
   platform:process.platform,arch:process.arch,exePath:process.execPath,bundleId:'site.chatgpt.liyibo2432023353.question-atlas-notes',
   releases:()=>cachedPublicReleases(path.join(app.getPath('userData'),'update-check-cache.json'),true),
   protect:async()=>{await new Promise(resolve=>setTimeout(resolve,700));await notebookQueue;await draftQueue;restoringBackup=true;
-   const current=await readStore();if(!validNotebookData(current.data))throw Error('资料未能核验，未开始安装。');
+   await checkpointLocalData();const current=await readStore();if(!validNotebookData(current.data))throw Error('资料未能核验，未开始安装。');
    const folder=path.join(app.getPath('userData'),'update-cache','safeguard-'+Date.now());await fsp.mkdir(folder,{recursive:true,mode:0o700});
    await fsp.copyFile(dataPath,path.join(folder,'notebook.json'));const before=await fsp.readFile(dataPath),copied=await fsp.readFile(path.join(folder,'notebook.json'));if(!before.equals(copied))throw Error('资料正在变化，请稍后安装。');
    const drafts=await readDrafts();await fsp.writeFile(path.join(folder,'drafts.json'),JSON.stringify(drafts),{mode:0o600});
@@ -769,6 +804,12 @@ async function handleAppUpdates(request,response,url){
   const origin=`http://127.0.0.1:${localPort}`;
   if(request.headers.host!==`127.0.0.1:${localPort}`||(request.headers.origin&&request.headers.origin!==origin)||request.headers['sec-fetch-site']==='cross-site')return jsonReply(response,403,{error:'来源不匹配'});
   try{
+    if(pathname==='/api/app/performance'){
+      if(!windowsPerformance)return jsonReply(response,404,{error:'此设置仅适用于 Windows。'});
+      if(request.method==='GET')return jsonReply(response,200,windowsPerformance.status());
+      if(request.method==='POST'){const input=await requestBody(request,1024);if(typeof input.hardwareAcceleration!=='boolean')return jsonReply(response,400,{error:'图形加速设置无效。'});return jsonReply(response,200,windowsPerformance.save(input.hardwareAcceleration));}
+      return jsonReply(response,405,{error:'不支持的设置操作'});
+    }
     if(pathname==='/api/app/update'){
       const updater=appUpdater();if(request.method==='GET')return jsonReply(response,200,updater.status());
       const input=await requestBody(request);
@@ -781,7 +822,7 @@ async function handleAppUpdates(request,response,url){
       throw Error('更新操作无效。');
     }
     if(pathname==='/api/app/info'&&request.method==='GET')return jsonReply(response,200,{version:RELEASE_VERSION,build:String(require('./package.json').buildVersion||''),displayBuild:String(require('./package.json').displayBuild||require('./package.json').buildVersion||''),platform:process.platform,arch:process.arch});
-    if(pathname==='/api/app/reader-budget'&&request.method==='GET'){const memory=process.getSystemMemoryInfo(),workingKB=app.getAppMetrics().reduce((sum,item)=>sum+item.memory.workingSetSize,0);return jsonReply(response,200,{allowPrefetch:process.platform==='win32'&&(memory.available??memory.free)>=1048576&&workingKB<900*1024});}
+    if(pathname==='/api/app/reader-budget'&&request.method==='GET')return jsonReply(response,200,currentReaderBudget());
     if(pathname==='/api/app/releases'&&request.method==='GET')return jsonReply(response,200,await cachedPublicReleases(path.join(app.getPath('userData'),'update-check-cache.json'),url.searchParams.get('manual')==='1'));
     if(pathname==='/api/app/open'&&request.method==='POST'){
       const value=await requestBody(request);
@@ -797,6 +838,7 @@ async function startServer() {
     const url = new URL(request.url, 'http://127.0.0.1');
     if(restoringBackup&&request.method!=='GET'&&!url.pathname.startsWith('/api/app/'))return jsonReply(response,423,{error:'正在保护或恢复资料，请稍候。'});
     if (url.pathname === '/api/backup/restore' && request.method === 'POST') { if(request.headers.origin && request.headers.origin !== `http://127.0.0.1:${localPort}`)return jsonReply(response,403,{error:'来源不匹配'}); void restoreBackup().then(()=>jsonReply(response,200,{finished:true})).catch(()=>jsonReply(response,500,{error:'无法恢复备份'})); }
+    else if (url.pathname.startsWith('/api/reader/ocr/')) void handleWindowsModel(request,response,url.pathname);
     else if (url.pathname.startsWith('/api/app/')) void handleAppUpdates(request,response,url);
     else if (url.pathname.startsWith('/api/sync/')) void handleDeviceSync(request,response,url);
     else if (url.pathname === '/api/notebook') void serializeNotebook(()=>handleApi(request, response));
@@ -897,7 +939,7 @@ function setMenu() {
         mainWindow.webContents.executeJavaScript('window.dispatchEvent(new Event("wenjian-open-cloud"))').catch(() => {});
       } },
       { label: '显示本地数据文件', click: () => shell.showItemInFolder(dataPath) }, { type: 'separator' },
-      ...(process.platform==='win32'?[{label:'性能信息（本机）…',click:async()=>{const metrics=app.getAppMetrics(),memory=process.getSystemMemoryInfo(),report=JSON.stringify({version:RELEASE_VERSION,build:require('./package.json').buildVersion,performanceTrial:require('./package.json').windowsPerformanceTrial||null,platform:process.platform,arch:process.arch,electron:process.versions.electron,graphics:app.getGPUFeatureStatus(),systemMemoryKB:memory,processes:metrics.map(item=>({type:item.type,cpu:item.cpu,memory:item.memory}))},null,2);const result=await dialog.showMessageBox(mainWindow,{type:'info',title:'Windows 性能信息',message:'当前应用的本机运行信息',detail:report,buttons:['复制信息','关闭'],defaultId:1,cancelId:1});if(result.response===0)require('electron').clipboard.writeText(report);}}]:[]),
+      ...(process.platform==='win32'?[{label:'性能信息（本机）…',click:async()=>{const metrics=app.getAppMetrics(),memory=process.getSystemMemoryInfo(),report=JSON.stringify({version:RELEASE_VERSION,build:require('./package.json').buildVersion,performanceTrial:require('./package.json').windowsPerformanceTrial||null,platform:process.platform,arch:process.arch,electron:process.versions.electron,graphics:app.getGPUFeatureStatus(),gpu:await app.getGPUInfo('basic').catch(()=>null),readerBudget:currentReaderBudget(),graphicsPreference:windowsPerformance?.status(),systemMemoryKB:memory,processes:metrics.map(item=>({type:item.type,cpu:item.cpu,memory:item.memory}))},null,2);const result=await dialog.showMessageBox(mainWindow,{type:'info',title:'Windows 性能信息',message:'当前应用的本机运行信息',detail:report,buttons:['复制信息','关闭'],defaultId:1,cancelId:1});if(result.response===0)require('electron').clipboard.writeText(report);}}]:[]),
       ...platformItems, { role: 'quit', label: '退出问间' }
     ]},
     { label: '编辑', submenu: [{ role: 'undo', label: '撤销' }, { role: 'redo', label: '重做' }, { type: 'separator' }, { role: 'cut', label: '剪切' }, { role: 'copy', label: '复制' }, { role: 'paste', label: '粘贴' }, { role: 'selectAll', label: '全选' }] },
@@ -908,7 +950,7 @@ function setMenu() {
 function createWindow() {
   mainWindow = new BrowserWindow({ width: 1440, height: 920, minWidth: 820, minHeight: 620, title: '问间', ...(process.platform === 'darwin' ? { titleBarStyle: 'hiddenInset' } : {}), backgroundColor: '#f7f8fb', show: false, webPreferences: { contextIsolation: true, nodeIntegration: false, sandbox: true, spellcheck: process.platform!=='win32', backgroundThrottling:true } });
   mainWindow.webContents.on('will-prevent-unload',async event=>{if(installingUpdate){event.preventDefault();return;}if(process.platform==='win32'&&windowsTray?.isQuitting()){windowsTray.cancelQuit();windowsTray.show();await dialog.showMessageBox(mainWindow,{type:'warning',title:'内容尚未提交',message:'当前编辑器仍有未提交内容，问间已取消退出。',detail:'请先保存或关闭正在编辑的内容，再从托盘菜单退出。收起到托盘不需要关闭这些内容。',buttons:['返回编辑']});}});
-  if(process.platform==='win32'){if(!windowsTray)windowsTray=require('./windows-tray.cjs').createWindowsTray({app,...require('electron'),getWindow:()=>mainWindow,isUpdating:()=>installingUpdate,prepareQuit:async()=>{if(cloudBusy)throw Error('云端备份尚未结束，请稍后退出。');if(mainWindow&&!mainWindow.isDestroyed()){let timeout;try{await Promise.race([mainWindow.webContents.executeJavaScript('window.__wenjianPrepareClose ? window.__wenjianPrepareClose() : Promise.resolve(true)'),new Promise((_,reject)=>{timeout=setTimeout(()=>reject(Error('Saving timeout')),8000);})]);}finally{clearTimeout(timeout);}}await draftQueue;await notebookQueue;}});windowsTray.attach(mainWindow);}
+  if(process.platform==='win32'){if(!windowsTray)windowsTray=require('./windows-tray.cjs').createWindowsTray({app,...require('electron'),getWindow:()=>mainWindow,isUpdating:()=>installingUpdate,prepareQuit:async()=>{if(cloudBusy)throw Error('云端备份尚未结束，请稍后退出。');if(mainWindow&&!mainWindow.isDestroyed()){let timeout;try{await Promise.race([mainWindow.webContents.executeJavaScript('window.__wenjianPrepareClose ? window.__wenjianPrepareClose() : Promise.resolve(true)'),new Promise((_,reject)=>{timeout=setTimeout(()=>reject(Error('Saving timeout')),8000);})]);}finally{clearTimeout(timeout);}}await draftQueue;await notebookQueue;await checkpointLocalData();}});windowsTray.attach(mainWindow);}
   mainWindow.once('ready-to-show', () => mainWindow.show());
   mainWindow.loadURL(`http://127.0.0.1:${localPort}/`).catch((error) => { console.error(error); dialog.showErrorBox('问间无法打开', '本地页面载入失败，请重新打开问间。'); });
 }
@@ -942,6 +984,7 @@ else {
     } else {
       if (!fs.existsSync(dataPath)) throw new Error('坚果云目录中的笔记暂时不可用。问间已停止启动，避免打开空白资料库。');
     }
+    if(process.platform==='win32'&&storageMode==='local'){const {createWindowsData}=require('./windows-data.cjs');windowsData=createWindowsData(dataPath);windowsDrafts=createWindowsData(draftsPath,'draft');}
     const store = await readStore();
     await appUpdater().init();
     libraryDir = await prepareLocalLibrary({ storageDir, userDataDir: app.getPath('userData'), books: store.data.libraryBooks, storageMode });

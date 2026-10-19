@@ -2,6 +2,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import {useEffect,useRef,useState} from 'react';
 import {waitForReaderIdle} from '@/lib/reader-work';
+import {isWindowsReader} from '@/lib/windows-reader-performance';
 import {Loader2,Search,X} from 'lucide-react';
 import {Button} from '@/components/ui/button';
 import {findBookText,readingTextNodes,rangeForMatch,type BookSearchHit} from '@/lib/book-search';
@@ -12,6 +13,7 @@ export function BookSearch({book,ready,getPdf,getEpub,getCache,getCurrentPage,on
  const [expanded,setExpanded]=useState(false),[query,setQuery]=useState(''),[busy,setBusy]=useState(false),[hits,setHits]=useState<BookSearchHit[]>([]),[status,setStatus]=useState(''),[error,setError]=useState('');
  const generation=useRef(0),pdfText=useRef(new Map<number,string>()),input=useRef<HTMLInputElement>(null),request=useRef<AbortController|null>(null);
  useEffect(()=>()=>{generation.current++;request.current?.abort();},[]);
+ useEffect(()=>{const hidden=()=>{if(isWindowsReader()&&document.hidden){generation.current++;request.current?.abort();setBusy(false);setStatus('搜索已暂停，回到阅读后可重新查找。');}};document.addEventListener('visibilitychange',hidden);return()=>document.removeEventListener('visibilitychange',hidden);},[]);
  const stop=()=>{generation.current++;request.current?.abort();setBusy(false);};
  function close(){stop();setExpanded(false);onClear();}
  async function search(event:React.FormEvent){
@@ -21,14 +23,14 @@ export function BookSearch({book,ready,getPdf,getEpub,getCache,getCurrentPage,on
   setBusy(true);setHits([]);setError('');onClear();
   const results:BookSearchHit[]=[];let skipped=0,failed=0,nativePages=0,scanned=0,total=0;
   try{
-   const pdf=getPdf(),epub=getEpub(),cache=getCache().filter(item=>item.libraryBookId===book.id);
+   const pdf=getPdf(),epub=getEpub(),cache=new Map(getCache().filter(item=>item.libraryBookId===book.id).map(item=>[item.page,item]));
    if(book.format==='pdf'&&!pdf||book.format==='epub'&&!epub)throw Error('书籍还在打开，请稍后搜索。');
    const sections=epub?.spine?.spineItems||[];total=book.format==='pdf'?pdf.numPages:sections.length;
    for(let i=0;i<total;i++){
     await waitForReaderIdle(controller.signal,250);if(!isCurrent())return;
     try{
      if(book.format==='pdf'){
-      const page=i+1,cached=cache.find(item=>item.page===page);let text=pdfText.current.get(page);
+      const page=i+1,cached=cache.get(page);let text=cached?.preferOcr?'':pdfText.current.get(page);
       if(text===undefined){const source=await pdf.getPage(page),content=await source.getTextContent();text=content.items.map((item:{str?:string;hasEOL?:boolean})=>(item.str||'')+(item.hasEOL?'\n':' ')).join('');if(!isCurrent())return;pdfText.current.set(page,text!);while(pdfText.current.size>128||[...pdfText.current.values()].reduce((sum,value)=>sum+value.length,0)>2_000_000)pdfText.current.delete(pdfText.current.keys().next().value!);if(page!==getCurrentPage?.())source.cleanup();}
       const readable=!!text!.trim()&&!/[\uFFFD\u0000-\u0008]/.test(text!);
       if(readable)nativePages++;
@@ -45,6 +47,7 @@ export function BookSearch({book,ready,getPdf,getEpub,getCache,getCurrentPage,on
      }
     }catch{failed++;}
     if(!isCurrent())return;scanned=i+1;
+    if(isWindowsReader())await new Promise(resolve=>setTimeout(resolve,0));
     if(i%8===0||i===total-1){setHits(results.slice(0,200));setStatus(`正在搜索 ${scanned} / ${total} ${book.format==='pdf'?'页':'节'}`);await new Promise(resolve=>setTimeout(resolve,0));}
     if(results.length>200)break;
    }

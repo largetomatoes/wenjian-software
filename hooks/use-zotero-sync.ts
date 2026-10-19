@@ -1,6 +1,7 @@
 'use client';
 
 import {useCallback,useEffect,useRef,useState} from 'react';
+import {isWindowsReader} from '@/lib/windows-reader-performance';
 import {readerIsBusy} from '@/lib/reader-work';
 import type {Notebook} from '@/lib/notebook';
 import {type ZoteroCatalog} from '@/lib/zotero';
@@ -33,7 +34,7 @@ export function useZoteroSync({enabled,data,saving,applyCatalog}:Options){
  const refresh=useCallback(async(force=false)=>{
   if(!current.current.enabled||document.visibilityState==='hidden'||request.current||pending.current||applying.current)return;
   if(!force&&readerIsBusy()){deferred.current=true;return;}deferred.current=false;
-  if(!force&&Date.now()-lastAttempt.current<10000)return;
+  if(!force&&Date.now()-lastAttempt.current<(isWindowsReader()?120000:10000))return;
   lastAttempt.current=Date.now();
   const controller=new AbortController(),epoch=generation.current;
   request.current=controller;
@@ -56,9 +57,9 @@ export function useZoteroSync({enabled,data,saving,applyCatalog}:Options){
  useEffect(()=>{
   if(!enabled)return;
   const epoch=generation.current;
-  const start=window.setTimeout(()=>void refresh(),1000);
-  const timer=window.setInterval(()=>{if(pending.current)void apply();else void refresh();},60000);
-  const focus=()=>{if(pending.current)void apply();else void refresh();},idle=()=>{if(deferred.current||pending.current)focus();};
+  const start=window.setTimeout(()=>void refresh(),isWindowsReader()?5000:1000);
+  const timer=window.setInterval(()=>{if(pending.current)void apply();else void refresh();},isWindowsReader()?120000:60000);
+  const focus=()=>{if(document.hidden&&isWindowsReader()){request.current?.abort();return;}if(pending.current)void apply();else void refresh();},idle=()=>{if(deferred.current||pending.current)focus();};
   window.addEventListener('focus',focus);document.addEventListener('visibilitychange',focus);window.addEventListener('wenjian:reader-idle',idle);
   return()=>{generation.current=epoch+1;request.current?.abort();request.current=null;pending.current=null;window.clearTimeout(start);window.clearInterval(timer);window.removeEventListener('focus',focus);document.removeEventListener('visibilitychange',focus);window.removeEventListener('wenjian:reader-idle',idle);};
  },[enabled,refresh,apply]);

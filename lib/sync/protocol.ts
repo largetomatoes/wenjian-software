@@ -119,7 +119,8 @@ export async function compactCloud():Promise<CleanupResult>{const identity=await
  await syncApi('backup-local',{});const preview=await cloudPreview(identity.target);if(stable(project(preview.data))!==stable(project(snapshot.data)))throw Error('云端有新修改，请先同步，再整理。');
  if(stable(preview.manifest)!==stable(info.manifest))throw Error('云端资料刚有变化，请重新同步。');
  const epoch=crypto.randomUUID(),at=new Date().toISOString(),operations:Operation[]=[];
- for(const key of tips(preview.operations).keys()){if(key==='settings/zoteroEnabled')continue;const value=project(preview.data)[key]??null;operations.push({id:crypto.randomUUID(),key,parents:[],value,at,device:state.device,deviceName:state.deviceName});}
+ const previewValues=project(preview.data);
+ for(const key of tips(preview.operations).keys()){if(key==='settings/zoteroEnabled')continue;const value=previewValues[key]??null;operations.push({id:crypto.randomUUID(),key,parents:[],value,at,device:state.device,deviceName:state.deviceName});}
  const snapshots=await saveSnapshots(identity.target,operations,renew);
  // Old clients stop instead of bringing discarded history back into the current library.
  await remote(identity.target,{action:'guard'});await renew(true);

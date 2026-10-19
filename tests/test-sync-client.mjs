@@ -1,7 +1,8 @@
 import fs from 'node:fs';import vm from 'node:vm';import assert from 'node:assert/strict';import ts from 'typescript';import {webcrypto} from 'node:crypto';
 function load(path,imports={},extra={}){const module={exports:{}};vm.runInNewContext(ts.transpileModule(fs.readFileSync(path,'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText,{module,exports:module.exports,require:name=>imports[name],crypto:webcrypto,structuredClone,TextEncoder,CustomEvent,window:{dispatchEvent(){}},...extra});return module.exports;}
 const equality=load('lib/value-equal.ts');const core=load('lib/sync/core.ts'),cloud=new Map();const seed=JSON.parse(fs.readFileSync('work/mac-app/seed.json')).data;
-function device(data=seed){const state={store:{version:0,syncRevision:0,data:structuredClone(data),sync:{...core.newSyncState(),enabled:true}},fail:false,onList:null,puts:0,failPut:0,bookAttempts:[],downloadAttempts:[],available:new Map()};state.api=load('lib/sync/client.ts',{'./core':core,'../value-equal':equality},{fetch:async(url,request={})=>{
+const tasks=load('lib/sync/compute-tasks.ts',{'./core':core,'../value-equal':equality}),compute={compute:async(task,input)=>tasks.calculate(task,input)};
+function device(data=seed){const state={store:{version:0,syncRevision:0,data:structuredClone(data),sync:{...core.newSyncState(),enabled:true}},fail:false,onList:null,puts:0,failPut:0,bookAttempts:[],downloadAttempts:[],available:new Map()};state.api=load('lib/sync/client.ts',{'./core':core,'./compute':compute,'../value-equal':equality},{fetch:async(url,request={})=>{
  const body=request.body?JSON.parse(request.body):{},route=url.split('/').at(-1);let result,status=200;
  if(route==='identity')result={configured:true,target:'cn-test/example/wenjian/'};
  else if(route==='local')result=structuredClone(state.store);

@@ -1,4 +1,5 @@
 'use client';
+import {readingProgressDelta} from '@/lib/reading-progress-delta';
 import {removePlacement,registerPageAdditions,recordPages} from '@/lib/page-organization.cjs';
 import {visibleNotebook} from '@/lib/record-archives.cjs';
 import {syncNow} from '@/lib/sync/client';
@@ -45,7 +46,7 @@ import {MoreHorizontal,ArrowLeft,Undo2} from 'lucide-react';
 import type {MaintenanceContext} from '@/components/record-maintenance';
 import type {MaintenanceRequest} from '@/lib/maintenance.cjs';
 import {QuestionPages} from '@/components/question-pages';
-import {QuestionMap} from '@/components/question-map';
+import {ReadingBackgroundMap} from '@/components/reading-background-map';
 import {type ManuscriptSourceSnapshot} from '@/lib/manuscript-materials';
 type FormKind={kind:'question'|'answer'|'link';from:string}|null;
 type Draft={text:string;origin:string;reason:string;changed:boolean};
@@ -96,8 +97,8 @@ function NotebookHome(){
   if(loading||savingRef.current)return {status:'busy'};
   savingRef.current=true;setSaving(true);
   try{
-   const response=await fetch('/api/notebook',{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({entry,version:versionRef.current}),signal:AbortSignal.timeout(15000)});
-   const result=await response.json() as {data:Notebook;version:number;error?:string};
+   const response=await fetch('/api/notebook',{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({entry,version:versionRef.current,delta:document.documentElement.dataset.wenjianPlatform==='windows'}),signal:AbortSignal.timeout(15000)});
+   const result=await response.json() as {data?:Notebook;entry?:OcrCacheEntry;version:number;error?:string};
    if(response.status===409){
     const latest=await fetch('/api/notebook',{cache:'no-store',signal:AbortSignal.timeout(15000)});
     if(!latest.ok)throw Error('资料库暂时无法读取。');
@@ -107,7 +108,7 @@ function NotebookHome(){
    }
    if(response.status===404)return {status:'discarded'};
    if(!response.ok)return {status:response.status===400?'failed':'retry',error:result.error||'识别缓存暂时未能写入。'};
-   latestDataRef.current=normalize(result.data);versionRef.current=result.version;setData(latestDataRef.current);
+   latestDataRef.current=result.entry?{...latestDataRef.current,ocrCache:[...latestDataRef.current.ocrCache.filter(item=>!(item.libraryBookId===result.entry!.libraryBookId&&item.page===result.entry!.page)),result.entry]}:normalize(result.data!);versionRef.current=result.version;setData(latestDataRef.current);
    return {status:'saved'};
   }catch(error){return {status:'retry',error:(error as Error).name==='TimeoutError'?'保存超时，将自动重试。':'本地保存暂时失败，将自动重试。'};}
   finally{savingRef.current=false;setSaving(false);}
@@ -137,7 +138,20 @@ function NotebookHome(){
   const pending=readerSaveQueue.current.catch(()=>{}).then(async()=>{
    for(let attempt=0;savingRef.current&&attempt<120;attempt++)await new Promise(resolve=>setTimeout(resolve,100));
    if(savingRef.current){setError('资料库正在保存，阅读草稿仍保留，请稍后重试。');return false;}
-   try{return await save(rebaseReading(base,next,latestDataRef.current),feedback);}catch(cause){setError((cause as Error).message);return false;}
+   try{
+    if(!feedback&&document.documentElement.dataset.wenjianPlatform==='windows'){
+     const items=readingProgressDelta(base,next);
+     if(items){
+      if(!items.length)return true;savingRef.current=true;setSaving(true);
+      try{const response=await fetch('/api/notebook',{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({kind:'progress',delta:true,version:versionRef.current,items})});const result=await response.json() as {version:number;items?:Array<{id:string;progress:import('@/lib/notebook').LibraryBook['progress']}>;error?:string};
+       if(response.ok&&Array.isArray(result.items)){const updates=new Map<string,import('@/lib/notebook').LibraryBook['progress']>(result.items.map((item:{id:string;progress:import('@/lib/notebook').LibraryBook['progress']})=>[item.id,item.progress]));latestDataRef.current={...latestDataRef.current,libraryBooks:latestDataRef.current.libraryBooks.map(book=>updates.has(book.id)?{...book,progress:{...book.progress,...updates.get(book.id)}}:book)};versionRef.current=result.version;setData(latestDataRef.current);return true;}
+       if(response.status===409){const latest=await fetch('/api/notebook',{cache:'no-store'});if(!latest.ok)throw Error('资料库暂时无法读取');const snapshot=await latest.json() as {version:number;data:Notebook};latestDataRef.current=normalize(snapshot.data);versionRef.current=snapshot.version;setData(latestDataRef.current);}
+       else if(response.status!==400&&response.status!==404)throw Error(result.error||'阅读进度尚未保存');
+      }finally{savingRef.current=false;setSaving(false);}
+     }
+    }
+    return await save(rebaseReading(base,next,latestDataRef.current),feedback);
+   }catch(cause){setError((cause as Error).message);return false;}
   });readerSaveQueue.current=pending;return pending;
  }
  function startComparison(source:import('@/lib/notebook').BookThoughtSource,entry?:import('@/lib/notebook').BookThought){setLibraryOpen(false);setCompareRequest({source,entry});}
@@ -237,7 +251,7 @@ function NotebookHome(){
  return <main className="studio"><header className="studio-header"><div className="wordmark" ref={syncMenuRef}><button type="button" className="wordmark-title" aria-label="返回关系图" onClick={()=>{setSelected(null);setForm(null);setBoxOpen(false);}}>问<span>间</span></button><button type="button" className={'sync-dot'+(syncMenuOpen?' is-open':'')} aria-label={"打开同步菜单："+syncStatus.text} title={syncStatus.text} data-sync-phase={syncStatus.phase} aria-expanded={syncMenuOpen} aria-controls="sync-menu" onClick={()=>setSyncMenuOpen(value=>!value)}><i/></button>{syncMenuOpen&&<div className="sync-menu" id="sync-menu" role="menu" aria-label="同步"><div className="sync-menu-heading"><span><Cloud size={16}/>同步</span><small>{storage==='nutstore'?'本机资料已保存到同步目录':storage==='local'?'本机资料已保存':'本机保存状态'}</small></div><button type="button" role="menuitem" onClick={()=>{setSyncMenuOpen(false);setSyncService(undefined);setDeviceSyncOpen(true);}}><Cloud size={16}/><span><strong>同步与连接</strong><small>{syncStatus.text}</small></span></button><button type="button" role="menuitem" onClick={()=>openCloud(false)}><Cloud size={16}/><span><strong>云端备份</strong><small>检测连接、上传完整备份、恢复</small></span><ArrowUpRight size={14}/></button><button type="button" role="menuitem" onClick={()=>openCloud(true)}><Settings2 size={16}/><span><strong>OSS 备份设置</strong><small>OSS 地域、Bucket 与访问密钥</small></span><ArrowUpRight size={14}/></button></div>}</div><Button variant="outline" className="search-jump" disabled={loading} onClick={()=>setSearchOpen(true)} aria-label="搜索"><Search/><span>搜索</span></Button><Button variant="outline" className="history-jump" aria-label="修改记录" title="修改记录" disabled={loading} onClick={()=>setHistoryOpen(true)}><History/><span>修改记录</span></Button><Button variant="outline" className="manuscript-jump" aria-label="文稿" title="文稿" disabled={loading} onClick={()=>{setManuscriptInitialId(null);setManuscriptsOpen(true);}}><FileText/><span>文稿</span></Button><LibraryEntry open={libraryEntryOpen} onOpenChange={setLibraryEntryOpen} disabled={loading} onChoose={chooseLibrary}/><Button variant="ghost" size="icon" className="settings-jump" aria-label="设置" title="设置 · ⌘," onClick={()=>setSettingsOpen(true)}><Settings2/></Button><div className="save-state" role="status">{loading?'读取中':saving?<><Loader2 className="spin" size={14}/>保存中</>:<><Check size={14}/>{storage==='nutstore'?'已保存到同步目录':storage==='local'?'已保存到本机':'已保存'}</>}</div><Button variant="outline" className="cross-jump" disabled={loading||saving||!currentPage} onClick={startCrossMode}><Network/>交叉思考</Button><Button variant="outline" className="capture-jump" aria-expanded={boxOpen} aria-controls="card-box" onClick={()=>setBoxOpen(v=>!v)}><Archive/>卡片集 <span>{data.cards.length}</span></Button></header>
  {error&&!selected&&!form&&!deleting&&<div role="alert" className="error-banner">{error}<Button variant="ghost" onClick={load} disabled={saving}>重新读取</Button></div>}
  <div className={"studio-columns "+(boxOpen?"box-open":"box-closed")}><section className="map-side">
- {currentPage?<QuestionMap key={currentPage?.id} viewKey={currentPage?.id} rootId={rootId} data={viewData} loading={loading} onOpen={openItem} onAddRoot={()=>openForm('question',rootId)}/>:<div className="empty-question-pages"><h2>问题页已归档</h2><p>可以从下方恢复原页，或新建一个问题页。</p></div>}
+ {currentPage?<ReadingBackgroundMap paused={typeof document!=='undefined'&&document.documentElement.dataset.wenjianPlatform==='windows'&&(libraryOpen||!!compareRequest)} key={currentPage?.id} viewKey={currentPage?.id} rootId={rootId} data={viewData} loading={loading} onOpen={openItem} onAddRoot={()=>openForm('question',rootId)}/>:<div className="empty-question-pages"><h2>问题页已归档</h2><p>可以从下方恢复原页，或新建一个问题页。</p></div>}
  <div className="map-bottom"><span>{viewData.notes.filter(n=>n.kind==='question').length} 个问题 · {viewData.crossThoughts.length} 个交叉板块 · {data.cards.filter(c=>cardConnected(c,data)).length} 张已连接卡片</span></div></section>
  {boxOpen&&<CardCollectionPanel data={data} save={save} saving={saving} onOpen={id=>setSelected(id)} onClose={()=>setBoxOpen(false)}><form className="quick-note" onSubmit={captureCard}><NativeSelect aria-label="新卡片类型" value={captureKind} onChange={e=>setCaptureKind(e.target.value as CardKind)}><NativeSelectOption value="idea">想法</NativeSelectOption><NativeSelectOption value="question">问题</NativeSelectOption></NativeSelect><Textarea ref={captureRef} aria-label={captureKind==='question'?'记下一个问题':'记下一个想法'} placeholder={captureKind==='question'?'记下一个还没归位的问题…':'记下一个想法…'} value={capture} onChange={e=>setCapture(e.target.value)} rows={4} required maxLength={100000}/><details className="capture-details"><summary>来源（可选）</summary><label>这段话来自<NativeSelect value={captureOrigin} onChange={e=>setCaptureOrigin(e.target.value)}>{origins.map(o=><NativeSelectOption key={o}>{o}</NativeSelectOption>)}</NativeSelect></label><Input aria-label="卡片具体来源" value={captureSource} onChange={e=>setCaptureSource(e.target.value)} placeholder="书名、页码、链接，或触发它的事"/></details><div className="quick-footer"><Button type="submit" disabled={loading||saving||!capture.trim()} size="sm"><Plus/>添加卡片</Button></div></form></CardCollectionPanel>}</div>
  <QuestionPages data={data} currentId={currentPage?.id||pageId} onSelect={selectPage} saving={saving} save={save} onShare={()=>void shareReadOnly()}/>

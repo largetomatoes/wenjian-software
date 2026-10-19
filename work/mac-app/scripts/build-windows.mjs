@@ -58,7 +58,7 @@ async function makeWindowsIcon() {
 
 function buildSpa() {
   const vite = path.join(projectRoot, 'node_modules', 'vite', 'bin', 'vite.js');
-  execFileSync(process.execPath, [vite, 'build', '--config', path.join(spaRoot, 'vite.config.mjs')], {
+  execFileSync(process.execPath, [vite, 'build', '--config', path.join(spaRoot, 'vite.config.mjs'), '--configLoader', 'native'], {
     cwd: projectRoot,
     env:{...process.env,WENJIAN_BUILD_PLATFORM:'windows'},
     stdio: 'inherit',

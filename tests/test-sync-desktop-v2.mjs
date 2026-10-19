@@ -2,7 +2,8 @@ import fs from 'node:fs';import vm from 'node:vm';import ts from 'typescript';im
 const initial=JSON.parse(fs.readFileSync('work/mac-app/seed.json')).data,objects=new Map();let writes=0,failCleanup=false;const remoteRequests=[];
 function load(file,imports,extra={}){const m={exports:{}};vm.runInNewContext(ts.transpileModule(fs.readFileSync(file,'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText,{module:m,exports:m.exports,require:n=>imports[n],Error,structuredClone,crypto:webcrypto,TextEncoder,CustomEvent,window:{dispatchEvent(){}},...extra});return m.exports;}
 const equality=load('lib/value-equal.ts');const core=load('lib/sync/core.ts',{});const hash=t=>createHash('sha256').update(t).digest('hex');
-function device(name,data=initial){const d={store:{version:0,syncRevision:0,data:structuredClone(data),sync:{...core.newSyncState(),enabled:true}},backups:0,events:[]};const imports={'../value-equal':equality,'./core':core,'../notebook':{initialNotebook:initial}},proto={};imports['./protocol']=proto;
+const tasks=load('lib/sync/compute-tasks.ts',{'./core':core,'../value-equal':equality}),compute={compute:async(task,input)=>tasks.calculate(task,input)};
+function device(name,data=initial){const d={store:{version:0,syncRevision:0,data:structuredClone(data),sync:{...core.newSyncState(),enabled:true}},backups:0,events:[]};const imports={'./compute':compute,'../value-equal':equality,'./core':core,'../notebook':{initialNotebook:initial}},proto={};imports['./protocol']=proto;
  const api=load('lib/sync/client.ts',imports,{window:{dispatchEvent:e=>d.events.push(e)},fetch:async(url,init={})=>{const body=init.body?JSON.parse(init.body):{},route=url.split('/').at(-1);let result,status=200;
  if(route==='identity')result={configured:true,verified:true,protocol:2,deviceName:name,autoPaused:!!d.autoPaused,target:'fake-library'};
  else if(route==='local')result=structuredClone(d.store);

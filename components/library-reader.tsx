@@ -1,4 +1,7 @@
 'use client';
+import {useBookMetadata} from '@/hooks/use-book-metadata';
+import {beginReaderOcr,continueReaderRender} from '@/lib/reader-work';
+import {readerBudget,sharedWindowsOcr} from '@/lib/windows-reader-performance';
 import {processEntries,processNotesForBook,processSources} from '@/lib/process-note-sources';
 import {RecordRevisionEditor} from './record-revision-editor';
 import {ZoteroNoteRail} from './zotero-note-rail';
@@ -80,13 +83,14 @@ export function LibraryReader({embedded=false,paneKey='library',interactive=true
  const [searchHit,setSearchHit]=useState<BookSearchHit|null>(null);
  const ocrTaskRef=useRef(new OcrTaskController()),ocrEngineBusyRef=useRef<any>(null);
  const [automaticOcr,setAutomaticOcr]=useState(()=>{try{return localStorage.getItem('wenjian.windows.auto-ocr')!=='off';}catch{return true;}});
- const windowsPreviewsRef=useRef(new WindowsPreviewCache<HTMLCanvasElement>()),windowsFullPagesRef=useRef(new WindowsPreviewCache<HTMLCanvasElement>(8_000_000,2)),speculativeCancelRef=useRef<(()=>void)|null>(null),refiningRef=useRef<any>(null);
+ const windowsPreviewsRef=useRef(new WindowsPreviewCache<HTMLCanvasElement>()),windowsFullPagesRef=useRef(new WindowsPreviewCache<HTMLCanvasElement>(12_000_000,2)),speculativeCancelRef=useRef<(()=>void)|null>(null),refiningRef=useRef<any>(null);
  const [pdfPreviewing,setPdfPreviewing]=useState(false),[pdfPaintEpoch,setPdfPaintEpoch]=useState(0);
- const windowsOcrRef=useRef(new WindowsOcrSession()),windowsPixelsRef=useRef(new WindowsPixelProcessor()),windowsPdfPagesRef=useRef(new WindowsPdfPageCache());
- useEffect(()=>{if(!open||!isWindowsReader())return;const activity=(event:Event)=>{if(event.target instanceof Node&&readerWorkspaceRef.current?.contains(event.target)){speculativeCancelRef.current?.();refiningRef.current?.cancel();}};const events=['wheel','scroll','pointerdown','keydown'];for(const type of events)document.addEventListener(type,activity,{passive:true,capture:true});return()=>{for(const type of events)document.removeEventListener(type,activity,true);};},[open]);
+ const windowsOcrRef=useRef(sharedWindowsOcr),windowsPixelsRef=useRef(new WindowsPixelProcessor()),windowsPdfPagesRef=useRef(new WindowsPdfPageCache());
+ useEffect(()=>{if(!open||!isWindowsReader())return;const activity=(event:Event)=>{if(event.target instanceof Node&&readerWorkspaceRef.current?.contains(event.target)){speculativeCancelRef.current?.();}};const events=['wheel','scroll','pointerdown','keydown'];for(const type of events)document.addEventListener(type,activity,{passive:true,capture:true});return()=>{for(const type of events)document.removeEventListener(type,activity,true);};},[open]);
  useEffect(()=>()=>{windowsOcrRef.current.dispose();windowsPixelsRef.current.cancel();},[]);
- useEffect(()=>{if(!open||!isWindowsReader())return;const yieldWork=()=>{speculativeCancelRef.current?.();refiningRef.current?.cancel();};window.addEventListener('wenjian:reader-active',yieldWork);return()=>window.removeEventListener('wenjian:reader-active',yieldWork);},[open]);
- const [ocrSettled,setOcrSettled]=useState(0);
+ useEffect(()=>{if(!open||!isWindowsReader())return;const yieldWork=()=>{speculativeCancelRef.current?.();};window.addEventListener('wenjian:reader-active',yieldWork);return()=>window.removeEventListener('wenjian:reader-active',yieldWork);},[open]);
+ const [ocrSettled,setOcrSettled]=useState(0),[displayEpoch,setDisplayEpoch]=useState(0);
+ useEffect(()=>{if(!open||!isWindowsReader())return;let media:MediaQueryList;const update=()=>{pdfBitmapRef.current=null;windowsFullPagesRef.current.clear();windowsFullPagesRef.current=new WindowsPreviewCache(readerBudget.cachePixels,2);setDisplayEpoch(value=>value+1);};const density=()=>{media?.removeEventListener('change',density);media=matchMedia(`(resolution: ${window.devicePixelRatio}dppx)`);media.addEventListener('change',density);update();};density();window.addEventListener('wenjian:reader-budget',update);return()=>{media?.removeEventListener('change',density);window.removeEventListener('wenjian:reader-budget',update);};},[open]);
  const [epubReady,setEpubReady]=useState(0);
  const [linkingNoteId,setLinkingNoteId]=useState<string|null>(null),[epubAnchors,setEpubAnchors]=useState<Array<{item:ReadingNote;y:number}>>([]);
  const pendingSourceRef=useRef<ReadingNote|null>(null);const [sourceRequest,setSourceRequest]=useState(0);
@@ -134,17 +138,18 @@ export function LibraryReader({embedded=false,paneKey='library',interactive=true
  const [metadataOpen,setMetadataOpen]=useState(false),[noteTab,setNoteTab]=useState<'own'|'zotero'>('own');
  const [zoteroRects,setZoteroRects]=useState<Array<{left:number;top:number;width:number;height:number;color:string;key:string}>>([]),[epubZoteroRects,setEpubZoteroRects]=useState<Array<{left:number;top:number;width:number;height:number;color:string;key:string}>>([]);
  const deletingBook=data.libraryBooks.find(book=>book.id===deletingBookId);
- const activeHighlights=useMemo(()=>active?data.libraryHighlights.filter(highlight=>highlight.libraryBookId===active.id):[],[data.libraryHighlights,active]);
- const activeReadingNotes=useMemo(()=>active?processNotesForBook(data.readingNotes,active.id,data.libraryBooks):[],[data.readingNotes,data.libraryBooks,active]);
- const pageProcessNotes=useMemo(()=>active?.format==='pdf'?activeReadingNotes.filter(note=>note.sourceLocation===`pdf:${page}`):[],[active,activeReadingNotes,page]);
- const activeBookThoughts=useMemo(()=>active?data.bookThoughts.filter(note=>thoughtBookEntries(note,active.id).length||(!note.sources?.length&&noteBook({kind:'reading',note},data.libraryBooks)?.id===active.id)):[],[data.bookThoughts,data.libraryBooks,active]);
- const noteChapters=useMemo(()=>chapterNotes([...activeReadingNotes.map(note=>({kind:"process" as const,note})),...activeBookThoughts.flatMap(note=>note.sources?.length?thoughtBookEntries(note,active!.id):[{kind:'reading' as const,note}])],active),[activeReadingNotes,activeBookThoughts,active]);
+ const metadataBooks=useBookMetadata(data.libraryBooks),activeMetadata=metadataBooks.find(book=>book.id===active?.id);
+ const activeHighlights=useMemo(()=>active?data.libraryHighlights.filter(highlight=>highlight.libraryBookId===active.id):[],[data.libraryHighlights,active?.id]);
+ const activeReadingNotes=useMemo(()=>active?processNotesForBook(data.readingNotes,active.id,metadataBooks):[],[data.readingNotes,metadataBooks,active?.id]);
+ const pageProcessNotes=useMemo(()=>active?.format==='pdf'?activeReadingNotes.filter(note=>note.sourceLocation===`pdf:${page}`):[],[active?.format,activeReadingNotes,page]);
+ const activeBookThoughts=useMemo(()=>active?data.bookThoughts.filter(note=>thoughtBookEntries(note,active.id).length||(!note.sources?.length&&noteBook({kind:'reading',note},metadataBooks)?.id===active.id)):[],[data.bookThoughts,metadataBooks,active?.id]);
+ const noteChapters=useMemo(()=>chapterNotes([...activeReadingNotes.map(note=>({kind:"process" as const,note})),...activeBookThoughts.flatMap(note=>note.sources?.length?thoughtBookEntries(note,active!.id):[{kind:'reading' as const,note}])],activeMetadata),[activeReadingNotes,activeBookThoughts,activeMetadata]);
  const noteReplyIndex=useMemo(()=>{const map=new Map<string,string>();for(const reply of data.thoughtReplies)map.set(reply.thoughtId,(map.get(reply.thoughtId)||'')+'\n'+reply.text);return map;},[data.thoughtReplies]);
  const filteredNoteChapters=useMemo(()=>!deferredNoteQuery.trim()&&!noteChapterFilter?noteChapters:noteChapters.filter(group=>!noteChapterFilter||group.key===noteChapterFilter).map(group=>({...group,entries:group.entries.filter(entry=>matchesNoteText(bookNoteContent(entry,noteReplyIndex),deferredNoteQuery))})).filter(group=>!deferredNoteQuery.trim()||group.entries.length),[noteChapters,noteChapterFilter,deferredNoteQuery,noteReplyIndex]);
 
- const activeZoteroAnnotations=useMemo(()=>active?visibleZoteroAnnotations(active):[],[active]);
- const zoteroNoteMatches=useMemo(()=>new Set(activeZoteroAnnotations.filter(annotation=>{const chapter=active?zoteroAnnotationChapter(active,annotation):'',key=chapter?'chapter:'+chapter:'unfiled';return (!noteChapterFilter||key===noteChapterFilter)&&matchesNoteText([annotation.text,annotation.comment,chapter].join('\n'),noteQuery);}).map(annotation=>annotation.key)),[active,activeZoteroAnnotations,noteQuery,noteChapterFilter]);
- const noteChapterChoices=useMemo(()=>[...new Map([...noteChapters.map(group=>[group.key,group.title] as const),...activeZoteroAnnotations.map(annotation=>{const chapter=active?zoteroAnnotationChapter(active,annotation):'';return [chapter?'chapter:'+chapter:'unfiled',chapter||'未标章节'] as const;})]).entries()],[noteChapters,activeZoteroAnnotations,active]);
+ const activeZoteroAnnotations=useMemo(()=>active?visibleZoteroAnnotations(activeMetadata!):[],[activeMetadata]);
+ const zoteroNoteMatches=useMemo(()=>new Set(activeZoteroAnnotations.filter(annotation=>{const chapter=active?zoteroAnnotationChapter(activeMetadata!,annotation):'',key=chapter?'chapter:'+chapter:'unfiled';return (!noteChapterFilter||key===noteChapterFilter)&&matchesNoteText([annotation.text,annotation.comment,chapter].join('\n'),noteQuery);}).map(annotation=>annotation.key)),[activeMetadata,activeZoteroAnnotations,noteQuery,noteChapterFilter]);
+ const noteChapterChoices=useMemo(()=>[...new Map([...noteChapters.map(group=>[group.key,group.title] as const),...activeZoteroAnnotations.map(annotation=>{const chapter=active?zoteroAnnotationChapter(activeMetadata!,annotation):'';return [chapter?'chapter:'+chapter:'unfiled',chapter||'未标章节'] as const;})]).entries()],[noteChapters,activeZoteroAnnotations,activeMetadata]);
  const activeFormat=active?.format,activeZoteroAttachmentKey=active?.zotero?.attachmentKey;
  const appliedZoteroJump=useRef<string|null>(null);
  const initialZoteroKey=initialLocation?.startsWith('zotero:')?initialLocation.slice(7):null;
@@ -293,6 +298,9 @@ export function LibraryReader({embedded=false,paneKey='library',interactive=true
    setPdfTextStatus('loading');if(!bookDraftsRef.current[active.id]?.interpretation.trim())setExcerpt(null);
    const nextView={bookId:active.id,page,rotation,scale:effective};
    const commit=(image:HTMLCanvasElement,quality:'preview'|'full')=>{
+    // A preview replaces the visible canvas too. A cancelled next page must not
+    // leave the previous full-page key claiming that its pixels are still visible.
+    pdfBitmapRef.current=null;
     const scroll=pdfScrollAfterResize(pdfViewRef.current,nextView,{top:stage.scrollTop,left:stage.scrollLeft,paddingTop,paddingLeft});
     canvas.width=image.width;canvas.height=image.height;canvas.style.width=`${viewport.width}px`;canvas.style.height=`${viewport.height}px`;canvas.getContext('2d')!.drawImage(image,0,0);
     pageElement.style.width=`${viewport.width}px`;pageElement.style.height=`${viewport.height}px`;pageElement.style.setProperty('--total-scale-factor',String(effective));
@@ -316,7 +324,7 @@ export function LibraryReader({embedded=false,paneKey='library',interactive=true
    if(hot){bitmap=hot;retainedBitmap=true;}else for(;;){
     if(progressive)await waitForReaderIdle(controller.signal,180,false);if(cancelled)return;
     bitmap=document.createElement('canvas');bitmap.width=Math.floor(viewport.width*ratio);bitmap.height=Math.floor(viewport.height*ratio);
-    renderTask=pdfPage.render({canvasContext:bitmap.getContext('2d'),viewport,transform:[ratio,0,0,ratio,0,0]});pdfRenderRef.current=renderTask;if(progressive)refiningRef.current=renderTask;
+    renderTask=pdfPage.render({canvasContext:bitmap.getContext('2d'),viewport,transform:[ratio,0,0,ratio,0,0]});pdfRenderRef.current=renderTask;if(isWindowsReader())renderTask.onContinue=(resume:()=>void)=>continueReaderRender(resume,controller.signal);if(progressive)refiningRef.current=renderTask;
     try{await renderTask.promise;break;}catch(error){if(!cancelled&&progressive&&(error as Error).name==='RenderingCancelledException'){bitmap.width=bitmap.height=1;continue;}throw error;}finally{if(refiningRef.current===renderTask)refiningRef.current=null;}
    }
    if(cancelled)return;
@@ -328,7 +336,7 @@ export function LibraryReader({embedded=false,paneKey='library',interactive=true
   }catch(error){if(!cancelled&&(error as {name?:string}).name!=='RenderingCancelledException'){console.error(error);setPdfTextStatus('failed');setReaderError('本页未能正常显示，请重试翻页。');}}
   finally{release();if(bitmap&&!retainedBitmap){bitmap.width=1;bitmap.height=1;}if(pdfRenderRef.current===renderTask)pdfRenderRef.current=null;if(textLayerRenderRef.current===textTask)textLayerRenderRef.current=null;if(!cancelled){setRendering(false);setPdfPreviewing(false);}}})();
   return()=>{cancelled=true;controller.abort();renderTask?.cancel?.();textTask?.cancel?.();};
- },[open,activeId,active?.format,page,zoomMode,customZoom,pdfReady,rotation,stageSize.width,renderStageHeight,readerVisible]);
+ },[open,activeId,active?.format,page,zoomMode,customZoom,pdfReady,rotation,stageSize.width,renderStageHeight,readerVisible,displayEpoch]);
  useEffect(()=>{
   if(!isWindowsReader()||!open||!readerVisible||!interactive||rendering||ocr||active?.format!=='pdf'||!pdfRef.current||pdfBitmapRef.current?.native||page>=pageCount)return;
   const pdf=pdfRef.current,controller=new AbortController();let task:any=null,image:HTMLCanvasElement|null=null,retained=false;
@@ -345,7 +353,7 @@ export function LibraryReader({embedded=false,paneKey='library',interactive=true
  useEffect(()=>{if(!readerVisible&&isWindowsReader()){windowsPreviewsRef.current.clear();windowsFullPagesRef.current.clear();speculativeCancelRef.current?.();}},[readerVisible]);
  function cancelActiveOcr(){const key=ocrTaskRef.current.cancel();if(key)autoOcrAttemptsRef.current.delete(key);ocrRenderRef.current?.cancel?.();ocrRenderRef.current=null;const worker=ocrWorkerRef.current;ocrWorkerRef.current=null;if(isWindowsReader()){windowsPixelsRef.current.cancel();if(worker&&ocrEngineBusyRef.current===worker)windowsOcrRef.current.dispose();else windowsOcrRef.current.release(worker);ocrEngineBusyRef.current=null;}else if(worker)void worker.terminate?.().catch(()=>{});setOcr(false);setOcrTarget('');}
  useEffect(()=>()=>cancelActiveOcr(),[open,activeId,page,rotation]);
- useEffect(()=>{if(!readerVisible||!open||!interactive){cancelActiveOcr();if(isWindowsReader())windowsOcrRef.current.dispose();}},[readerVisible,open,interactive]);
+ useEffect(()=>{if(!readerVisible||!open||!interactive){cancelActiveOcr();if(isWindowsReader()&&!readerVisible)windowsOcrRef.current.dispose();}},[readerVisible,open,interactive]);
  useEffect(()=>{if((isWindowsReader()&&!automaticOcr)||ocrTaskRef.current.busy||!open||!readerVisible||!interactive||active?.format!=='pdf'||pdfTextStatus!=='needs-ocr'||ocr||(rendering&&!pdfPreviewing)||!pdfRef.current)return;const key=`${active.id}:${page}:${rotation}`;if(autoOcrAttemptsRef.current.has(key))return;const begin=()=>{if(document.hidden||viewRef.current.activeId!==active.id||viewRef.current.page!==page)return;autoOcrAttemptsRef.current.add(key);void recognizePage();};const timer=window.setTimeout(begin,OCR_START_DELAY_MS);return()=>window.clearTimeout(timer);},[open,readerVisible,interactive,activeId,active?.format,page,pdfTextStatus,ocr,rendering,rotation,ocrSettled,automaticOcr,pdfPreviewing]);
 
  function selectionMenu(rect:DOMRect,frame?:DOMRect){const workspace=readerWorkspaceRef.current;if(!workspace)return undefined;const workspaceRect=workspace.getBoundingClientRect(),x=(frame?.left||0)+rect.right-workspaceRect.left+12,y=(frame?.top||0)+rect.top+rect.height/2-workspaceRect.top;return{x:Math.max(12,Math.min(workspace.clientWidth-290,x)),y:Math.max(78,Math.min(workspace.clientHeight-78,y))};}
@@ -414,10 +422,11 @@ export function LibraryReader({embedded=false,paneKey='library',interactive=true
   if(ocrTaskRef.current.busy||!active||!pdfRef.current||document.hidden)return;
   const targetBookId=active.id,targetPage=page,targetKey=`${active.id}:${page}:${rotation}`,pdf=pdfRef.current,task=ocrTaskRef.current.start(targetKey);if(!task)return;
   const stillCurrent=()=>task.isCurrent()&&viewRef.current.activeId===targetBookId&&viewRef.current.page===targetPage&&!document.hidden;
+  const finishOcrWork=beginReaderOcr();
   setOcr(true);setOcrTarget(`${active.id}:${page}`);setOcrProgress('准备识别');setReaderError('');let worker:any=null,renderTask:any=null,ocrCanvas:HTMLCanvasElement|null=null;const logger=(message:any)=>{if(message.status==='recognizing text'&&stillCurrent())setOcrProgress(previous=>{const next=`识别中 ${Math.round((message.progress||0)*100)}%`;return previous===next?previous:next;});};
   try{
    const {createWorker}=await import('tesseract.js');const windows=isWindowsReader();setOcrProgress('加载识别引擎');
-   const create=(log:(message:any)=>void)=>createWorker('chi_sim+eng',1,{workerPath:'/reader/ocr/worker.min.js',corePath:'/reader/ocr',langPath:windows?'/reader/ocr/lstm-v1':'/reader/ocr',...(windows?{cachePath:'wenjian-lstm-v1'}:{}),gzip:document.documentElement.dataset.wenjianWeb==='true'||!isMobileReader(),logger:log});
+   const create=(log:(message:any)=>void)=>createWorker('chi_sim+eng',1,{workerPath:'/reader/ocr/worker.min.js',corePath:'/reader/ocr',langPath:windows?'/api/reader/ocr':'/reader/ocr',...(windows?{cacheMethod:'none' as const}:{}),gzip:windows?false:document.documentElement.dataset.wenjianWeb==='true'||!isMobileReader(),logger:log});
    worker=await (windows?windowsOcrRef.current.acquire(create,logger,task.signal):create(logger));if(!stillCurrent())return;ocrWorkerRef.current=worker;setOcrProgress('准备识别');
    const pdfPage=await pdf.getPage(targetPage);if(!stillCurrent())return;const base=pdfPage.getViewport({scale:1,rotation}),viewport=pdfPage.getViewport({scale:ocrScaleFor(base.width,base.height),rotation});if(isWindowsReader())windowsPdfPagesRef.current.track(pdfPage);ocrCanvas=document.createElement('canvas');const context=ocrCanvas.getContext('2d',isWindowsReader()?{willReadFrequently:true}:undefined);
    if(!context)throw Error('Canvas unavailable');ocrCanvas.width=Math.ceil(viewport.width);ocrCanvas.height=Math.ceil(viewport.height);
@@ -432,7 +441,7 @@ export function LibraryReader({embedded=false,paneKey='library',interactive=true
    const text=cleanReadingText(result.data.text);if(lines.length){setOcrLines(lines);pdfTextLayerRef.current?.replaceChildren();}setPdfTextStatus(lines.length?'cached':'failed');if(!lines.length)setReaderError('本页没有识别出文字，已有文字仍保留。');
    if(lines.length)ocrCache.enqueue({libraryBookId:targetBookId,page:targetPage,text,lines,version:OCR_VERSION,rotation,preferOcr,at:new Date().toISOString()});
   }catch(error){if(stillCurrent()){console.error(error);setPdfTextStatus('failed');setReaderError('这一页没有识别成功，请重试。');}}
-  finally{if(ocrEngineBusyRef.current===worker)ocrEngineBusyRef.current=null;if(isWindowsReader()&&ocrCanvas){ocrCanvas.width=1;ocrCanvas.height=1;}if(ocrRenderRef.current===renderTask)ocrRenderRef.current=null;renderTask=null;if(ocrWorkerRef.current===worker)ocrWorkerRef.current=null;if(isWindowsReader())windowsOcrRef.current.release(worker,logger);else await worker?.terminate?.().catch(()=>{});if(task.isCurrent()){task.finish();setOcr(false);setOcrTarget('');setOcrSettled(value=>value+1);}}
+  finally{finishOcrWork();if(ocrEngineBusyRef.current===worker)ocrEngineBusyRef.current=null;if(isWindowsReader()&&ocrCanvas){ocrCanvas.width=1;ocrCanvas.height=1;}if(ocrRenderRef.current===renderTask)ocrRenderRef.current=null;renderTask=null;if(ocrWorkerRef.current===worker)ocrWorkerRef.current=null;if(isWindowsReader())windowsOcrRef.current.release(worker,logger);else await worker?.terminate?.().catch(()=>{});if(task.isCurrent()){task.finish();setOcr(false);setOcrTarget('');setOcrSettled(value=>value+1);}}
  }
  function changeZoomMode(mode:ZoomMode){if(mode==='custom')setCustomZoom(renderedZoom);setZoomMode(mode);}
  function adjustZoom(delta:number){setCustomZoom(Math.max(.25,Math.min(3,(zoomMode==='custom'?customZoom:renderedZoom)+delta)));setZoomMode('custom');}

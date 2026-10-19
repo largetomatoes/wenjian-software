@@ -26,7 +26,7 @@ async function sha256(filePath) {
   return hash.digest('hex');
 }
 
-async function prepareLocalLibrary({ storageDir, userDataDir, books, storageMode }) {
+async function prepareLocalLibrary({ storageDir, userDataDir, books, storageMode, cacheVerified = process.platform==='win32' }) {
   if (!userDataDir || !path.isAbsolute(userDataDir)) throw new Error('本地资料目录不正确。');
   const localLibraryDir = path.join(userDataDir, 'library');
   if (storageMode === 'local') {
@@ -55,6 +55,10 @@ async function prepareLocalLibrary({ storageDir, userDataDir, books, storageMode
     return localLibraryDir;
   }
 
+  const cachePath=path.join(userDataDir,'verified-legacy-library.json');
+  let verified={};if(cacheVerified)try{const saved=JSON.parse(await fsp.readFile(cachePath,'utf8'));if(saved.source===legacyLibraryDir&&saved.files&&typeof saved.files==='object')verified=saved.files;}catch{}
+  const signature=s=>s?[s.dev,s.ino,s.size,s.mtimeMs,s.ctimeMs].join(':'):'';
+  const record=async(name,source,destination)=>{verified[name]={source:signature(await regularFileOrNull(source)),destination:signature(await regularFileOrNull(destination))};};
   for (const name of names) {
     const source = path.join(legacyLibraryDir, name);
     const destination = path.join(localLibraryDir, name);
@@ -64,11 +68,14 @@ async function prepareLocalLibrary({ storageDir, userDataDir, books, storageMode
       if (!destinationStat) throw new Error(`找不到书籍原文件：${name}。请检查原来的坚果云书库。`);
       continue;
     }
+    if(cacheVerified&&destinationStat&&verified[name]?.source===signature(sourceStat)&&verified[name]?.destination===signature(destinationStat))continue;
     const sourceHash = await sha256(source);
     if (destinationStat) {
       if (sourceStat.size !== destinationStat.size || sourceHash !== await sha256(destination)) {
         throw new Error(`本地书籍与原书库内容不同：${name}。已保留两个文件，请先检查。`);
       }
+      if(signature(await regularFileOrNull(source))!==signature(sourceStat)||signature(await regularFileOrNull(destination))!==signature(destinationStat))throw new Error('核对期间书籍发生变化，请重试。');
+      if(cacheVerified)await record(name,source,destination);
       continue;
     }
 
@@ -91,7 +98,9 @@ async function prepareLocalLibrary({ storageDir, userDataDir, books, storageMode
     } finally {
       await fsp.unlink(temporary).catch((error) => { if (error.code !== 'ENOENT') throw error; });
     }
+    if(cacheVerified)await record(name,source,destination);
   }
+  if(cacheVerified){const temporary=cachePath+'.new-'+crypto.randomUUID();try{await fsp.writeFile(temporary,JSON.stringify({source:legacyLibraryDir,files:verified}),{mode:0o600});await fsp.rename(temporary,cachePath);}catch(error){console.warn('Legacy library receipt deferred:',error.code);}finally{await fsp.unlink(temporary).catch(()=>{});}}
   return localLibraryDir;
 }
 

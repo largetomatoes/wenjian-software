@@ -1,3 +1,5 @@
+import {compute} from './compute';
+const isWindowsReader=()=>typeof document!=='undefined'&&document.documentElement.dataset.wenjianPlatform==='windows';
 import {waitForReaderIdle} from '../reader-work';
 import {jsonEqual} from '../value-equal';
 import {prepareDesktopSync,withCloudLease,readManifest} from './protocol';
@@ -35,7 +37,7 @@ async function run(progress?: (progress:SyncProgress)=>void,mode?:SyncMode,rootI
   // Read immutable journal names first; acquire the writer lease only for work.
   if(!mode&&!config.autoPaused){
    const snapshot=await syncApi<Envelope>('local'),state=snapshot.sync;
-   if(state?.lastSync&&state.target===config.target&&!state.pending.length&&jsonEqual(project(snapshot.data),state.observed)){
+   if(state?.lastSync&&state.target===config.target&&!state.pending.length&&await compute('unchanged',{state,data:snapshot.data})){
     const {manifest}=await readManifest(config.target);
     if(manifest&&state.libraryId!==manifest.libraryId)throw Error('本机与云端不是同一资料库，请核对后接入。');
     if(manifest&&manifest.schema===4&&(state.epoch||'legacy')===manifest.epoch){
@@ -56,7 +58,7 @@ async function runJournal(progress?:(progress:SyncProgress)=>void,epoch='legacy'
  if((expectedTarget&&expectedTarget!==config.target)||(state.target&&state.target!==config.target))throw Error('连接的资料库已改变，请在连接设置中处理。');
  const protocol=config.protocol===2?await readManifest(config.target):null;
  if(config.protocol===2&&(!protocol?.manifest||protocol.manifest.epoch!==epoch))throw Error('云端资料库基准刚有变化，请重新同步。');
- state=capture({...state,...(protocol?.manifest?{libraryId:protocol.manifest.libraryId,epoch}:{}),target:config.target,...(config.deviceName?{deviceName:config.deviceName}:{})},snapshot.data);
+ state=await compute('capture',{state:{...state,...(protocol?.manifest?{libraryId:protocol.manifest.libraryId,epoch}:{}),target:config.target,...(config.deviceName?{deviceName:config.deviceName}:{})},data:snapshot.data});
  // Keep the queue durable before network access. The binding remains provisional
  // until a PUT is acknowledged or remote records are successfully incorporated.
  snapshot=await syncApi<Envelope>('commit',{version:snapshot.version,syncRevision:snapshot.syncRevision||0,data:snapshot.data,sync:state});
@@ -72,7 +74,7 @@ async function runJournal(progress?:(progress:SyncProgress)=>void,epoch='legacy'
   remote.push(...batch.operations);received.add(key);
  }
  // Reject corrupt remote records before publishing local records.
- materialize({...state,operations:unionOperations(state.operations,remote)},snapshot.data);
+ await compute('validate',{state,remote,data:snapshot.data});
  const batches=operationBatches(state.pending);
  for(const [index,batch] of batches.entries()){
   progress?.({stage:'notes',message:'正在上传笔记…',completed:index,total:batches.length});
@@ -87,9 +89,7 @@ async function runJournal(progress?:(progress:SyncProgress)=>void,epoch='legacy'
  await renew?.(true);
  for(let attempt=0;attempt<5;attempt++){
   const current=await syncApi<Envelope>('local');if(current.sync?.target!==config.target)throw Error('同步连接已变化。');
-  let next=capture(current.sync,current.data);
-  next={...next,epoch,operations:unionOperations(next.operations,remote),pending:next.pending.filter(op=>!state.pending.some(sent=>sent.id===op.id)),received:[...new Set([...next.received,...received])],lastSync:new Date().toISOString()};
-  const merged=materialize(next,current.data);next.observed=project(merged.data);
+  const merged=await compute('finish',{state:current.sync,data:current.data,remote,sent:state.pending.map(op=>op.id),received:[...received],epoch}),next=merged.sync;
   try{const result=await syncApi<Envelope>('commit',{version:current.version,syncRevision:current.syncRevision||0,data:merged.data,sync:next});window.dispatchEvent(new CustomEvent('wenjian-sync-updated',{detail:result}));return result;}
   catch(error){if((error as {status?:number}).status!==409||attempt===4)throw error;}
  }
@@ -104,11 +104,12 @@ export async function syncBooks(snapshot:Envelope,progress?:(progress:SyncProgre
  // One listing repairs old references without spending one HEAD request per book.
  let index:{keys:string[]};try{index=books.length?await syncApi<{keys:string[]}>('remote',{action:'book-index',target}):{keys:[]};if(!Array.isArray(index.keys)||index.keys.some(key=>!/^books\/[a-f0-9]{64}\.(pdf|epub)$/.test(key)))throw Error('云端书籍目录不完整，请稍后重试。');}
  catch(error){const issue=error instanceof Error?error.message:'书籍目录核对未完成';await updateSync(state=>{if(state.target!==target)throw Error('同步连接已变化。');return {...state,books:{errors:Object.fromEntries(books.map(book=>[book.id,issue]))}};});throw error;}
+ const statuses=isWindowsReader()?await syncApi<{statuses:Record<string,{available:boolean;matchesManifest?:boolean}>}>('book-statuses',{}).then(r=>r.statuses).catch(()=>null):null;
  const remote=new Set(index.keys);
  for(const [position,book] of books.entries()){
   if(options.background)await waitForReaderIdle();
   try{
-   const local=await syncApi<{available:boolean;matchesManifest?:boolean}>('book',{action:'status',id:book.id});
+   const local=statuses?.[book.id]||await syncApi<{available:boolean;matchesManifest?:boolean}>('book',{action:'status',id:book.id});
    const present=!!book.cloudFile&&remote.has(book.cloudFile.key);
    if(local.available&&(!present||local.matchesManifest===false)){
     progress?.({stage:'books',message:'正在上传《'+book.title+'》',completed,total:books.length});
@@ -127,6 +128,6 @@ export async function syncBooks(snapshot:Envelope,progress?:(progress:SyncProgre
  // A successful original upload is not complete until its metadata reaches peers.
  return uploaded?syncNow(progress):updated;
 }
-export async function resolveSync(key:string,chosenId:string){const current=await syncApi<Envelope>('local'),state=current.sync;if(!state)throw Error('同步尚未初始化。');const captured=capture(state,current.data);if(captured.pending.some(op=>op.key===key&&!state.pending.some(old=>old.id===op.id)))throw Error('这条记录刚有新修改，请先同步，再选择版本。');const next=resolveConflict(captured,key,chosenId),merged=materialize(next,current.data);next.observed=project(merged.data);const result=await syncApi<Envelope>('commit',{version:current.version,syncRevision:current.syncRevision||0,data:merged.data,sync:next});window.dispatchEvent(new CustomEvent('wenjian-sync-updated',{detail:result}));return result;}
+export async function resolveSync(key:string,chosenId:string){const current=await syncApi<Envelope>('local'),state=current.sync;if(!state)throw Error('同步尚未初始化。');const captured=await compute('capture',{state,data:current.data});if(captured.pending.some(op=>op.key===key&&!state.pending.some(old=>old.id===op.id)))throw Error('这条记录刚有新修改，请先同步，再选择版本。');const next=resolveConflict(captured,key,chosenId),merged=await compute('materialize',{state:next,data:current.data});next.observed=await compute('project',{data:merged.data});const result=await syncApi<Envelope>('commit',{version:current.version,syncRevision:current.syncRevision||0,data:merged.data,sync:next});window.dispatchEvent(new CustomEvent('wenjian-sync-updated',{detail:result}));return result;}
 export async function sha256(text:string){return Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(text)))).map(n=>n.toString(16).padStart(2,'0')).join('');}
 export function operationBatches(operations:Operation[]){const batches:Operation[][]=[];let current:Operation[]=[],size=0;for(const op of operations){const length=new TextEncoder().encode(stable(op)).length+1;if(length>12*1024*1024)throw Error('单条内容过大，无法同步。');if(current.length&&size+length>4*1024*1024){batches.push(current);current=[];size=0;}current.push(op);size+=length;}if(current.length)batches.push(current);return batches;}

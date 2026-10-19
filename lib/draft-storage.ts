@@ -32,10 +32,11 @@ function serverError(response: Response): Error {
 export async function readDraft<T>(key: string, fallback: T): Promise<T> {
   try {
     localKey(key);
-    const response = await fetch(API_PATH, { method: "GET", cache: "no-store" });
+    const response = await fetch(API_PATH+"?key="+encodeURIComponent(key), { method: "GET", cache: "no-store" });
     if (unsupported(response.status)) return readLocal(key, fallback);
     if (!response.ok) throw serverError(response);
     const body: unknown = await response.json();
+    if(body&&typeof body==="object"&&"found" in body&&"value" in body)return body.found?body.value as T:fallback;
     if (!body || typeof body !== "object" || !("drafts" in body) || !body.drafts || typeof body.drafts !== "object" || Array.isArray(body.drafts)) {
       throw new Error("草稿服务返回的数据格式不正确。");
     }
@@ -60,7 +61,7 @@ async function persistDraft(key: string, value: unknown): Promise<void> {
     const response = await fetch(API_PATH, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ key, value }),
+      body: '{"key":'+JSON.stringify(key)+',"value":'+serialized+'}',
     });
     if (unsupported(response.status)) {
       writeLocal(key, serialized);

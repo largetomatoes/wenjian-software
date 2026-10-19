@@ -1,7 +1,10 @@
 'use client';
+import {ReaderNoteSlot} from './reader-note-slot';
+import {isWindowsReader} from '@/lib/windows-reader-performance';
+import {useBookMetadata} from '@/hooks/use-book-metadata';
 import {BookFinishedMark} from './book-finished-mark';
 
-import {useEffect,useMemo,useRef,useState} from 'react';
+import {useEffect,useMemo,useRef,useState,useDeferredValue} from 'react';
 import {ArrowLeft,BookOpen,ChevronDown,ChevronRight,FilePlus2,Folder,FolderInput,FolderPlus,Library,Loader2,Pencil,RefreshCw,Search,Trash2,X} from 'lucide-react';
 import {Button} from '@/components/ui/button';
 import {Dialog,DialogContent,DialogDescription,DialogTitle} from '@/components/ui/dialog';
@@ -71,19 +74,21 @@ export function LibraryShelf({data,mode,onChooseLibrary,activeId,selectedFolder,
  const [folderDrawerOpen,setFolderDrawerOpen]=useState(false);
  const [collapsedCollections,setCollapsedCollections]=useState<Set<string>>(()=>new Set());
  const pending=useRef(false);
+ const [pinnedBook,setPinnedBook]=useState<string|null>(null);
+ const deferredQuery=useDeferredValue(query),metadataBooks=useBookMetadata(data.libraryBooks);
  const isZotero=mode==='zotero';
- const modeBooks=libraryBooksForMode(data,mode);
- const folders=normalizeLibraryFolders(data.libraryFolders);
+ const modeBooks=useMemo(()=>libraryBooksForMode(data,mode),[data.libraryBooks,mode]);
+ const folders=useMemo(()=>normalizeLibraryFolders(data.libraryFolders),[data.libraryFolders]);
  const folderIds=new Set(folders.map(folder=>folder.id));
  const groupOf=(folderId:string|undefined)=>folderId&&folderIds.has(folderId)?folderId:'';
  const effectiveFolder=selectedFolder&& !folderIds.has(selectedFolder)?null:selectedFolder;
- const collections=isZotero?zoteroCollectionTree(data):[];
- const allCollections=collectionNodes(collections);
+ const collections=useMemo(()=>isZotero?zoteroCollectionTree({...data,libraryBooks:metadataBooks}):[],[isZotero,metadataBooks,data.zoteroCollections]);
+ const allCollections=useMemo(()=>collectionNodes(collections),[collections]);
  const effectiveCollection=selectedCollection&&!allCollections.some(collection=>collection.id===selectedCollection)?null:selectedCollection;
  const folderBooks=isZotero?libraryBooksForZoteroCollection(data,effectiveCollection):modeBooks.filter(book=>effectiveFolder===null||groupOf(book.folderId)===effectiveFolder);
- const noteIndex=useMemo(()=>libraryNoteIndex(data),[data.readingNotes,data.bookThoughts,data.libraryBooks,data.thoughtReplies]);
- const noteHits=searchLibraryNotes(noteIndex,query,new Set(folderBooks.map(book=>book.id)));
- const words=query.trim().toLocaleLowerCase().split(/\s+/).filter(Boolean);
+ const noteIndex=useMemo(()=>deferredQuery.trim()?libraryNoteIndex({...data,libraryBooks:metadataBooks}):[],[data.readingNotes,data.bookThoughts,metadataBooks,data.thoughtReplies,!!deferredQuery.trim()]);
+ const noteHits=searchLibraryNotes(noteIndex,deferredQuery,new Set(folderBooks.map(book=>book.id)));
+ const words=deferredQuery.trim().toLocaleLowerCase().split(/\s+/).filter(Boolean);
  const books=folderBooks.filter(book=>matchesReadingStatus(book,readingFilter)).map(displayBook).filter(book=>words.every(word=>`${book.title} ${book.author||''}`.toLocaleLowerCase().includes(word)));
  const uncategorized=isZotero?libraryBooksForZoteroCollection(data,'').length:modeBooks.filter(book=>!groupOf(book.folderId)).length;
  const folderCounts=new Map<string,number>();
@@ -176,7 +181,7 @@ export function LibraryShelf({data,mode,onChooseLibrary,activeId,selectedFolder,
   <section className="folder-shelf-books" aria-label={`${selectedName}中的${isZotero?'文献':'图书'}`}>
    <div className="folder-shelf-book-heading"><span title={selectedName}>{selectedName}</span><small>{query.trim()?`${books.length} / ${folderBooks.length}`:folderBooks.length} {isZotero?'篇':'本'}</small></div>
    <div className="folder-shelf-book-list">
-    {books.map(book=><article key={book.id} className={`folder-shelf-book${activeId===book.id?' is-current':''}`}><button type="button" className="folder-shelf-open-book" aria-current={activeId===book.id?'true':undefined} title={book.title} onClick={()=>onOpenBook(book.id)}><span className="folder-shelf-book-format">{book.format==='reference'?'文献':book.format.toUpperCase()}{book.zotero&&<span className="folder-shelf-zotero-badge" title="来自 Zotero">Zotero</span>}<BookFinishedMark book={book}/></span><strong>{book.title}</strong><small>{book.author||'作者未填写'}{book.progress.page?` · 第 ${book.progress.page} 页`:''}</small></button><DropdownMenu><DropdownMenuTrigger asChild><Button type="button" variant="ghost" size="icon-xs" className="folder-shelf-move" aria-label={`书籍操作：《${book.title}》`} disabled={busy}><MoreHorizontal/></Button></DropdownMenuTrigger><DropdownMenuContent align="end"><DropdownMenuItem disabled={busy} onSelect={()=>void save(setBookFinished(latest.current,book.id,!isBookFinished(book)),isBookFinished(book)?'已取消读完标记':'已标记读完')}><CheckCircle2/>{isBookFinished(book)?'取消已读完标记':'标记已读完'}</DropdownMenuItem>{!isZotero&&<DropdownMenuItem onSelect={()=>start({kind:'move',bookId:book.id})}><FolderInput/>移动到文件夹</DropdownMenuItem>}</DropdownMenuContent></DropdownMenu></article>)}
+    {books.map(book=>{const content=<article key={book.id} className={`folder-shelf-book${activeId===book.id?' is-current':''}`}><button type="button" className="folder-shelf-open-book" aria-current={activeId===book.id?'true':undefined} title={book.title} onClick={()=>onOpenBook(book.id)}><span className="folder-shelf-book-format">{book.format==='reference'?'文献':book.format.toUpperCase()}{book.zotero&&<span className="folder-shelf-zotero-badge" title="来自 Zotero">Zotero</span>}<BookFinishedMark book={book}/></span><strong>{book.title}</strong><small>{book.author||'作者未填写'}{book.progress.page?` · 第 ${book.progress.page} 页`:''}</small></button><DropdownMenu onOpenChange={open=>setPinnedBook(open?book.id:null)}><DropdownMenuTrigger asChild><Button type="button" variant="ghost" size="icon-xs" className="folder-shelf-move" aria-label={`书籍操作：《${book.title}》`} disabled={busy}><MoreHorizontal/></Button></DropdownMenuTrigger><DropdownMenuContent align="end"><DropdownMenuItem disabled={busy} onSelect={()=>void save(setBookFinished(latest.current,book.id,!isBookFinished(book)),isBookFinished(book)?'已取消读完标记':'已标记读完')}><CheckCircle2/>{isBookFinished(book)?'取消已读完标记':'标记已读完'}</DropdownMenuItem>{!isZotero&&<DropdownMenuItem onSelect={()=>start({kind:'move',bookId:book.id})}><FolderInput/>移动到文件夹</DropdownMenuItem>}</DropdownMenuContent></DropdownMenu></article>;return isWindowsReader()&&books.length>120?<ReaderNoteSlot key={book.id} id={book.id} initialHeight={94} scrollerSelector=".folder-shelf-book-list" pinned={activeId===book.id||pinnedBook===book.id} render={()=>content}/>:content;})}
     {!books.length&&(!query.trim()||!noteHits.length)&&<div className="folder-shelf-empty"><Folder aria-hidden="true"/><p>{query.trim()?`没有找到匹配的${isZotero?'文献':'书籍'}`:isZotero?(effectiveCollection===null?'还没有同步的文献':'这个分类还没有文献'):effectiveFolder===null?'还没有导入书籍':'这个文件夹还没有书籍'}</p>{query.trim()?<Button type="button" variant="ghost" size="sm" onClick={()=>setQuery('')}>清除搜索</Button>:isZotero?<small>{effectiveCollection===null?'打开 Zotero 后，文献与分类会自动同步。':'在 Zotero 中整理分类后，这里会自动更新。'}</small>:effectiveFolder===null?<Button type="button" variant="outline" size="sm" disabled={importing||busy} onClick={onImport}>导入书籍</Button>:<small>从“全部图书”中移动书籍到这里，也可以直接导入。</small>}</div>}
    {query.trim()&&!!noteHits.length&&<LibraryNoteResults hits={noteHits} query={query} onOpen={onOpenNote}/>}
    </div>

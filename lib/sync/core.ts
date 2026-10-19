@@ -82,6 +82,12 @@ export function capture(state:SyncState,data:Notebook,id=()=>crypto.randomUUID()
  }
  return {...state,observed:next,operations:unionOperations(state.operations,created),pending:unionOperations(state.pending,created)};
 }
+// Status checks need conflicts, not a cloned, reconstructed notebook.
+export function conflictsOnly(state:SyncState):Conflict[]{
+ validateGraph(state.operations);const conflicts:Conflict[]=[];
+ for(const [key,options] of tips(state.operations))if(key!=='settings/zoteroEnabled'&&!key.startsWith('readingProgress/')&&!key.startsWith('ocrCache/')&&!mergedValue(key,options,state.operations).ok)conflicts.push({key,options:distinct(options)});
+ return conflicts;
+}
 export function materialize(state:SyncState,local:Notebook):{data:Notebook;conflicts:Conflict[]}{
  validateGraph(state.operations);
  const conflicts:Conflict[]=[],heads=tips(state.operations),localValues=project(local);
