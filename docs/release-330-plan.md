@@ -49,3 +49,4 @@ ELK 的多端连接与汇合点：https://eclipse.dev/elk/documentation/tooldeve
 - Web 手机及平板宽度检查覆盖首次说明、选字过程笔记、章节与问题关联、EPUB、离线重开、草稿、模拟同步和多窗口并发保存。官网检查包括 Mac 第一绿色入口、三个宽度无横向溢出及首次安装步骤。
 - Mac 原生进程已执行交互检查；Windows 应用分支在 Mac 模拟执行不等于 Windows 硬件性能实测。Windows 安装验收另由 GitHub Windows runner 执行。Android 构建、lint、原证书与包资源检查不等于全型号手机实测；Chrome 平板尺寸检查不等于 iOS Safari 实机验收。
 - 桌面主项目、mobile、webapp 分别进行 TypeScript 检查。主项目排除独立 Web host 的模板与生成目录；该 host 使用部署脚本在独立暂存工程中构建，浏览器端继续单独检查。
+- 正式 Worker 的首次加载／离线重开检查发现：计算桥可能在 service worker 接管前加载，遗漏运行期缓存。已将动态程序分块加入安装期完整缓存；此项通过正式入口的全新资料测试重新验证，不依赖旧浏览器 HTTP 缓存。

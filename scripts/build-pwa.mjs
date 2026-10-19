@@ -8,7 +8,11 @@ for(const name of ['assets','reader','read'])await rm(path.join(publicDir,name),
 await mkdir(path.join(publicDir,'read'),{recursive:true});
 for(const entry of await readdir(source)){if(entry==='index.html')await cp(path.join(source,entry),path.join(publicDir,'read/index.html'));else await cp(path.join(source,entry),path.join(publicDir,entry),{recursive:true});}
 const html=await readFile(path.join(publicDir,'read/index.html'),'utf8');
-const assets=['/read/','/manifest.webmanifest','/icon-192.png','/app-icon.png','/apple-touch-icon.png',...Array.from(html.matchAll(/(?:src|href)="(\/assets\/[^\"]+)"/g),m=>m[1])];
+// Startup can read saved data through a dynamically imported compute bridge.
+// It may load before the first service worker takes control, so runtime caching
+// alone does not guarantee that an offline restart can read the existing store.
+const chunks=(await readdir(path.join(publicDir,'assets'))).filter(name=>/\.(?:js|css)$/.test(name)).map(name=>'/assets/'+name);
+const assets=[...new Set(['/read/','/manifest.webmanifest','/icon-192.png','/app-icon.png','/apple-touch-icon.png',...Array.from(html.matchAll(/(?:src|href)="(\/assets\/[^\"]+)"/g),m=>m[1]),...chunks])];
 const version=crypto.createHash('sha256').update(html).update(await readFile(new URL(import.meta.url))).update(await readFile(path.join(publicDir,'manifest.webmanifest'))).digest('hex').slice(0,12);
 const sw=`const CACHE='wenjian-web-${version}';const SHELL='/read/';const CORE=${JSON.stringify(assets)};
 self.addEventListener('install',event=>event.waitUntil((async()=>{const cache=await caches.open(CACHE);for(const url of CORE){const r=await fetch(url,{cache:'reload',credentials:'same-origin',redirect:'error'});if(!r.ok||url===SHELL&&!(await r.clone().text()).includes('id="root"'))throw Error('离线资源未完整下载');await cache.put(url,r);}})()));
