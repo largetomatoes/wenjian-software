@@ -187,3 +187,5 @@ Web App 执行 `npm run build:pwa`，独立静态资源及受限 WebDAV 中转�
 正式归档统一命名 `Wenjian-3.14-build330-平台`。发布说明包含 `wenjian-build:330`、`wenjian-display-build:330`、`wenjian-platforms:darwin,win32,android` 元数据；使用原更新私钥生成 `update-manifest-330.json`，Mac/Windows ZIP 与 Android APK 均记录准确大小和 SHA-256。另附安装版 EXE、完整源码归档与 SHA256SUMS.txt。Windows 内置更新仍使用 ZIP。
 
 330 新增的纯逻辑及交互检查：`node tests/test-question-links-330.cjs`、`node tests/test-release330-ui.cjs`；后者需要可用的桌面 Electron 测试运行时及 Chrome，使用隔离虚构资料。已有移动 API、恢复与三设备同步检查继续适用。平台模拟和静态构建不等同于所有设备的实测。
+
+对历史已发布更新代码的兼容检查会读取 Git 历史提交／标签，需使用完整克隆；不含 `.git` 的源码 ZIP 仍可独立构建应用，但不能单独还原这些历史测试夹具。
