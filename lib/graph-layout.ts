@@ -1,16 +1,17 @@
 import {ROOT} from './notebook';
 import {graphOwners,type GraphProjection,type GraphData} from './graph-projection';
 export type GraphPosition={x:number;y:number};
-export const GRAPH_NODE_WIDTH=260,GRAPH_NODE_HEIGHT=84,GRAPH_COLUMN=354,GRAPH_ROW=260;
+export const GRAPH_NODE_WIDTH=260,GRAPH_NODE_HEIGHT=84,GRAPH_COLUMN=354,GRAPH_ROW=200;
 export const CROSS_BADGE_WIDTH=198,CROSS_BADGE_HEIGHT=30;
 const CROSS_ROW=132;
 export type CrossLane={id:string;area:string;x:number;y:number;width:number;height:number;nodes:{id:string;x:number;y:number;parent:string|null}[]};
-export type QuestionRowLayout={positions:Record<string,GraphPosition>;mainIds:string[];crossOwners:Record<string,string>;lanes:Record<string,CrossLane>};
+export type QuestionRowLayout={positions:Record<string,GraphPosition>;mainIds:string[];crossOwners:Record<string,string>;lanes:Record<string,CrossLane>;input?:{data:GraphData;projection:GraphProjection}};
 
-/** Reserve from the COMPLETE saved trees, never from expansion state. A cross
- * subtree owns its own rows between ordinary rows. Adding a record may enlarge
- * the reservation; expanding/collapsing cannot move any ordinary node. */
-export function layoutQuestionRows(data:GraphData,projection:GraphProjection):QuestionRowLayout{
+/** A folded crossing occupies only its badge. An opened tree reserves its
+ * complete sibling rows inside that gap. Only that gap grows; later rows shift
+ * together without changing the spacing of any unrelated branch. */
+export function layoutQuestionRows(data:GraphData,projection:GraphProjection,expandedIds:Iterable<string>=[]):QuestionRowLayout{
+ const expanded=new Set(expandedIds);
  const positions:Record<string,GraphPosition>={},crossOwners:Record<string,string>={},lanes:Record<string,CrossLane>={},visible=new Set(projection.visibleIds);
  const notes=new Map(data.notes.map(n=>[n.id,n])),crosses=[...data.crossThoughts].sort((a,b)=>a.order-b.order||a.id.localeCompare(b.id)),crossMap=new Map(crosses.map(c=>[c.id,c]));
  const owners=graphOwners(data),children=new Map<string,string[]>();
@@ -41,27 +42,33 @@ export function layoutQuestionRows(data:GraphData,projection:GraphProjection):Qu
   const descend=(parent:string,depth:number,start:number)=>{let next=start;for(const child of children.get(parent)||[]){if(seen.has(child)||crossOwners[child]!==cross.id)continue;seen.add(child);nodes.push({id:child,parent,x:depth*GRAPH_COLUMN,y:next*CROSS_ROW});descend(child,depth+1,next);next+=count(child);}};
   descend(cross.id,1,0);const group=groups.get(slot)||[];group.push({id:cross.id,x:sourceX(cross.id),rows:count(cross.id),nodes});groups.set(slot,group);
  }
- const step=(row:number)=>{const group=groups.get(row)||[];return Math.max(GRAPH_ROW,GRAPH_NODE_HEIGHT+32+group.reduce((sum,c)=>sum+GRAPH_NODE_HEIGHT+(c.rows-1)*CROSS_ROW,0)+Math.max(0,group.length-1)*48+32);};
- // Equal top-level bands are sized from complete ordinary AND crossing trees.
- const bandHeight=Math.max(GRAPH_ROW,...branches.map((_,i)=>Array.from({length:band},(_,r)=>step(i*band+r)).reduce((sum,n)=>sum+n,0)));
+ const height=(cross:{id:string;rows:number})=>expanded.has(cross.id)?GRAPH_NODE_HEIGHT+(cross.rows-1)*CROSS_ROW:CROSS_BADGE_HEIGHT;
+ const visibleHeight=(row:number)=>{const group=groups.get(row)||[],opened=group.filter(c=>expanded.has(c.id)),folded=group.some(c=>!expanded.has(c.id));return opened.reduce((sum,c)=>sum+height(c),0)+(folded?CROSS_BADGE_HEIGHT:0)+Math.max(0,opened.length+(folded?1:0)-1)*24;};
+ const step=(row:number)=>Math.max(GRAPH_ROW,GRAPH_NODE_HEIGHT+64+visibleHeight(row));
+ // Only the opened gap grows. Subsequent rows shift as one sequence, retaining
+ // every other gap; no global maximum is applied to unrelated main branches.
  const actualRows=new Map<number,number>();let y=0;
- for(let row=0;row<=Math.ceil(lastRow)+1;row++){if(branches.length&&row<branches.length*band&&row%band===0)y=(row/band)*bandHeight;else if(branches.length&&row===branches.length*band)y=branches.length*bandHeight;actualRows.set(row,y);y+=step(row);}
+ for(let row=0;row<=Math.ceil(lastRow)+1;row++){actualRows.set(row,y);y+=step(row);}
  for(const[id,p]of Object.entries(ordinary))positions[id]={x:p.x,y:actualRows.get(p.row)||0};
  if(positions[rootId])positions[rootId].y=branches.length?((actualRows.get(0)||0)+(actualRows.get((branches.length-1)*band)||0))/2:0;
- for(const[slot,group]of groups){let top=(actualRows.get(slot)||0)+GRAPH_NODE_HEIGHT+32;
-  for(const cross of group){const height=GRAPH_NODE_HEIGHT+(cross.rows-1)*CROSS_ROW;
-   for(const node of cross.nodes)positions[node.id]={x:cross.x+node.x,y:top+node.y};
-   lanes[cross.id]={id:cross.id,area:String(slot),x:cross.x-12,y:top-12,width:Math.max(...cross.nodes.map(n=>n.x))+GRAPH_NODE_WIDTH+24,height:height+24,nodes:cross.nodes};top+=height+48;
-  }
+ for(const[slot,group]of groups){let top=(actualRows.get(slot)||0)+GRAPH_NODE_HEIGHT+(step(slot)-GRAPH_NODE_HEIGHT-visibleHeight(slot))/2;
+  const folded=group.filter(c=>!expanded.has(c.id)),opened=group.filter(c=>expanded.has(c.id));let cursor=0;
+  const assign=(cross:typeof group[number],x:number,rootY:number)=>{const fullHeight=GRAPH_NODE_HEIGHT+(cross.rows-1)*CROSS_ROW;for(const node of cross.nodes)positions[node.id]={x:x+node.x,y:rootY+node.y};lanes[cross.id]={id:cross.id,area:String(slot),x:x-12,y:rootY-12,width:Math.max(...cross.nodes.map(n=>n.x))+GRAPH_NODE_WIDTH+24,height:fullHeight+24,nodes:cross.nodes};};
+  // Folded badges share one thin row; hidden descendants take no vertical space.
+  for(const cross of folded){const badgeX=Math.max(cross.x+(GRAPH_NODE_WIDTH-CROSS_BADGE_WIDTH)/2,cursor);assign(cross,badgeX-(GRAPH_NODE_WIDTH-CROSS_BADGE_WIDTH)/2,top-(GRAPH_NODE_HEIGHT-CROSS_BADGE_HEIGHT)/2);cursor=badgeX+CROSS_BADGE_WIDTH+24;}
+  if(folded.length&&opened.length)top+=CROSS_BADGE_HEIGHT+24;
+  for(const cross of opened){assign(cross,cross.x,top);top+=height(cross)+24;}
  }
  for(const id of projection.visibleIds)if(!positions[id]){positions[id]={x:GRAPH_COLUMN,y};y+=GRAPH_ROW;mainIds.push(id);}
- return{positions,mainIds,crossOwners,lanes};
+ return{positions,mainIds,crossOwners,lanes,input:{data,projection}};
 }
 export function layoutGraph(data:GraphData,projection:GraphProjection){return layoutQuestionRows(data,projection).positions;}
 
-/** Expansion changes visibility and badge size only, never the reserved grid. */
+/** Reflow from active crossings, then draw in the shared canvas coordinate space. */
 export function expandCrossRows(layout:QuestionRowLayout,expandedIds:Iterable<string>){
- const expanded=new Set([...expandedIds].filter(id=>layout.lanes[id])),positions={...layout.positions},displayIds=new Set(layout.mainIds),sizes:Record<string,{width:number;height:number}>={},bands:{id:string;x:number;y:number;width:number;height:number}[]=[];
+ const expanded=new Set([...expandedIds].filter(id=>layout.lanes[id]));
+ if(layout.input)layout=layoutQuestionRows(layout.input.data,layout.input.projection,expanded);
+ const positions={...layout.positions},displayIds=new Set(layout.mainIds),sizes:Record<string,{width:number;height:number}>={},bands:{id:string;x:number;y:number;width:number;height:number}[]=[];
  for(const lane of Object.values(layout.lanes)){
   displayIds.add(lane.id);
   if(expanded.has(lane.id)){for(const node of lane.nodes){displayIds.add(node.id);sizes[node.id]={width:GRAPH_NODE_WIDTH,height:GRAPH_NODE_HEIGHT};}bands.push({id:lane.id,x:lane.x,y:lane.y,width:lane.width,height:lane.height});}

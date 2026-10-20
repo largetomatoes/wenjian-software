@@ -22,7 +22,7 @@ function boundary(from: GraphPosition, to: GraphPosition) {
 
 export const QuestionMap = memo(function QuestionMap({ data, loading, onOpen, onAddRoot, onAddQuestion, rootId = ROOT, viewKey = 'page-world', mobile = false }: { data: Notebook; loading: boolean; onOpen: (id: string) => void; onAddRoot?: () => void; onAddQuestion?:(id:string)=>void; rootId?:string;viewKey?:string;mobile?: boolean }) {
   const canvasRef = useRef<HTMLDivElement>(null);
-  const savedCamera = useMemo(()=>{try{const value=JSON.parse(localStorage.getItem('wenjian-camera:rows-v3:'+viewKey)||'null');return value&&[value.x,value.y,value.zoom].every(Number.isFinite)&&value.zoom>0?value as GraphCamera:null;}catch{return null;}},[viewKey]);
+  const savedCamera = useMemo(()=>{try{const value=JSON.parse(localStorage.getItem('wenjian-camera:rows-v4:'+viewKey)||'null');return value&&[value.x,value.y,value.zoom].every(Number.isFinite)&&value.zoom>0?value as GraphCamera:null;}catch{return null;}},[viewKey]);
   const initialized = useRef(!!savedCamera);
   const cameraRef = useRef(savedCamera||initialCamera);
   const frameRef = useRef<number | null>(null);
@@ -81,7 +81,7 @@ export const QuestionMap = memo(function QuestionMap({ data, loading, onOpen, on
     cameraRef.current = next;
     if (frameRef.current === null) frameRef.current = requestAnimationFrame(() => {
       frameRef.current = null;
-      setCamera(cameraRef.current);try{localStorage.setItem('wenjian-camera:rows-v3:'+viewKey,JSON.stringify(cameraRef.current));}catch{}
+      setCamera(cameraRef.current);try{localStorage.setItem('wenjian-camera:rows-v4:'+viewKey,JSON.stringify(cameraRef.current));}catch{}
     });
   }, [viewKey]);
 
