@@ -1,128 +1,71 @@
 import {ROOT} from './notebook';
 import {graphOwners,type GraphProjection,type GraphData} from './graph-projection';
-
 export type GraphPosition={x:number;y:number};
-export const GRAPH_NODE_WIDTH=260;
-export const GRAPH_NODE_HEIGHT=124;
-const COLUMN=368, GAP=44, CLEARANCE=24;
-type Tree={id:string;children:Tree[];height:number;gaps:Map<number,string[]>};
+export const GRAPH_NODE_WIDTH=260,GRAPH_NODE_HEIGHT=84,GRAPH_COLUMN=354,GRAPH_ROW=260;
+export const CROSS_BADGE_WIDTH=198,CROSS_BADGE_HEIGHT=30;
+const CROSS_ROW=132;
+export type CrossLane={id:string;area:string;x:number;y:number;width:number;height:number;nodes:{id:string;x:number;y:number;parent:string|null}[]};
+export type QuestionRowLayout={positions:Record<string,GraphPosition>;mainIds:string[];crossOwners:Record<string,string>;lanes:Record<string,CrossLane>};
 
-/** A deterministic tree, with room reserved between branches for their cross boards.
- * Text edits never enter this calculation. Coordinates are anchored to the top of
- * each subtree so additions move following siblings, rather than reshuffling all nodes.
- */
-export function layoutGraph(data:GraphData,projection:GraphProjection):Record<string,GraphPosition>{
- const visible=new Set(projection.visibleIds),positions:Record<string,GraphPosition>={};
- const notes=new Map(data.notes.map(note=>[note.id,note]));
- const crosses=[...data.crossThoughts].sort((a,b)=>a.order-b.order||a.id.localeCompare(b.id));
- const crossIds=new Set(crosses.map(cross=>cross.id));
- const owners=graphOwners(data),owner=(id:string)=>owners.get(id)||id;
- const children=new Map<string,string[]>();
- for(const note of [...data.notes].sort((a,b)=>a.kind===b.kind?a.order-b.order||a.id.localeCompare(b.id):a.kind==='question'?-1:1)){
-  if(note.parent&&visible.has(note.id)){const list=children.get(note.parent)||[];list.push(note.id);children.set(note.parent,list);}
+/** Reserve from the COMPLETE saved trees, never from expansion state. A cross
+ * subtree owns its own rows between ordinary rows. Adding a record may enlarge
+ * the reservation; expanding/collapsing cannot move any ordinary node. */
+export function layoutQuestionRows(data:GraphData,projection:GraphProjection):QuestionRowLayout{
+ const positions:Record<string,GraphPosition>={},crossOwners:Record<string,string>={},lanes:Record<string,CrossLane>={},visible=new Set(projection.visibleIds);
+ const notes=new Map(data.notes.map(n=>[n.id,n])),crosses=[...data.crossThoughts].sort((a,b)=>a.order-b.order||a.id.localeCompare(b.id)),crossMap=new Map(crosses.map(c=>[c.id,c]));
+ const owners=graphOwners(data),children=new Map<string,string[]>();
+ for(const n of data.notes){const seen=new Set<string>();let parent=n.parent;while(parent&&!seen.has(parent)){seen.add(parent);if(crossMap.has(parent)){crossOwners[n.id]=parent;break;}parent=notes.get(parent)?.parent||null;}}
+ for(const n of [...data.notes].sort((a,b)=>a.kind===b.kind?a.order-b.order||a.id.localeCompare(b.id):a.kind==='question'?-1:1))if(n.parent)children.set(n.parent,[...(children.get(n.parent)||[]),n.id]);
+ const counts=new Map<string,number>();
+ const count=(id:string):number=>{if(counts.has(id))return counts.get(id)!;counts.set(id,1);const value=Math.max(1,(children.get(id)||[]).reduce((sum,key)=>sum+count(key),0));counts.set(id,value);return value;};
+ const ordinary:Record<string,{x:number;row:number}>={};
+ function place(id:string,x:number,row:number,seen=new Set<string>()){
+  if(seen.has(id)||ordinary[id]||crossOwners[id]||!visible.has(id))return;
+  ordinary[id]={x,row};let next=row;for(const child of children.get(id)||[]){if(crossOwners[child])continue;place(child,x+GRAPH_COLUMN,next,new Set([...seen,id]));next+=count(child);}
  }
- // Cross-page links are references, never a second set of roots. Position an
- // explicitly owned cross as a child of its placement in this canvas.
- for(const cross of crosses)if(cross.placementParentId&&visible.has(cross.placementParentId)){
-  const parent=cross.placementParentId,list=children.get(parent)||[],indices:number[]=[];
-  for(let id of cross.anchorIds.map(owner)){
-   const seen=new Set<string>();while(id&&!seen.has(id)){seen.add(id);const up=notes.get(id)?.parent||crosses.find(c=>c.id===id)?.placementParentId;if(up===parent){const index=list.indexOf(id);if(index>=0)indices.push(index);break;}id=up||'';}
-  }
-  const index=indices.length?Math.floor((Math.min(...indices)+Math.max(...indices))/2)+1:list.length;
-  list.splice(index,0,cross.id);children.set(parent,list);
- }
- // Identify the first branch boundary separating anchors, without changing parents.
- const ancestry=(id:string)=>{
-  const path:string[]=[],seen=new Set<string>();
-  while(id&&!seen.has(id)){seen.add(id);path.unshift(id);id=notes.get(id)?.parent||crosses.find(c=>c.id===id)?.placementParentId||'';}
-  return path;
- };
- const reservations=new Map<string,Map<number,string[]>>();
+ const rootId=data.notes.find(n=>!n.parent&&!crossOwners[n.id])?.id||ROOT,branches=(children.get(rootId)||[]).filter(id=>!crossOwners[id]),band=Math.max(1,...branches.map(count));
+ branches.forEach((id,i)=>place(id,GRAPH_COLUMN,i*band));
+ if(visible.has(rootId))ordinary[rootId]={x:0,row:branches.length?(branches.length-1)*band/2:0};
+ let lastRow=Math.max(0,...Object.values(ordinary).map(p=>p.row));
+ for(const n of data.notes)if(!crossOwners[n.id]&&!ordinary[n.id]&&visible.has(n.id)){lastRow++;place(n.id,GRAPH_COLUMN,lastRow);lastRow=Math.max(lastRow,...Object.values(ordinary).map(p=>p.row));}
+ for(const card of data.cards)if(visible.has(card.id)&&!ordinary[card.id])ordinary[card.id]={x:GRAPH_COLUMN,row:++lastRow};
+ const mainIds=Object.keys(ordinary),rowIds=[...new Set(mainIds.filter(id=>id!==rootId).map(id=>ordinary[id].row))].sort((a,b)=>a-b);if(!rowIds.length)rowIds.push(0);
+ // Infer a source's row through its actual parent/cross, including deep sources.
+ const rowMemo=new Map<string,number>(),xMemo=new Map<string,number>();
+ function sourceRow(key:string,seen=new Set<string>()):number{key=owners.get(key)||key;if(ordinary[key])return ordinary[key].row;if(seen.has(key))return 0;if(rowMemo.has(key))return rowMemo.get(key)!;const next=new Set([...seen,key]),note=notes.get(key),cross=crossMap.get(key);const value=note?.parent?sourceRow(note.parent,next):cross?.anchorIds.length?cross.anchorIds.reduce((sum,id)=>sum+sourceRow(id,next),0)/cross.anchorIds.length:0;rowMemo.set(key,value);return value;}
+ function sourceX(key:string,seen=new Set<string>()):number{key=owners.get(key)||key;if(ordinary[key])return ordinary[key].x;if(seen.has(key))return GRAPH_COLUMN;if(xMemo.has(key))return xMemo.get(key)!;const next=new Set([...seen,key]),note=notes.get(key),cross=crossMap.get(key);const value=note?.parent?sourceX(note.parent,next)+GRAPH_COLUMN:cross?.anchorIds.length?GRAPH_COLUMN*Math.max(1,Math.round(cross.anchorIds.reduce((sum,id)=>sum+sourceX(id,next),0)/cross.anchorIds.length/GRAPH_COLUMN)):GRAPH_COLUMN;xMemo.set(key,value);return value;}
+ const groups=new Map<number,{id:string;x:number;rows:number;nodes:CrossLane['nodes']}[]>();
  for(const cross of crosses){
-  if(cross.placementParentId)continue;
-  const paths=[...new Set(cross.anchorIds.map(owner))].map(ancestry);
-  if(paths.length<2||paths.some(path=>!path.length||path[0]!==paths[0][0]))continue;
-  let depth=0;
-  while(paths.every(path=>path[depth]&&path[depth]===paths[0][depth]))depth++;
-  if(depth===0||paths.some(path=>!path[depth]))continue; // Ancestor/descendant links use a nearby free slot.
-  const parent=paths[0][depth-1],siblings=children.get(parent)||[];
-  const indices=paths.map(path=>siblings.indexOf(path[depth]));
-  if(indices.some(index=>index<0))continue;
-  const boundary=Math.floor((Math.min(...indices)+Math.max(...indices)-1)/2);
-  const gaps=reservations.get(parent)||new Map<number,string[]>();
-  gaps.set(boundary,[...(gaps.get(boundary)||[]),cross.id]);reservations.set(parent,gaps);
+  const row=sourceRow(cross.id),slot=rowIds.reduce((best,r)=>Math.abs(r+.5-row)<Math.abs(best+.5-row)?r:best,rowIds[0]);
+  const nodes:CrossLane['nodes']=[{id:cross.id,x:0,y:0,parent:null}],seen=new Set([cross.id]);
+  const descend=(parent:string,depth:number,start:number)=>{let next=start;for(const child of children.get(parent)||[]){if(seen.has(child)||crossOwners[child]!==cross.id)continue;seen.add(child);nodes.push({id:child,parent,x:depth*GRAPH_COLUMN,y:next*CROSS_ROW});descend(child,depth+1,next);next+=count(child);}};
+  descend(cross.id,1,0);const group=groups.get(slot)||[];group.push({id:cross.id,x:sourceX(cross.id),rows:count(cross.id),nodes});groups.set(slot,group);
  }
- const building=new Set<string>(),trees=new Map<string,Tree>();
- const build=(id:string):Tree=>{
-  const cached=trees.get(id);if(cached)return cached;
-  if(building.has(id))return {id,children:[],height:GRAPH_NODE_HEIGHT,gaps:new Map()};
-  building.add(id);
-  const branch=(children.get(id)||[]).filter(child=>!building.has(child)).map(build);
-  const gaps=reservations.get(id)||new Map<number,string[]>();
-  const height=Math.max(GRAPH_NODE_HEIGHT,branch.reduce((sum,child,index)=>sum+child.height+(index?GAP:0)+(gaps.get(index)||[]).reduce((space,crossId)=>space+(building.has(crossId)?GRAPH_NODE_HEIGHT:build(crossId).height)+GAP,0),0));
-  const tree={id,children:branch,height,gaps};trees.set(id,tree);building.delete(id);return tree;
- };
- const slots=new Map<string,{x:number;y:number}>();
- const placed=new Set<string>();
- const placeTree=(tree:Tree,x:number,top:number,target=positions,collectSlots=true)=>{
-  if(target[tree.id])return;
-  target[tree.id]={x,y:top+(tree.height-GRAPH_NODE_HEIGHT)/2};
-  if(collectSlots)placed.add(tree.id);
-  let y=top;
-  tree.children.forEach((child,index)=>{
-   placeTree(child,x+COLUMN,y,target,collectSlots);y+=child.height+GAP;
-   for(const crossId of tree.gaps.get(index)||[]){
-    if(collectSlots)slots.set(crossId,{x:x+COLUMN,y});
-    y+=build(crossId).height+GAP;
-   }
-  });
- };
- const rootId=data.notes.find(note=>!note.parent)?.id||ROOT;if(visible.has(rootId))placeTree(build(rootId),0,0);
- // Preserve orphaned boards and malformed cycles as visible islands, never drop data.
- for(const note of data.notes){
-  if(placed.has(note.id)||crossIds.has(note.parent||''))continue;
-  const path=ancestry(note.id);if(path.some(id=>crossIds.has(id)))continue;
-  const bottom=Math.max(0,...Object.values(positions).map(p=>p.y+GRAPH_NODE_HEIGHT));
-  placeTree(build(note.id),0,bottom+GAP);
- }
- const overlaps=(a:GraphPosition,b:GraphPosition)=>Math.abs(a.x-b.x)<GRAPH_NODE_WIDTH+CLEARANCE&&Math.abs(a.y-b.y)<GRAPH_NODE_HEIGHT+CLEARANCE;
- const placeFreeTree=(id:string,x:number,y:number)=>{
-  const local:Record<string,GraphPosition>={};placeTree(build(id),0,0,local,false);
-  const root=local[id];
-  const fits=(dx:number,dy:number)=>Object.entries(local).every(([node,p])=>positions[node]||Object.values(positions).every(q=>!overlaps({x:p.x+dx,y:p.y+dy},q)));
-  const dx=x;let dy=y-root.y;
-  // Search nearby vertical slots first; keep descendants on the right of the board.
-  for(let distance=0;!fits(dx,dy);distance++){
-   if(distance>projection.visibleIds.length*4){dy=Math.max(0,...Object.values(positions).map(p=>p.y+GRAPH_NODE_HEIGHT))+GAP;break;}
-   const step=Math.ceil((distance+1)/2)*(GRAPH_NODE_HEIGHT+GAP);
-   dy=y-root.y+(distance%2===0?step:-step);
+ const step=(row:number)=>{const group=groups.get(row)||[];return Math.max(GRAPH_ROW,GRAPH_NODE_HEIGHT+32+group.reduce((sum,c)=>sum+GRAPH_NODE_HEIGHT+(c.rows-1)*CROSS_ROW,0)+Math.max(0,group.length-1)*48+32);};
+ // Equal top-level bands are sized from complete ordinary AND crossing trees.
+ const bandHeight=Math.max(GRAPH_ROW,...branches.map((_,i)=>Array.from({length:band},(_,r)=>step(i*band+r)).reduce((sum,n)=>sum+n,0)));
+ const actualRows=new Map<number,number>();let y=0;
+ for(let row=0;row<=Math.ceil(lastRow)+1;row++){if(branches.length&&row<branches.length*band&&row%band===0)y=(row/band)*bandHeight;else if(branches.length&&row===branches.length*band)y=branches.length*bandHeight;actualRows.set(row,y);y+=step(row);}
+ for(const[id,p]of Object.entries(ordinary))positions[id]={x:p.x,y:actualRows.get(p.row)||0};
+ if(positions[rootId])positions[rootId].y=branches.length?((actualRows.get(0)||0)+(actualRows.get((branches.length-1)*band)||0))/2:0;
+ for(const[slot,group]of groups){let top=(actualRows.get(slot)||0)+GRAPH_NODE_HEIGHT+32;
+  for(const cross of group){const height=GRAPH_NODE_HEIGHT+(cross.rows-1)*CROSS_ROW;
+   for(const node of cross.nodes)positions[node.id]={x:cross.x+node.x,y:top+node.y};
+   lanes[cross.id]={id:cross.id,area:String(slot),x:cross.x-12,y:top-12,width:Math.max(...cross.nodes.map(n=>n.x))+GRAPH_NODE_WIDTH+24,height:height+24,nodes:cross.nodes};top+=height+48;
   }
-  for(const [node,p] of Object.entries(local))if(!positions[node]){positions[node]={x:p.x+dx,y:p.y+dy};placed.add(node);}
- };
- // Cards linked by ordinary links are positioned next to their earliest known anchor.
- for(const card of data.cards.filter(card=>visible.has(card.id))){
-  const edge=projection.edges.find(edge=>edge.kind==='link'&&(edge.from===card.id&&positions[edge.to]||edge.to===card.id&&positions[edge.from]));
-  const anchor=edge?positions[edge.from===card.id?edge.to:edge.from]:undefined;
-  if(anchor)placeFreeTree(card.id,anchor.x+COLUMN,anchor.y);
  }
- // Crosses depending on other crosses wait until those anchors have positions.
- let pending=crosses.filter(cross=>!placed.has(cross.id));
- while(pending.length){
-  const ready=pending.filter(cross=>cross.anchorIds.map(owner).every(id=>positions[id]||!crossIds.has(id)));
-  const batch=ready.length?ready:[pending[0]];
-  for(const cross of batch){
-   const anchors=cross.anchorIds.map(owner).map(id=>positions[id]).filter(Boolean);
-   const slot=slots.get(cross.id);
-   const x=anchors.length?anchors.reduce((sum,p)=>sum+p.x,0)/anchors.length:COLUMN;
-   const y=slot?slot.y+(build(cross.id).height-GRAPH_NODE_HEIGHT)/2:anchors.length?anchors.reduce((sum,p)=>sum+p.y,0)/anchors.length:0;
-   placeFreeTree(cross.id,Math.max(COLUMN,x),y);
-  }
-  const done=new Set(batch.map(cross=>cross.id));pending=pending.filter(cross=>!done.has(cross.id));
+ for(const id of projection.visibleIds)if(!positions[id]){positions[id]={x:GRAPH_COLUMN,y};y+=GRAPH_ROW;mainIds.push(id);}
+ return{positions,mainIds,crossOwners,lanes};
+}
+export function layoutGraph(data:GraphData,projection:GraphProjection){return layoutQuestionRows(data,projection).positions;}
+
+/** Expansion changes visibility and badge size only, never the reserved grid. */
+export function expandCrossRows(layout:QuestionRowLayout,expandedIds:Iterable<string>){
+ const expanded=new Set([...expandedIds].filter(id=>layout.lanes[id])),positions={...layout.positions},displayIds=new Set(layout.mainIds),sizes:Record<string,{width:number;height:number}>={},bands:{id:string;x:number;y:number;width:number;height:number}[]=[];
+ for(const lane of Object.values(layout.lanes)){
+  displayIds.add(lane.id);
+  if(expanded.has(lane.id)){for(const node of lane.nodes){displayIds.add(node.id);sizes[node.id]={width:GRAPH_NODE_WIDTH,height:GRAPH_NODE_HEIGHT};}bands.push({id:lane.id,x:lane.x,y:lane.y,width:lane.width,height:lane.height});}
+  else{positions[lane.id]={x:positions[lane.id].x+(GRAPH_NODE_WIDTH-CROSS_BADGE_WIDTH)/2,y:positions[lane.id].y+(GRAPH_NODE_HEIGHT-CROSS_BADGE_HEIGHT)/2};sizes[lane.id]={width:CROSS_BADGE_WIDTH,height:CROSS_BADGE_HEIGHT};}
  }
- for(const id of projection.visibleIds)if(!positions[id]){
-  const edge=projection.edges.find(edge=>edge.from===id&&positions[edge.to]||edge.to===id&&positions[edge.from]);
-  const anchor=edge?positions[edge.from===id?edge.to:edge.from]:undefined;
-  placeFreeTree(id,anchor?anchor.x+COLUMN:COLUMN,anchor?.y||0);
- }
- return positions;
+ return{positions,displayIds,sizes,expanded,bands};
 }

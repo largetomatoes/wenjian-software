@@ -20,7 +20,7 @@ async function run(){
   if(!process.env.STRUCTURAL_SEED){await page.getByRole('button',{name:'交叉思考',exact:true}).click();await page.getByRole('button',{name:'展开Canvas A',exact:true}).click();
   const tree=page.locator('.question-picker-tree');await tree.hover();const before=await tree.evaluate(e=>e.scrollTop);await page.mouse.wheel(0,550);await page.waitForTimeout(200);report.pickerWheel={before,after:await tree.evaluate(e=>e.scrollTop)};
   await page.screenshot({path:path.join(out,'picker.png')});await page.locator('.block-picker').getByRole('button',{name:'取消',exact:true}).click();
-  await page.getByRole('button',{name:'查看全图',exact:true}).click();await page.waitForTimeout(200);const graphBefore=await state();await page.locator('[data-node=xa]').click();await page.waitForTimeout(250);report.crossClicked=await state();
+  await page.getByRole('button',{name:'查看全图',exact:true}).click();await page.waitForTimeout(200);const graphBefore=await state();await page.locator('[data-cross-badge=xa] .cross-badge-label').click();await page.waitForTimeout(250);report.crossClicked=await state();
   if(await page.locator('.immersive-window').count())await page.locator('.immersive-window>[data-slot=dialog-close]').click();await page.waitForTimeout(250);
   }
   const graphBefore=await state();

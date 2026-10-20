@@ -23,9 +23,14 @@ function verify(data){
  assert.equal(new Set(projection.visibleIds).size,projection.visibleIds.length);
  for(const p of Object.values(positions))assert.ok(Number.isFinite(p.x)&&Number.isFinite(p.y));
  for(const edge of projection.edges.filter(e=>e.kind==='hierarchy'))assert.ok(positions[edge.to].x>positions[edge.from].x,'children stay right of parents');
- const entries=Object.entries(positions);
- for(let i=0;i<entries.length;i++)for(let j=i+1;j<entries.length;j++){
-  const [a,p]=entries[i],[b,q]=entries[j];assert.ok(Math.abs(p.x-q.x)>=layout.GRAPH_NODE_WIDTH||Math.abs(p.y-q.y)>=layout.GRAPH_NODE_HEIGHT,`${a} overlaps ${b}`);
+ // Only drawn items occupy space: folded descendants are records, not cards.
+ const outline=layout.layoutQuestionRows(data,projection);
+ for(const expanded of [[],...Object.keys(outline.lanes).map(id=>[id])]){
+  const view=layout.expandCrossRows(outline,expanded),entries=[...view.displayIds].map(id=>[id,view.positions[id]]);
+  for(let i=0;i<entries.length;i++)for(let j=i+1;j<entries.length;j++){
+   const [a,p]=entries[i],[b,q]=entries[j],as=view.sizes[a]||{width:layout.GRAPH_NODE_WIDTH,height:layout.GRAPH_NODE_HEIGHT},bs=view.sizes[b]||{width:layout.GRAPH_NODE_WIDTH,height:layout.GRAPH_NODE_HEIGHT};
+   assert.ok(p.x+as.width<=q.x||q.x+bs.width<=p.x||p.y+as.height<=q.y||q.y+bs.height<=p.y,`${a} overlaps ${b} with expanded ${expanded}`);
+  }
  }
  return {projection,positions};
 }

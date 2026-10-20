@@ -48,6 +48,9 @@ async function prepare() {
   await mkdir(stage, { recursive: true });
   await mkdir(resourceStage, { recursive: true });
   await cp(path.join(appRoot, 'asar-src'), stage, { recursive: true });
+  await cp(path.join(projectRoot,'lib/plugin-contract.cjs'),path.join(stage,'plugin-contract.cjs'));
+  await cp(path.join(projectRoot,'plugins/catalog.json'),path.join(resourceStage,'plugin-catalog.json'));
+  await cp(path.join(projectRoot,'plugins/README.md'),path.join(resourceStage,'plugin-guide.md'));
   await cp(path.join(projectRoot,'lib/record-archives.cjs'),path.join(stage,'record-archives.cjs'));
   await cp(path.join(projectRoot,'lib/page-organization.cjs'),path.join(stage,'page-organization.cjs'));
   await cp(path.join(projectRoot,'lib/maintenance.cjs'),path.join(stage,'maintenance.cjs'));
@@ -105,6 +108,7 @@ if (prepareOnly) {
     await writeFile(path.join(contents, 'Info.plist'), JSON.stringify(plist));
     execFileSync('/usr/bin/plutil', ['-convert', 'xml1', path.join(contents, 'Info.plist')]);
     await cp(path.join(resourceStage, 'static'), path.join(resources, 'static'), {recursive:true});
+    for(const name of ['plugin-catalog.json','plugin-guide.md'])await cp(path.join(resourceStage,name),path.join(resources,name));
     for (const name of ['seed.json', 'AppIcon.icns']) await cp(path.join(appRoot, name), path.join(resources, name));
   } else {
   const paths = await packager({
@@ -122,7 +126,7 @@ if (prepareOnly) {
     prune: false,
     overwrite: true,
     icon: path.join(appRoot, 'AppIcon.icns'),
-    extraResource: [path.join(resourceStage, 'static'), path.join(appRoot, 'seed.json')],
+    extraResource: [path.join(resourceStage, 'static'), path.join(appRoot, 'seed.json'),path.join(resourceStage,'plugin-catalog.json'),path.join(resourceStage,'plugin-guide.md')],
   });
   if (paths.length !== 1) throw new Error('Mac 打包没有生成唯一的应用目录。');
   application = path.join(paths[0], '问间.app');

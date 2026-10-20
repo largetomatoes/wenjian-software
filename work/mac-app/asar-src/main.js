@@ -10,7 +10,7 @@ const {validOcrEntry,mergeOcrPage}=require('./ocr-cache.cjs');
 let notebookQueue=Promise.resolve(),storeRevisionHint=null,libraryFileIndex=null;
 function serializeNotebook(operation){const result=notebookQueue.then(operation);notebookQueue=result.catch(()=>{});return result;}
 const {allowedReleaseUrl,cachedPublicReleases}=require('./app-updates.cjs');
-const { app, BrowserWindow, Menu, dialog, shell, session, safeStorage, powerMonitor } = require('electron');
+const { app, BrowserWindow, Menu, dialog, shell, session, safeStorage, powerMonitor, clipboard } = require('electron');
 const fs = require('node:fs');
 const fsp = require('node:fs/promises');
 const http = require('node:http');
@@ -833,12 +833,35 @@ async function handleAppUpdates(request,response,url){
   }catch(error){return jsonReply(response,500,{error:error.message||'更新检查未完成'});}
 }
 
+let pluginsManager;
+function localPlugins(){return pluginsManager??=require('./plugin-manager.cjs').createPluginManager({directory:app.getPath('userData'),resources:process.resourcesPath,build:Number(require('./package.json').buildVersion),openExternal:url=>shell.openExternal(url),copyText:text=>clipboard.writeText(text)});}
+async function handlePlugins(request,response,url){
+ const origin=`http://127.0.0.1:${localPort}`;
+ if(process.platform!=='darwin')return jsonReply(response,404,{error:'此插件接口当前仅用于 Mac。'});
+ if(request.headers.host!==`127.0.0.1:${localPort}`||(request.headers.origin&&request.headers.origin!==origin)||request.headers['sec-fetch-site']==='cross-site')return jsonReply(response,403,{error:'来源不匹配'});
+ try{
+  const manager=localPlugins();
+  if(request.method==='GET'){if(url.pathname==='/api/plugins/invoke')return jsonReply(response,405,{error:'请主动选择文本后调用插件。'});if(url.searchParams.has('guide'))return jsonReply(response,200,{guide:await manager.guide()});return jsonReply(response,200,await manager.list(url.searchParams.get('refresh')==='1'));}
+  if(request.method!=='POST')return jsonReply(response,405,{error:'不支持的插件操作。'});
+  const input=await requestBody(request,280000);
+  if(url.pathname==='/api/plugins/invoke')return jsonReply(response,200,await manager.invoke(input.id,input.text));
+  if(input.action==='import'){const choice=await dialog.showOpenDialog(mainWindow,{title:'安装问间插件接入包',properties:['openFile'],filters:[{name:'问间插件接入包',extensions:['wenjian-plugin','json']}]});return jsonReply(response,200,choice.canceled?{cancelled:true}:await manager.previewFile(choice.filePaths[0]));}
+  if(input.action==='preview-market')return jsonReply(response,200,await manager.previewMarket(input.id));
+  if(input.action==='install')return jsonReply(response,200,await manager.install(input.token));
+  if(input.action==='enabled')return jsonReply(response,200,await manager.setEnabled(input.id,input.enabled));
+  if(input.action==='uninstall')return jsonReply(response,200,await manager.uninstall(input.id));
+  if(input.action==='submission'){await shell.openExternal('https://github.com/largetomatoes/wenjian-software/issues/new');return jsonReply(response,200,{ok:true});}
+  throw Error('插件操作无效。');
+ }catch(error){return jsonReply(response,400,{error:error.message||'插件操作未完成。'});}
+}
+
 async function startServer() {
   server = http.createServer((request, response) => {
     const url = new URL(request.url, 'http://127.0.0.1');
     if(restoringBackup&&request.method!=='GET'&&!url.pathname.startsWith('/api/app/'))return jsonReply(response,423,{error:'正在保护或恢复资料，请稍候。'});
     if (url.pathname === '/api/backup/restore' && request.method === 'POST') { if(request.headers.origin && request.headers.origin !== `http://127.0.0.1:${localPort}`)return jsonReply(response,403,{error:'来源不匹配'}); void restoreBackup().then(()=>jsonReply(response,200,{finished:true})).catch(()=>jsonReply(response,500,{error:'无法恢复备份'})); }
     else if (url.pathname.startsWith('/api/reader/ocr/')) void handleWindowsModel(request,response,url.pathname);
+    else if (url.pathname==='/api/plugins'||url.pathname==='/api/plugins/invoke') void handlePlugins(request,response,url);
     else if (url.pathname.startsWith('/api/app/')) void handleAppUpdates(request,response,url);
     else if (url.pathname.startsWith('/api/sync/')) void handleDeviceSync(request,response,url);
     else if (url.pathname === '/api/notebook') void serializeNotebook(()=>handleApi(request, response));
