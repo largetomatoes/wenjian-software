@@ -26,7 +26,7 @@ export type CrossAnchorRevision = { from:string[]; to:string[]; fromLabel?:strin
 export type PagePlacement={id:string;recordId:string;parentId:string|null;order:number;sourcePageId?:string;sourcePlacementId?:string;adoptedAt?:string};
 export type PageArrangement={id:string;at:string;label:string;before:PagePlacement[];after:PagePlacement[]};
 export type QuestionPage = {placements?:PagePlacement[];arrangements?:PageArrangement[];id:string;rootId:string;kind:'question'|'collection';order:number;members:string[];archivedAt?:string};
-export type CrossThought = { pageId?:string; title?:string; id:string; order:number; anchorIds:string[]; anchorRevisions:CrossAnchorRevision[]; text:string; origin:string; source:string; at:string; thoughts:Thought[] };
+export type CrossThought = { /** Projection only; never written back by pageView. */ placementParentId?:string|null; displayCode?:string; pageId?:string; title?:string; id:string; order:number; anchorIds:string[]; anchorRevisions:CrossAnchorRevision[]; text:string; origin:string; source:string; at:string; thoughts:Thought[] };
 export type ManuscriptLink = { id:string; questionId:string; targetKind?:'question'|'reading'; quote:string; start:number; end:number; prefix:string; suffix:string; at:string; unresolved?:boolean };
 export type ManuscriptRevision = { title:string; body:string; links:ManuscriptLink[]; blocks?:ManuscriptBlock[]; at:string };
 export type Manuscript = { id:string; title:string; body:string; links:ManuscriptLink[]; blocks?:ManuscriptBlock[]; at:string; updatedAt:string; revisions:ManuscriptRevision[] };
@@ -65,9 +65,20 @@ export function normalize(data:Partial<Notebook>):Notebook {
  });
  return migrateOrganization({...initialNotebook,...data,questionPages:pagesOf(data as Notebook),setupCompleted:data.setupCompleted??!!data.notes?.length,zoteroEnabled:data.zoteroEnabled??(data.setupCompleted!==false&&!!data.notes?.length),notes:(data.notes||initialNotebook.notes).map(n=>({...n,thoughts:n.thoughts||[]})),cards:(data.cards??[]).map(c=>({...c,thoughts:c.thoughts||[]})),readingNotes:(data.readingNotes||[]).map(n=>({...n,thoughts:n.thoughts||[]})),crossThoughts,thoughtReplies:data.thoughtReplies||[],manuscripts:(data.manuscripts||[]).map(m=>({...m,links:(m.links||[]).map(link=>({...link,targetKind:link.targetKind||'question'})),revisions:(m.revisions||[]).map(r=>({...r,links:(r.links||[]).map(link=>({...link,targetKind:link.targetKind||'question'}))}))})),libraryFolders:normalizeLibraryFolders(data.libraryFolders),zoteroCollections:normalizeZoteroCollections(data.zoteroCollections),libraryBooks:(data.libraryBooks||[]).map(book=>({...book,...(!book.display&&book.zotero?{display:{...(book.title!==book.zotero.title?{title:book.title}:{}),...(book.author&&(book.zotero.author===undefined||book.author!==book.zotero.author)?{author:book.author}:{})}}:{}),inReadingLibrary:book.inReadingLibrary===undefined?(!book.zotero||!book.id.startsWith('zotero-')):book.inReadingLibrary,author:book.author||'',progress:book.progress||{},pdfChapters:(book.pdfChapters||[]).filter(chapter=>chapter.title?.trim()&&Number.isInteger(chapter.startPage)&&chapter.startPage>0)})),libraryHighlights:data.libraryHighlights||[],ocrCache:data.ocrCache||[],bookThoughts:(data.bookThoughts||[]).map(entry=>({...entry,scope:entry.scope||'book',locator:entry.locator||'',quote:entry.quote||undefined,chapter:entry.chapter||undefined,questionIds:entry.questionIds||[],thoughts:entry.thoughts||[]})),dismissedSuggestions:data.dismissedSuggestions||[]});
 }
-export function crossNumber(c:CrossThought){return `X${c.order}`;}
+export function crossNumber(c:CrossThought,data?:Notebook):string {
+ if(c.displayCode)return c.displayCode;
+ if(data){const page=data.viewPageId?pagesOf(data).find(p=>p.id===data.viewPageId):pageForRecord(data,c.id);const projected=page?pageView(data,page.id).crossThoughts.find(x=>x.id===c.id):undefined;if(projected?.displayCode)return projected.displayCode;}
+ return `X${c.order}`;
+}
 export function numberOf(n:Note,notes:Note[],crossThoughts:CrossThought[]=[]):string { if(n.kind==='answer')return '回答';if(!n.parent)return '';const siblings=notes.filter(x=>x.kind==='question'&&x.parent===n.parent).sort((a,b)=>a.order-b.order||a.id.localeCompare(b.id));const position=Math.max(1,siblings.findIndex(x=>x.id===n.id)+1);const p=notes.find(x=>x.id===n.parent);const cross=crossThoughts.find(x=>x.id===n.parent);const prefix=p?numberOf(p,notes,crossThoughts):cross?crossNumber(cross):'';return prefix?prefix+'.'+position:String(position); }
-export function crossSignature(c:CrossThought,data:Notebook){return c.anchorIds.map(id=>{if(data.externalLabels?.[id])return data.externalLabels[id];const n=data.notes.find(n=>n.id===id);const label=n?numberOf(n,data.notes,data.crossThoughts)||'核心':data.crossThoughts.find(x=>x.id===id)?crossNumber(data.crossThoughts.find(x=>x.id===id)!):'原连接';const page=data.viewPageId?pagesOf(data).find(p=>p.id===data.viewPageId):pageForRecord(data,id);return !data.viewPageId&&pagesOf(data).length>1&&page?pageTitle(data,page)+' · '+label:label;}).join(c.anchorIds.length>2?' ＋ ':' ↔ ');}
+export function crossSignature(c:CrossThought,data:Notebook){
+ return c.anchorIds.map(id=>{
+  if(data.externalLabels?.[id])return data.externalLabels[id];
+  const page=data.viewPageId?pagesOf(data).find(p=>p.id===data.viewPageId):pageForRecord(data,id),view=data.viewPageId?data:page?pageView(data,page.id):data;
+  const note=view.notes.find(n=>n.id===id),cross=view.crossThoughts.find(x=>x.id===id),label=note?numberOf(note,view.notes,view.crossThoughts)||'核心':cross?crossNumber(cross):'原连接';
+  return !data.viewPageId&&pagesOf(data).length>1&&page?pageTitle(data,page)+' · '+label:label;
+ }).join(c.anchorIds.length>2?' ＋ ':' ↔ ');
+}
 export function itemText(data:Notebook,id:string){const c=data.cards.find(c=>c.id===id);return data.crossThoughts.find(c=>c.id===id)?.title||data.crossThoughts.find(c=>c.id===id)?.text||c?.text||data.notes.find(n=>n.id===id)?.title||'';}
 const topics=[
  {name:'表达与语言',words:['诚实','言语','语言','表达','说话','谎言','沉默']},
@@ -89,7 +100,11 @@ export function pagesOf(data:Pick<Notebook,'notes'|'questionPages'>):QuestionPag
  return data.notes.filter(note=>note.kind==='question'&&!note.parent).map((note,index)=>({id:'page-'+note.id,rootId:note.id,kind:'question',order:index+1,members:[]}));
 }
 export function pageForRecord(data:Notebook,id:string):QuestionPage|undefined {
- const locations=recordPages(data,id);if(locations.length)return locations.find(p=>!p.archivedAt)||locations[0];
+ const locations=recordPages(data,id);
+ const explicit=data.crossThoughts.find(c=>c.id===id)?.pageId;
+ if(explicit){const own=pagesOf(data).find(p=>p.id===explicit);if(own)return own;}
+ const originalLocations=locations.filter(p=>!pagePlacements(data,p).find(r=>r.recordId===id)?.sourcePageId);
+ if(originalLocations.length===1)return originalLocations[0];
  const pages=pagesOf(data),roots=new Map(pages.map(page=>[page.rootId,page]));
  const notes=new Map(data.notes.map(note=>[note.id,note])),crosses=new Map(data.crossThoughts.map(cross=>[cross.id,cross]));
  const owners=new Map<string,string>();for(const item of [...data.notes,...data.cards,...data.crossThoughts,...data.readingNotes,...data.bookThoughts])for(const thought of item.thoughts||[])owners.set(thought.id,item.id);
@@ -102,7 +117,7 @@ export function pageForRecord(data:Notebook,id:string):QuestionPage|undefined {
   const cross=crosses.get(current);if(cross?.pageId)return pages.find(page=>page.id===cross.pageId);
   const parent=notes.get(current)?.parent||owners.get(current);if(parent)queue.push(parent);else if(cross)queue.push(...cross.anchorIds);
  }
- return undefined;
+ return locations.find(p=>!p.archivedAt&&!pagePlacements(data,p).find(r=>r.recordId===id)?.sourcePageId)||locations.find(p=>!p.archivedAt)||locations[0];
 }
 export function pageTitle(data:Notebook,page:QuestionPage){return data.notes.find(note=>note.id===page.rootId)?.title||'问题页';}
 export function addQuestionPage(data:Notebook,title:string,members:string[]=[],id=crypto.randomUUID()):{data:Notebook;page:QuestionPage} {
@@ -114,29 +129,18 @@ export function addQuestionPage(data:Notebook,title:string,members:string[]=[],i
  const next={...data,questionPages:[...pages,page],notes:[...data.notes,root]};const placed={...page,placements:pagePlacements(next,page)};return {data:migrateOrganization({...next,questionPages:[...pages,placed]}),page:placed};
 }
 export function pageView(data:Notebook,pageId:string):Notebook {
- if(data.organizationVersion===2||pagesOf(data).some(p=>p.id===pageId&&p.placements))return organizationView(data,pageId);
- const page=pagesOf(data).find(p=>p.id===pageId);if(!page)return data;
- const memberPages=page.members.map(id=>pagesOf(data).find(p=>p.id===id)).filter((p):p is QuestionPage=>!!p);
- const included=new Set([page.id,...memberPages.map(p=>p.id)]);
- const includedRoots=new Set([page.rootId,...memberPages.map(p=>p.rootId)]);
- const notes=new Map(data.notes.map(note=>[note.id,note]));
- const crossIds=new Set(data.crossThoughts.filter(c=>c.pageId?included.has(c.pageId):c.anchorIds.some(id=>{const p=pageForRecord(data,id);return p&&included.has(p.id);})).map(c=>c.id));
- const belongs=(id:string)=>{const seen=new Set<string>();while(id&&!seen.has(id)){seen.add(id);if(includedRoots.has(id)||crossIds.has(id))return true;id=notes.get(id)?.parent||'';}return false;};
- const visible=data.notes.filter(note=>belongs(note.id)),ids=new Set([...visible.map(n=>n.id),...crossIds]);
- const owners=new Map<string,string>();for(const item of [...data.notes,...data.cards,...data.crossThoughts])for(const thought of item.thoughts||[])owners.set(thought.id,item.id);
- for(const card of data.cards)if(card.questionId)owners.set(card.id,card.questionId);
- const owner=(id:string)=>owners.get(id)||id;
- for(const card of data.cards)if(data.links.some(l=>owner(l.from)===card.id&&ids.has(owner(l.to))||owner(l.to)===card.id&&ids.has(owner(l.from)))||data.crossThoughts.some(c=>crossIds.has(c.id)&&c.anchorIds.some(id=>owner(id)===card.id)))ids.add(card.id);
-
- const start=1;
- const projected=visible.map(note=>{const index=memberPages.findIndex(p=>p.rootId===note.id);return index<0?(note.parent===page.rootId?{...note,order:memberPages.length+note.order}:note):{...note,parent:page.rootId,order:start+index};});
- return {...data,notes:projected,crossThoughts:data.crossThoughts.filter(c=>crossIds.has(c.id)),links:data.links.filter(l=>ids.has(owner(l.from))&&ids.has(owner(l.to)))};
+ return organizationView(data,pageId);
+}
+export function recordNumber(data:Notebook,id:string){
+ const page=data.viewPageId?pagesOf(data).find(p=>p.id===data.viewPageId):pageForRecord(data,id),view=data.viewPageId?data:page?pageView(data,page.id):data;
+ const note=view.notes.find(n=>n.id===id),cross=view.crossThoughts.find(c=>c.id===id);
+ return note?numberOf(note,view.notes,view.crossThoughts):cross?crossNumber(cross):'';
 }
 export function recordLabel(data:Notebook,id:string){
- const note=data.notes.find(n=>n.id===id),page=pageForRecord(data,id);
- const number=note?numberOf(note,data.notes,data.crossThoughts):data.crossThoughts.find(c=>c.id===id)?crossNumber(data.crossThoughts.find(c=>c.id===id)!):'';
- return [page?pageTitle(data,page):'',number].filter(Boolean).join(' · ');
+ const page=data.viewPageId?pagesOf(data).find(p=>p.id===data.viewPageId):pageForRecord(data,id);
+ return [page?pageTitle(data,page):'',recordNumber(data,id)].filter(Boolean).join(' · ');
 }
+
 export function displayBook(book:LibraryBook):LibraryBook {
  return {...book,title:book.display?.title??book.zotero?.title??book.title,author:book.display?.author??book.zotero?.author??book.author};
 }

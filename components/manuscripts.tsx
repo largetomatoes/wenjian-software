@@ -7,7 +7,7 @@ import {Button} from '@/components/ui/button';
 import {Dialog,DialogContent,DialogDescription,DialogTitle} from '@/components/ui/dialog';
 import {Input} from '@/components/ui/input';
 import {readDraft,writeDraft} from '@/lib/draft-storage';
-import {type Manuscript,type ManuscriptLink,type Notebook,numberOf,crossNumber,crossSignature,ROOT} from '@/lib/notebook';
+import {type Manuscript,type ManuscriptLink,type Notebook,numberOf,recordNumber,crossNumber,crossSignature,ROOT} from '@/lib/notebook';
 
 import {ManuscriptMaterialPicker} from '@/components/manuscript-material-picker';
 import {ManuscriptAssembly} from '@/components/manuscript-assembly';
@@ -114,7 +114,7 @@ export function Manuscripts({open,initialId,onOpenChange,data,saving,save,onOpen
   finally{submittingRef.current=false;setSubmitting(false);}
  }
 
- function targetLabel(link:ManuscriptLink){if(link.targetKind==='reading'){const reading=data.readingNotes.find(note=>note.id===link.questionId);return reading?{number:'阅读',title:`《${reading.book}》${reading.chapter?` · ${reading.chapter}`:''}`,open:()=>onOpenReading(reading.id)}:null;}const question=data.notes.find(n=>n.id===link.questionId);return question?{number:link.questionId===ROOT?'核心':numberOf(question,data.notes,data.crossThoughts),title:question.title,open:()=>onOpenQuestion(link.questionId)}:(()=>{const cross=data.crossThoughts.find(item=>item.id===link.questionId);return cross?{number:crossNumber(cross),title:cross.title||cross.text||'交叉思考',open:()=>onOpenQuestion(cross.id)}:null;})();}
+ function targetLabel(link:ManuscriptLink){if(link.targetKind==='reading'){const reading=data.readingNotes.find(note=>note.id===link.questionId);return reading?{number:'阅读',title:`《${reading.book}》${reading.chapter?` · ${reading.chapter}`:''}`,open:()=>onOpenReading(reading.id)}:null;}const question=data.notes.find(n=>n.id===link.questionId);return question?{number:link.questionId===ROOT?'核心':recordNumber(data,question.id),title:question.title,open:()=>onOpenQuestion(link.questionId)}:(()=>{const cross=data.crossThoughts.find(item=>item.id===link.questionId);return cross?{number:crossNumber(cross,data),title:cross.title||cross.text||'交叉思考',open:()=>onOpenQuestion(cross.id)}:null;})();}
 
  return <Dialog open={open} onOpenChange={requestClose}><DialogContent className="manuscript-dialog" aria-describedby={undefined}>
   <aside className="manuscript-list"><header><div><FileText size={18}/><DialogTitle>文稿</DialogTitle></div><Button size="icon" variant="ghost" aria-label="新建文稿" disabled={!draftReady||busy} onClick={()=>requestLoad()}><FilePlus2/></Button></header><div>{data.manuscripts.map(m=><button type="button" key={m.id} className={m.id===selectedId?'is-current':''} disabled={!draftReady||busy} onClick={()=>requestLoad(m)}><strong>{m.title}</strong><span>{new Date(m.updatedAt||m.at).toLocaleDateString('zh-CN')} · {m.blocks?`${m.blocks.length} 段 · ${m.blocks.filter(block=>block.source).length} 处来源`:`${m.links.length} 处句子关联`}</span></button>)}</div></aside>

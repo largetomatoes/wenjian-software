@@ -40,3 +40,6 @@ html[data-wenjian-platform=windows] .reader-ocr-status{position:absolute;right:2
 
 .reader-quality-status{position:absolute;left:24px;bottom:18px;z-index:20;pointer-events:none;padding:5px 10px;border-radius:6px;background:#fffffff0;color:#647482;font-size:12px}
 .reader-note-slot{min-width:0;overflow-anchor:none}
+/* A reader is disposed on close. Do not animate its emptied page as a white
+   sheet above the restored graph while PDF/EPUB resources are released. */
+.library-dialog[data-state=closed],.comparison-dialog[data-state=closed]{animation:none!important;transition:none!important}

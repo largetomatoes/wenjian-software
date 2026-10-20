@@ -53,7 +53,7 @@ export function GlobalSearch({open,onOpenChange,data,onOpenItem,onOpenReading,on
    note.revisions.forEach((revision,index)=>add({id:`note:${note.id}:revision:${index}`,kind:'note',label:place(number,'过往修订'),title:revision.title||note.title,fields:[field(revision.title),field(revision.nextTitle||''),field(revision.body),field(revision.reason)],open:()=>onOpenItem(note.id)}));
   }
   for(const cross of data.crossThoughts){
-   const label=place(`${crossNumber(cross)} · 交叉思考`,short(crossSignature(cross,data),65));
+   const label=place(`${crossNumber(cross,data)} · 交叉思考`,short(crossSignature(cross,data),65));
    const title=cross.title||short(cross.text,80)||'交叉思考';
    add({id:`cross:${cross.id}`,kind:'cross',label,title,fields:[field(cross.title||'',1.2),field(cross.text),field(cross.source,.6)],open:()=>onOpenItem(cross.id)});
    addThoughts(`cross:${cross.id}`,'cross',label,title,cross.thoughts,(thoughtId,replyId)=>onOpenItem(cross.id,thoughtId,replyId));

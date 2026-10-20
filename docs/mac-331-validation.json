@@ -1,0 +1,89 @@
+{
+  "date": "2026-10-20",
+  "scope": "Mac local fix only",
+  "version": "3.14",
+  "build": "331",
+  "displayBuild": "330.1",
+  "typecheck": "passed",
+  "pureRegressionTests": 16,
+  "graphRegression": "passed",
+  "crossRegression": "passed",
+  "manuscriptRegression": "passed",
+  "macPackagedUI": {
+    "checks": [
+      {
+        "exit": 0,
+        "overlays": [],
+        "map": {
+          "x": 0,
+          "y": 70,
+          "width": 1440,
+          "height": 723,
+          "top": 70,
+          "right": 1440,
+          "bottom": 793,
+          "left": 0
+        },
+        "nodes": 48,
+        "camera": "translate(679.364133263925 48) scale(0.08159812597605413)",
+        "scrollY": 0,
+        "pointer": "auto"
+      },
+      {
+        "exit": 1,
+        "overlays": [],
+        "map": {
+          "x": 0,
+          "y": 70,
+          "width": 1050,
+          "height": 710,
+          "top": 70,
+          "right": 1050,
+          "bottom": 780,
+          "left": 0
+        },
+        "nodes": 48,
+        "camera": "translate(679.364133263925 48) scale(0.08159812597605413)",
+        "scrollY": 0,
+        "pointer": "auto"
+      },
+      {
+        "exit": 2,
+        "overlays": [],
+        "map": {
+          "x": 0,
+          "y": 70,
+          "width": 1050,
+          "height": 710,
+          "top": 70,
+          "right": 1050,
+          "bottom": 780,
+          "left": 0
+        },
+        "nodes": 48,
+        "camera": "translate(679.364133263925 48) scale(0.08159812597605413)",
+        "scrollY": 0,
+        "pointer": "auto"
+      },
+      "Nested comparison association picker scrolls"
+    ],
+    "errors": []
+  },
+  "macEpubAndQuit": {
+    "checks": [
+      "Association picker initially folds roots; nested expansion and canvas-owned four-way cross paths",
+      "Graph focus highlights all four spokes without changing the question tree",
+      "EPUB full-book pagination completes in background",
+      "Nested TOC jumps within a chapter file; supplied original page labels are preserved",
+      "Numeric page jump reaches the requested whole-book reading page",
+      "Window resize repaginates and retains CFI-based progress",
+      "Real Mac quit flushes the latest unsubmitted reader draft and checkpoints local data"
+    ],
+    "errors": []
+  },
+  "structuralFixture": {
+    "checks": 3,
+    "errors": []
+  },
+  "note": "Persistent user-specific white screen not reliably reproduced; guarded reader saving/close/focus/animation/highlight lifecycle and verified the reported action sequence."
+}

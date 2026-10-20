@@ -30,8 +30,15 @@ export const QuestionMap = memo(function QuestionMap({ data, loading, onOpen, on
   const [viewport, setViewport] = useState({ width: 900, height: 650 });
   const [dragging, setDragging] = useState(false);
   const [crossFocus,setCrossFocus]=useState<string|null>(null);
+  const activateNode=(id:string)=>{if(data.crossThoughts.some(c=>c.id===id))setCrossFocus(id);else onOpen(id);};
   const focusedCross=data.crossThoughts.find(c=>c.id===crossFocus);
-  const relatedIds=useMemo(()=>new Set(focusedCross?[focusedCross.id,...focusedCross.anchorIds]:[]),[focusedCross]);
+  const relatedIds=useMemo(()=>{
+    const ids=new Set<string>();
+    if(focusedCross)for(let id of [focusedCross.id,...focusedCross.anchorIds]){
+      const seen=new Set<string>();while(id&&!seen.has(id)){seen.add(id);ids.add(id);id=data.notes.find(n=>n.id===id)?.parent||data.crossThoughts.find(c=>c.id===id)?.placementParentId||'';}
+    }
+    return ids;
+  },[focusedCross,data.notes,data.crossThoughts]);
   const touches = useRef(new Map<number, { x: number; y: number }>());
   const pinch = useRef<{ camera: GraphCamera; pair: ReturnType<typeof touchPair> } | null>(null);
   const tap = useRef<{ id: string | null; x: number; y: number; moved: boolean } | null>(null);
@@ -69,11 +76,15 @@ export const QuestionMap = memo(function QuestionMap({ data, loading, onOpen, on
     const canvas = canvasRef.current;
     if (!canvas) return;
     const observer = new ResizeObserver(([entry]) => {
+      if(entry.contentRect.width<=0||entry.contentRect.height<=0)return;
       if (mobile) initialized.current = false;
       setViewport({ width: entry.contentRect.width, height: entry.contentRect.height });
     });
     observer.observe(canvas);
+    const resume=()=>{const rect=canvas.getBoundingClientRect();if(rect.width>0&&rect.height>0)setViewport({width:rect.width,height:rect.height});};
+    window.addEventListener('wenjian:reader-closed',resume);
     const onWheel = (event: WheelEvent) => {
+      if(event.target instanceof Element&&event.target.closest('.graph-cross-focus,.map-controls,button,input,textarea,select,[role=dialog]'))return;
       event.preventDefault();
       const rect = canvas.getBoundingClientRect();
       const unit = event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? rect.height : 1;
@@ -82,6 +93,7 @@ export const QuestionMap = memo(function QuestionMap({ data, loading, onOpen, on
     canvas.addEventListener('wheel', onWheel, { passive: false });
     return () => {
       observer.disconnect();
+      window.removeEventListener('wenjian:reader-closed',resume);
       canvas.removeEventListener('wheel', onWheel);
       if (frameRef.current !== null) cancelAnimationFrame(frameRef.current);
       frameRef.current = null;
@@ -101,7 +113,7 @@ export const QuestionMap = memo(function QuestionMap({ data, loading, onOpen, on
   const endTouch = (event: React.PointerEvent<HTMLDivElement>, cancelled = false) => {
     touches.current.delete(event.pointerId);
     ignoreClickUntil.current = Date.now() + 500;
-    if (!cancelled && !tap.current?.moved && tap.current?.id) onOpen(tap.current.id);
+    if (!cancelled && !tap.current?.moved && tap.current?.id) activateNode(tap.current.id);
     tap.current = null;
     pinch.current = null;
     const remaining = [...touches.current.entries()][0];
@@ -111,7 +123,7 @@ export const QuestionMap = memo(function QuestionMap({ data, loading, onOpen, on
   return <div className={'map-canvas' + (dragging ? ' is-dragging' : '') + (mobile ? ' mobile-map-canvas' : '')} ref={canvasRef} tabIndex={0} aria-label={mobile ? '全部问题关系图，单指移动、双指缩放，点击问题查看内容' : '问题关系图，可用触控板滚动或拖动平移'}
     onPointerDown={event => {
       if (mobile && event.pointerType === 'touch') {
-        if ((event.target as Element).closest('button')) return;
+        if ((event.target as Element).closest('button,.graph-cross-focus')) return;
         const rect = event.currentTarget.getBoundingClientRect();
         touches.current.set(event.pointerId, { x: event.clientX - rect.left, y: event.clientY - rect.top });
         event.currentTarget.setPointerCapture(event.pointerId);
@@ -127,7 +139,7 @@ export const QuestionMap = memo(function QuestionMap({ data, loading, onOpen, on
         setDragging(true);
         return;
       }
-      if (event.button !== 0 || (event.target as Element).closest('[data-node],button')) return;
+      if (event.button !== 0 || (event.target as Element).closest('[data-node],button,input,textarea,select,.graph-cross-focus')) return;
       dragRef.current = { pointerId: event.pointerId, x: event.clientX, y: event.clientY, camera: cameraRef.current };
       event.currentTarget.setPointerCapture(event.pointerId);
       setDragging(true);
@@ -173,15 +185,15 @@ export const QuestionMap = memo(function QuestionMap({ data, loading, onOpen, on
             const start = boundary(a, b), end = boundary(b, a);
             path = `M${start.x} ${start.y} L${end.x} ${end.y}`;
           }
-          return <path key={edge.id} d={path} className={`edge ${edge.kind}${focusedCross?(edge.kind==='cross'&&edge.to===focusedCross.id?' is-cross-focus':' is-cross-muted'):''}`} fill="none" pointerEvents="none"><title>{edge.type}</title></path>;
+          return <path key={edge.id} d={path} className={`edge ${edge.kind}${focusedCross?((edge.kind==='cross'&&edge.to===focusedCross.id)||(edge.kind==='hierarchy'&&relatedIds.has(edge.from)&&relatedIds.has(edge.to))?' is-cross-focus':' is-cross-muted'):''}`} fill="none" pointerEvents="none"><title>{edge.type}</title></path>;
         })}
         {items.map(item => {
           const position = positions[item.id];
           if (!position||!inView(position)) return null;
           return <g key={item.id} data-node={item.id} role="button" tabIndex={0} aria-label={`${item.label}：${item.text}`}
             className={`map-node ${item.kind}${item.id === rootId ? ' root-node' : ''}${relatedIds.has(item.id)?' is-cross-related':''}`} transform={`translate(${position.x} ${position.y})`}
-            onMouseEnter={()=>{if(item.kind==='cross')setCrossFocus(item.id);}} onFocus={()=>{if(item.kind==='cross')setCrossFocus(item.id);}}
-            onClick={() => { if (Date.now() > ignoreClickUntil.current) onOpen(item.id); }} onKeyDown={event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); onOpen(item.id); } }}>
+            aria-pressed={item.kind==='cross'?crossFocus===item.id:undefined}
+            onClick={() => { if (Date.now() > ignoreClickUntil.current) activateNode(item.id); }} onKeyDown={event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); activateNode(item.id); } }}>
             <title>{item.label} · {item.text}</title>
             <rect className="node-surface" width={GRAPH_NODE_WIDTH} height={GRAPH_NODE_HEIGHT} rx="10" />
             {camera.zoom>=.25&&<><foreignObject x="18" y="12" width={GRAPH_NODE_WIDTH - 36} height="23"><div className="node-tag">{item.kind==='cross'&&camera.zoom<.6?`${crossNumber(data.crossThoughts.find(c=>c.id===item.id)!)} · ${data.crossThoughts.find(c=>c.id===item.id)?.anchorIds.length} 个关联`:item.label}</div></foreignObject>
@@ -191,7 +203,7 @@ export const QuestionMap = memo(function QuestionMap({ data, loading, onOpen, on
         })}
       </g>
     </svg>
-    {focusedCross&&<aside className="graph-cross-focus"><header><strong>{focusedCross.title||'交叉思考'}</strong><button type="button" aria-label="关闭交叉路径预览" onClick={()=>setCrossFocus(null)}>×</button></header><CrossConnections data={data} cross={focusedCross} onOpen={onOpen}/></aside>}
+    {focusedCross&&<aside className="graph-cross-focus"><header><strong>{focusedCross.title||'交叉思考'}</strong><button type="button" aria-label="关闭交叉路径预览" onClick={()=>setCrossFocus(null)}>×</button></header><CrossConnections data={data} cross={focusedCross} onOpen={onOpen}/><Button variant="ghost" size="sm" onClick={()=>onOpen(focusedCross.id)}>打开这条思考</Button></aside>}
     {loading && <div className="map-loading"><Loader2 className="spin" />读取中</div>}
     <div className="map-controls">
       <Button variant="ghost" size="icon" aria-label="缩小关系图" title="缩小" onClick={() => resize(cameraRef.current.zoom / 1.2)}><Minus /></Button>

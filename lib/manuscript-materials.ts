@@ -1,6 +1,6 @@
 import {processSources} from './process-note-sources';
 import {thoughtSources,thoughtPrimary,sourceLabel} from './book-notebook';
-import {type Notebook,type ManuscriptLink,type Thought,displayBook,pagesOf,pageView,numberOf,crossNumber,crossSignature} from './notebook';
+import {type Notebook,type ManuscriptLink,type Thought,displayBook,pagesOf,pageView,numberOf,recordNumber,crossNumber,crossSignature} from './notebook';
 
 export type MaterialKind='heading'|'original'|'quote'|'understanding'|'thought'|'reply';
 export type ManuscriptSourceSnapshot={
@@ -42,7 +42,7 @@ export function buildManuscriptMaterials(data:Notebook):MaterialCatalog{
  const visit=(id:string)=>{
   if(visited.has(id))return;visited.add(id);
   const note=notes.get(id);if(!note)return;
-  const label=`${!note.parent?'问题页':numberOf(note,data.notes,data.crossThoughts)} · ${note.title}`;
+  const label=`${!note.parent?'问题页':recordNumber(data,note.id)} · ${note.title}`;
   if(note.kind==='question')addScope({id:questionScope(id),kind:'question',label,...(note.parent?{parentId:questionScope(note.parent)}:{})});
   const scopeIds=scopeAncestors(id),context={label,citation:note.source,targetKind:'note' as const,targetId:id,origin:note.origin};
   add({...context,key:`note:${id}:title`,kind:'heading',text:note.title,at:''},scopeIds);
@@ -52,7 +52,7 @@ export function buildManuscriptMaterials(data:Notebook):MaterialCatalog{
  };
  for(const page of pagesOf(data))visit(page.rootId);
  for(const cross of [...data.crossThoughts].sort((a,b)=>a.order-b.order)){
-  const label=`${crossNumber(cross)}〔${crossSignature(cross,data)}〕 · ${cross.title||'交叉思考'}`,scopeIds=[`cross:${cross.id}`];
+  const label=`${crossNumber(cross,data)}〔${crossSignature(cross,data)}〕 · ${cross.title||'交叉思考'}`,scopeIds=[`cross:${cross.id}`];
   addScope({id:scopeIds[0],kind:'cross',label});
   const context={label,citation:cross.source,targetKind:'cross' as const,targetId:cross.id,origin:cross.origin};
   if(cross.title)add({...context,key:`cross:${cross.id}:title`,kind:'heading',text:cross.title,at:cross.at},scopeIds);
@@ -94,7 +94,7 @@ export function buildManuscriptMaterials(data:Notebook):MaterialCatalog{
  for(const page of pagesOf(data).filter(page=>page.kind==='collection')){
   const view=pageView(data,page.id),rows=page.placements||[],rowByRecord=new Map(rows.map(row=>[row.recordId,row])),rootScope=questionScope(page.rootId);
   const localScope=(id:string)=>id===page.rootId?rootScope:`page:${page.id}:${id}`;
-  for(const row of rows){if(row.recordId===page.rootId)continue;const note=view.notes.find(n=>n.id===row.recordId),cross=view.crossThoughts.find(c=>c.id===row.recordId);if(note?.kind==='answer')continue;addScope({id:localScope(row.recordId),kind:cross?'cross':'question',label:note?`${numberOf(note,view.notes,view.crossThoughts)} · ${note.title}`:`${cross?crossNumber(cross):''} · ${cross?.title||'交叉思考'}`,parentId:row.parentId?localScope(row.parentId):rootScope});}
+  for(const row of rows){if(row.recordId===page.rootId)continue;const note=view.notes.find(n=>n.id===row.recordId),cross=view.crossThoughts.find(c=>c.id===row.recordId);if(note?.kind==='answer')continue;addScope({id:localScope(row.recordId),kind:cross?'cross':'question',label:note?`${numberOf(note,view.notes,view.crossThoughts)} · ${note.title}`:`${cross?crossNumber(cross,data):''} · ${cross?.title||'交叉思考'}`,parentId:row.parentId?localScope(row.parentId):rootScope});}
   for(const material of materials){
    material.scopeIds=material.scopeIds.filter(id=>id!==rootScope);
    const direct=material.targetKind==='reading'?data.readingNotes.find(n=>n.id===material.targetId)?.questionIds||[]:material.targetKind==='bookThought'?data.bookThoughts.find(n=>n.id===material.targetId)?.questionIds||[]:material.targetKind==='card'?data.links.filter(l=>l.from===material.targetId||l.to===material.targetId).map(l=>l.from===material.targetId?l.to:l.from):[material.targetId];

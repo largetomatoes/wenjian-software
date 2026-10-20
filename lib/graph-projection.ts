@@ -21,6 +21,7 @@ export function projectGraph(data:GraphData):GraphProjection{
  const graphIds=new Set([...data.notes.map(note=>note.id),...data.crossThoughts.map(cross=>cross.id),...connectedCards]);
  const edges:GraphEdge[]=[
   ...data.notes.filter(note=>note.parent&&graphIds.has(note.parent)).map(note=>({id:`parent:${note.id}`,from:note.parent!,to:note.id,type:note.kind==='question'?'子问题':'回答',kind:'hierarchy' as const})),
+  ...data.crossThoughts.filter(c=>c.placementParentId&&graphIds.has(c.placementParentId)).map(c=>({id:`parent:${c.id}`,from:c.placementParentId!,to:c.id,type:'本页交叉思考',kind:'hierarchy' as const})),
   ...data.links.map(link=>({id:`link:${link.id}`,from:owner(link.from),to:owner(link.to),type:link.type,kind:'link' as const})),
   ...data.crossThoughts.flatMap(cross=>[...new Set(cross.anchorIds.map(owner))].map((id,index)=>({id:`cross:${cross.id}:${index}`,from:id,to:cross.id,type:'交叉',kind:'cross' as const})))
  ].filter(edge=>graphIds.has(edge.from)&&graphIds.has(edge.to)&&edge.from!==edge.to);

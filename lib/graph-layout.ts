@@ -21,14 +21,25 @@ export function layoutGraph(data:GraphData,projection:GraphProjection):Record<st
  for(const note of [...data.notes].sort((a,b)=>a.kind===b.kind?a.order-b.order||a.id.localeCompare(b.id):a.kind==='question'?-1:1)){
   if(note.parent&&visible.has(note.id)){const list=children.get(note.parent)||[];list.push(note.id);children.set(note.parent,list);}
  }
+ // Cross-page links are references, never a second set of roots. Position an
+ // explicitly owned cross as a child of its placement in this canvas.
+ for(const cross of crosses)if(cross.placementParentId&&visible.has(cross.placementParentId)){
+  const parent=cross.placementParentId,list=children.get(parent)||[],indices:number[]=[];
+  for(let id of cross.anchorIds.map(owner)){
+   const seen=new Set<string>();while(id&&!seen.has(id)){seen.add(id);const up=notes.get(id)?.parent||crosses.find(c=>c.id===id)?.placementParentId;if(up===parent){const index=list.indexOf(id);if(index>=0)indices.push(index);break;}id=up||'';}
+  }
+  const index=indices.length?Math.floor((Math.min(...indices)+Math.max(...indices))/2)+1:list.length;
+  list.splice(index,0,cross.id);children.set(parent,list);
+ }
  // Identify the first branch boundary separating anchors, without changing parents.
  const ancestry=(id:string)=>{
   const path:string[]=[],seen=new Set<string>();
-  while(id&&!seen.has(id)){seen.add(id);path.unshift(id);id=notes.get(id)?.parent||'';}
+  while(id&&!seen.has(id)){seen.add(id);path.unshift(id);id=notes.get(id)?.parent||crosses.find(c=>c.id===id)?.placementParentId||'';}
   return path;
  };
  const reservations=new Map<string,Map<number,string[]>>();
  for(const cross of crosses){
+  if(cross.placementParentId)continue;
   const paths=[...new Set(cross.anchorIds.map(owner))].map(ancestry);
   if(paths.length<2||paths.some(path=>!path.length||path[0]!==paths[0][0]))continue;
   let depth=0;
@@ -95,7 +106,7 @@ export function layoutGraph(data:GraphData,projection:GraphProjection):Record<st
   if(anchor)placeFreeTree(card.id,anchor.x+COLUMN,anchor.y);
  }
  // Crosses depending on other crosses wait until those anchors have positions.
- let pending=[...crosses];
+ let pending=crosses.filter(cross=>!placed.has(cross.id));
  while(pending.length){
   const ready=pending.filter(cross=>cross.anchorIds.map(owner).every(id=>positions[id]||!crossIds.has(id)));
   const batch=ready.length?ready:[pending[0]];
