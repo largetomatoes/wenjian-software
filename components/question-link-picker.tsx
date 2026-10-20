@@ -16,9 +16,9 @@ export function QuestionLinkPicker({data,selected,onChange,disabled=false,disabl
   const children=node.children.length>0||!!node.anchors?.length,unfolded=!!needle||expanded.has(node.key),checked=selected.includes(node.id),blocked=disabled||disabledIds.includes(node.id)||(!checked&&selected.length>=limit);
   const title=<><small>{node.kind==='cross'?<><Network size={12}/>{node.code} · 同时关联 {node.anchors?.length||0} 个问题</>:node.code}</small><strong>{node.title}</strong></>;
   return <div key={node.key} data-question-choice={node.id||undefined} className={'question-choice-branch '+node.kind} style={{'--choice-depth':Math.min(depth,8)} as React.CSSProperties}>
-   <div className={'question-choice-row'+(checked?' is-selected':'')} onClick={()=>{if(children)expand(node.key);}}>
+   <div className={'question-choice-row'+(checked?' is-selected':'')+(children?' is-expandable':'')} onClick={()=>{if(children)expand(node.key);}}>
     {children?<button type="button" className="question-choice-expand" aria-label={`${unfolded?'收起':'展开'}${node.title}`} aria-expanded={unfolded} onClick={e=>{e.stopPropagation();expand(node.key);}}><ChevronRight size={16}/></button>:<span className="question-choice-spacer"/>}
-    {!!node.id&&<span className="question-choice-check" onClick={e=>e.stopPropagation()}><input type="checkbox" aria-label={`关联 ${node.code} · ${node.title}`} checked={checked} disabled={blocked} onChange={()=>toggle(node.id)}/></span>}
+    {!!node.id&&<label className="question-choice-check" title="勾选这个问题" onClick={e=>e.stopPropagation()}><input type="checkbox" aria-label={`关联 ${node.code} · ${node.title}`} checked={checked} disabled={blocked} onChange={()=>toggle(node.id)}/></label>}
     {children?<button type="button" className="question-choice-title" aria-label={`${unfolded?'收起':'展开'} ${node.code} · ${node.title}`} aria-expanded={unfolded} onClick={e=>{e.stopPropagation();expand(node.key);}}>{title}</button>:<span className="question-choice-title">{title}</span>}
     {!!count(node)&&<span className="question-choice-count">已选 {count(node)}</span>}
    </div>

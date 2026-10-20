@@ -15,3 +15,5 @@
 
 .graph-svg .edge.hierarchy.is-cross-muted{opacity:.35}
 .graph-svg .edge.is-cross-tree.is-cross-muted{opacity:.6}
+
+.graph-cross-info .cross-hidden-source{min-height:28px;border:1px solid #d9cbe3;padding:4px 7px;background:#f5eef9;border-radius:5px}

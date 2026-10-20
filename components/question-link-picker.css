@@ -24,3 +24,8 @@
 .question-choice-title strong{font-weight:500}
 .question-choice-title[aria-expanded=true] strong{color:#455e44}
 .question-choice-check:has(input:disabled){opacity:.5}
+
+.question-choice-row{cursor:default}
+.question-choice-row.is-expandable{cursor:pointer}
+.question-choice-row>label.question-choice-check{display:grid!important;place-items:center;flex:none!important;width:36px;min-height:36px;padding:0!important;margin:0!important;cursor:pointer}
+.question-choice-row>label.question-choice-check:hover{background:#dee8da!important;border-radius:5px}

@@ -1,9 +1,9 @@
 import {ROOT} from './notebook';
 import {graphOwners,type GraphProjection,type GraphData} from './graph-projection';
 export type GraphPosition={x:number;y:number};
-export const GRAPH_NODE_WIDTH=260,GRAPH_NODE_HEIGHT=84,GRAPH_COLUMN=354,GRAPH_ROW=200;
+export const GRAPH_NODE_WIDTH=260,GRAPH_NODE_HEIGHT=84,GRAPH_COLUMN=308,GRAPH_ROW=144;
 export const CROSS_BADGE_WIDTH=198,CROSS_BADGE_HEIGHT=30;
-const CROSS_ROW=132;
+const CROSS_ROW=120;
 export type CrossLane={id:string;area:string;x:number;y:number;width:number;height:number;nodes:{id:string;x:number;y:number;parent:string|null}[]};
 export type QuestionRowLayout={positions:Record<string,GraphPosition>;mainIds:string[];crossOwners:Record<string,string>;lanes:Record<string,CrossLane>;input?:{data:GraphData;projection:GraphProjection}};
 
@@ -44,7 +44,7 @@ export function layoutQuestionRows(data:GraphData,projection:GraphProjection,exp
  }
  const height=(cross:{id:string;rows:number})=>expanded.has(cross.id)?GRAPH_NODE_HEIGHT+(cross.rows-1)*CROSS_ROW:CROSS_BADGE_HEIGHT;
  const visibleHeight=(row:number)=>{const group=groups.get(row)||[],opened=group.filter(c=>expanded.has(c.id)),folded=group.some(c=>!expanded.has(c.id));return opened.reduce((sum,c)=>sum+height(c),0)+(folded?CROSS_BADGE_HEIGHT:0)+Math.max(0,opened.length+(folded?1:0)-1)*24;};
- const step=(row:number)=>Math.max(GRAPH_ROW,GRAPH_NODE_HEIGHT+64+visibleHeight(row));
+ const step=(row:number)=>Math.max(GRAPH_ROW,GRAPH_NODE_HEIGHT+24+visibleHeight(row));
  // Only the opened gap grows. Subsequent rows shift as one sequence, retaining
  // every other gap; no global maximum is applied to unrelated main branches.
  const actualRows=new Map<number,number>();let y=0;

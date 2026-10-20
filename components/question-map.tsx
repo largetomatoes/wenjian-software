@@ -22,7 +22,7 @@ function boundary(from: GraphPosition, to: GraphPosition) {
 
 export const QuestionMap = memo(function QuestionMap({ data, loading, onOpen, onAddRoot, onAddQuestion, rootId = ROOT, viewKey = 'page-world', mobile = false }: { data: Notebook; loading: boolean; onOpen: (id: string) => void; onAddRoot?: () => void; onAddQuestion?:(id:string)=>void; rootId?:string;viewKey?:string;mobile?: boolean }) {
   const canvasRef = useRef<HTMLDivElement>(null);
-  const savedCamera = useMemo(()=>{try{const value=JSON.parse(localStorage.getItem('wenjian-camera:rows-v4:'+viewKey)||'null');return value&&[value.x,value.y,value.zoom].every(Number.isFinite)&&value.zoom>0?value as GraphCamera:null;}catch{return null;}},[viewKey]);
+  const savedCamera = useMemo(()=>{try{const value=JSON.parse(localStorage.getItem('wenjian-camera:rows-v5:'+viewKey)||'null');return value&&[value.x,value.y,value.zoom].every(Number.isFinite)&&value.zoom>0?value as GraphCamera:null;}catch{return null;}},[viewKey]);
   const initialized = useRef(!!savedCamera);
   const cameraRef = useRef(savedCamera||initialCamera);
   const frameRef = useRef<number | null>(null);
@@ -81,7 +81,7 @@ export const QuestionMap = memo(function QuestionMap({ data, loading, onOpen, on
     cameraRef.current = next;
     if (frameRef.current === null) frameRef.current = requestAnimationFrame(() => {
       frameRef.current = null;
-      setCamera(cameraRef.current);try{localStorage.setItem('wenjian-camera:rows-v4:'+viewKey,JSON.stringify(cameraRef.current));}catch{}
+      setCamera(cameraRef.current);try{localStorage.setItem('wenjian-camera:rows-v5:'+viewKey,JSON.stringify(cameraRef.current));}catch{}
     });
   }, [viewKey]);
 
@@ -201,7 +201,6 @@ export const QuestionMap = memo(function QuestionMap({ data, loading, onOpen, on
           }
           return <path key={edge.id} data-edge-from={edge.from} data-edge-to={edge.to} d={path} className={`edge ${edge.kind}${edge.kind==='hierarchy'&&layout.crossOwners[edge.to]?' is-cross-tree':''}${focusedCross?((edge.kind==='cross'&&edge.to===focusedCross.id)||(edge.kind==='hierarchy'&&relatedIds.has(edge.from)&&relatedIds.has(edge.to))?' is-cross-focus':' is-cross-muted'):''}`} fill="none" pointerEvents="none"><title>{edge.type}</title></path>;
         })}
-        {hiddenSources.map(source=>{const p=positions[source.owner];if(!p||!inView(p))return null;return <foreignObject key={'source:'+source.owner} x={p.x} y={p.y+CROSS_BADGE_HEIGHT+6} width={Math.max(CROSS_BADGE_WIDTH,220)} height="25"><button type="button" className="cross-hidden-source" title={`关联的是 ${source.label}；点击展开所属分支`} aria-label={`展开来源 ${source.label}`} onClick={()=>openBranch(source.owner)}>{source.label}<span>展开来源 ↗</span></button></foreignObject>;})}
         {items.map(item => {
           const position = positions[item.id];
           if (!position||!inView(position)||!expandedLayout.displayIds.has(item.id)) return null;
@@ -220,7 +219,7 @@ export const QuestionMap = memo(function QuestionMap({ data, loading, onOpen, on
       </g>
     </svg>
 
-    {focusedCross&&<div className="graph-cross-stack"><div className="graph-cross-info"><strong>{crossNumber(focusedCross)} · {focusedCross.anchorIds.length} 个关联</strong><button type="button" onClick={()=>setShowSources(v=>!v)}>查看来源</button><button type="button" onClick={()=>onOpen(focusedCross.id)}>打开思考</button><button type="button" aria-label="取消交叉高亮" onClick={()=>{setCrossFocus(null);setShowSources(false);}}>×</button></div>
+    {focusedCross&&<div className="graph-cross-stack"><div className="graph-cross-info"><strong>{crossNumber(focusedCross)} · {focusedCross.anchorIds.length} 个关联</strong><button type="button" onClick={()=>setShowSources(v=>!v)}>查看来源</button><button type="button" onClick={()=>onOpen(focusedCross.id)}>打开思考</button>{hiddenSources.map(source=><button key={source.owner} type="button" className="cross-hidden-source" aria-label={`展开来源 ${source.label}`} onClick={()=>openBranch(source.owner)}>展开来源 {source.label} ↗</button>)}<button type="button" aria-label="取消交叉高亮" onClick={()=>{setCrossFocus(null);setShowSources(false);}}>×</button></div>
     {showSources&&<aside className="graph-cross-focus"><header><strong>{focusedCross.title||'交叉思考'}</strong><button type="button" aria-label="关闭交叉路径预览" onClick={()=>setShowSources(false)}>×</button></header><CrossConnections data={data} cross={focusedCross} onOpen={onOpen}/></aside>}</div>}
 
     {loading && <div className="map-loading"><Loader2 className="spin" />读取中</div>}
