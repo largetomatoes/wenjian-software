@@ -85,5 +85,20 @@
     "checks": 3,
     "errors": []
   },
-  "note": "Persistent user-specific white screen not reliably reproduced; guarded reader saving/close/focus/animation/highlight lifecycle and verified the reported action sequence."
+  "note": "Persistent user-specific white screen not reliably reproduced; guarded reader saving/close/focus/animation/highlight lifecycle and verified the reported action sequence.",
+  "installation": {
+    "path": "/Applications/问间.app",
+    "version": "3.14",
+    "displayBuild": "330.1",
+    "build": "331",
+    "gracefulQuit": true,
+    "preReplacementBackup": true,
+    "postQuitBackup": true,
+    "recordCountsUnchanged": true,
+    "draftSha256Unchanged": true,
+    "allLocalBookSha256Unchanged": true,
+    "noteContentUnchanged": true,
+    "sourceBranch": "codex/mac-331",
+    "published": false
+  }
 }
