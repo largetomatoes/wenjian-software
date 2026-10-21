@@ -17,16 +17,30 @@ function Check($condition,$label){if(-not $condition){throw $label};$script:repo
 function InstallSetup { Write-Host 'Starting silent setup';$process=Start-Process -FilePath $setup[0].FullName -ArgumentList @('/S',('/D='+$installed)) -PassThru;if(-not $process.WaitForExit(180000)){Get-Process|Select-Object Id,ProcessName,MainWindowTitle|ConvertTo-Json|Set-Content (Join-Path $artifacts 'windows-process-report.json');Stop-Process -Id $process.Id -Force;throw 'Setup timed out after 180 seconds'};return $process }
 function Launch($exe){
  $app=Start-Process -FilePath $exe -ArgumentList '--remote-debugging-port=0' -PassThru
+ Write-Host ('Launching application PID '+$app.Id)
  for($i=0;$i -lt 120;$i++){
   Start-Sleep -Milliseconds 500
   $ports=@(Get-NetTCPConnection -State Listen -OwningProcess $app.Id -ErrorAction SilentlyContinue)
   foreach($entry in $ports){try{$origin='http://127.0.0.1:'+$entry.LocalPort;$info=Invoke-RestMethod ($origin+'/api/app/info') -TimeoutSec 2;if($info.platform -eq 'win32'){return @{app=$app;origin=$origin;info=$info}}}catch{}}
  }
+ Get-CimInstance Win32_Process | Where-Object {$_.Name -eq 'Wenjian.exe'} | Select-Object ProcessId,ParentProcessId,ExecutablePath,CommandLine | ConvertTo-Json | Set-Content (Join-Path $artifacts 'windows-startup-process-report.json') -Encoding UTF8
+ Get-NetTCPConnection -State Listen | Select-Object LocalPort,OwningProcess | ConvertTo-Json | Set-Content (Join-Path $artifacts 'windows-startup-network-report.json') -Encoding UTF8
  throw 'Installed application server did not start'
 }
-function CloseApp($app){$null=$app.CloseMainWindow();if(-not $app.WaitForExit(10000)){Stop-Process -Id $app.Id -Force;$app.WaitForExit()};Start-Sleep -Seconds 2}
+function CloseApp($app){
+ $app.Refresh()
+ $null=$app.CloseMainWindow()
+ if(-not $app.WaitForExit(30000)){
+  Get-CimInstance Win32_Process | Where-Object {$_.Name -eq 'Wenjian.exe'} | Select-Object ProcessId,ParentProcessId,ExecutablePath,CommandLine | ConvertTo-Json | Set-Content (Join-Path $artifacts 'windows-exit-process-report.json') -Encoding UTF8
+  throw 'Application did not finish saving and exit normally'
+ }
+ Start-Sleep -Seconds 2
+}
 try{
  New-Item -ItemType Directory -Force $data | Out-Null
+ # Select the existing supported exit behavior; do not kill the main process
+ # while Chromium children and the profile lock may still be active.
+ [IO.File]::WriteAllText((Join-Path $data 'tray-config.json'),'{"choiceVersion":2,"closeToTray":false}',[Text.UTF8Encoding]::new($false))
  $fixture=Get-Content 'work/mac-app/seed.json' -Raw -Encoding UTF8 | ConvertFrom-Json
  $fixture.data.setupCompleted=$true
  $fixture.data.notes[0].title='虚构 Windows 安装测试'
