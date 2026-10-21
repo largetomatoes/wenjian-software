@@ -1,4 +1,4 @@
-> 当前发布：3.141 / 内部构建 336。Mac 和 Windows 共用桌面源代码；Android 与 iPhone/iPad Web App 共用阅读与资料模型。插件恢复模型位于 `lib/plugin-model.cjs`，移动端适配位于 `lib/portable-plugins.ts`。手机/平板不运行电脑版沙箱或本机程序。
+> 当前发布：3.141 / 内部构建 338。Mac 和 Windows 共用桌面源代码；Android 与 iPhone/iPad Web App 共用阅读与资料模型。插件恢复模型位于 `lib/plugin-model.cjs`，移动端适配位于 `lib/portable-plugins.ts`。手机/平板不运行电脑版沙箱或本机程序。
 
 # 对应源码、构建与再发行
 

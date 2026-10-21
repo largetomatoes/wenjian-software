@@ -7,7 +7,7 @@ android {
         applicationId "com.wenjian.reader"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 336
+        versionCode 338
         versionName "3.141"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {

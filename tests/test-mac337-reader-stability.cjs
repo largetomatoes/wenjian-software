@@ -2,7 +2,7 @@
 const fs=require('node:fs'),path=require('node:path'),assert=require('node:assert/strict');
 const {_electron}=require(process.env.PLAYWRIGHT_MODULE||'playwright'),sharp=require('sharp');
 const {PDFDocument,StandardFonts}=require('../work/mac-app/node_modules/pdf-lib');
-const root=path.resolve(__dirname,'..'),baseline=process.argv.includes('--baseline'),out=path.join(root,'outputs/mac337'),label=baseline?'baseline336':'fixed337';
+const root=path.resolve(__dirname,'..'),baseline=process.argv.includes('--baseline'),out=path.join(root,process.env.WENJIAN_TEST_OUTPUT||'outputs/mac337'),label=process.env.WENJIAN_TEST_LABEL||(baseline?'baseline336':'fixed337');
 async function run(){
  fs.mkdirSync(out,{recursive:true});const dir=fs.mkdtempSync('/tmp/wenjian337-reader-');fs.mkdirSync(path.join(dir,'library'));
  const pdf=await PDFDocument.create(),font=await pdf.embedFont(StandardFonts.Helvetica);pdf.addPage([595,842]).drawText('Native PDF anchor. Reading connects ideas.',{x:40,y:750,size:16,font});

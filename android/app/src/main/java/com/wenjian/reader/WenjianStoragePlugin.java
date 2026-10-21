@@ -38,11 +38,9 @@ public class WenjianStoragePlugin extends Plugin {
     private void run(ExecutorService pool,PluginCall call,Task task){pool.execute(()->{try{call.resolve(task.run());}catch(OutOfMemoryError error){SyncDiagnostics.hold(getContext(),true);SyncDiagnostics.failure(getContext(),"native-memory",error);call.reject("处理资料时内存不足，原资料仍保留。请导出同步诊断。", "MEMORY_PRESSURE");}catch(Exception error){SyncDiagnostics.failure(getContext(),"native-request",error);call.reject(error.getMessage()==null?"操作未完成":error.getMessage());}});}
     private static byte[] read(InputStream stream,long max)throws Exception{try(InputStream in=stream;ByteArrayOutputStream out=new ByteArrayOutputStream()){byte[] buffer=new byte[65536];int n;long total=0;while((n=in.read(buffer))!=-1){total+=n;if(total>max)throw new IOException("文件超出读取限额");out.write(buffer,0,n);}return out.toByteArray();}}
     private void atomic(File target,byte[] bytes)throws Exception{AtomicFile file=new AtomicFile(target);FileOutputStream out=null;try{out=file.startWrite();out.write(bytes);file.finishWrite(out);}catch(Exception error){if(out!=null)file.failWrite(out);throw error;}}
-    @PluginMethod public void appReleases(PluginCall call){run(network,call,()->{
-        HttpsURLConnection conn=(HttpsURLConnection)new URL("https://api.github.com/repos/largetomatoes/wenjian-software/releases?per_page=30").openConnection();
-        conn.setConnectTimeout(8000);conn.setReadTimeout(8000);conn.setInstanceFollowRedirects(false);conn.setRequestProperty("User-Agent","Wenjian-Update-Check");conn.setRequestProperty("Accept","application/vnd.github+json");
-        try{int status=conn.getResponseCode();if(status!=200)throw new IOException(status==403||status==429?"更新检查达到访问限额，请稍后重试。":"未能读取正式发布信息，请稍后重试。");JSONArray releases=new JSONArray(new String(read(conn.getInputStream(),4L*1024*1024),StandardCharsets.UTF_8));return new JSObject().put("releases",releases);}catch(SocketTimeoutException e){throw new IOException("连接发布服务器超时，请稍后重试。");}finally{conn.disconnect();}
-    });}
+    private AppReleaseIndex releaseIndex;
+    private synchronized AppReleaseIndex releaseIndex(){if(releaseIndex==null)releaseIndex=new AppReleaseIndex(new File(getContext().getCacheDir(),"wenjian-updates/releases.json"));return releaseIndex;}
+    @PluginMethod public void appReleases(PluginCall call){run(network,call,()->new JSObject().put("releases",releaseIndex().releases(call.getBoolean("manual",false))));}
     @PluginMethod public void openExternalTool(PluginCall call){
         String value=call.getString("url");
         try{if(value==null||value.length()>2048)throw new Exception();URI uri=new URI(value);String host=uri.getHost();boolean local="http".equals(uri.getScheme())&&("localhost".equals(host)||"127.0.0.1".equals(host)||"[::1]".equals(host));if(host==null||uri.getUserInfo()!=null||!("https".equals(uri.getScheme())||local))throw new Exception();

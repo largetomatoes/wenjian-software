@@ -78,6 +78,10 @@ const legacy330={exports:{}};
 vm.runInNewContext(ts.transpileModule(execFileSync('git',['show','ec5f09a:lib/app-updates.ts'],{encoding:'utf8'}),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText,{module:legacy330,exports:legacy330.exports,URL});
 const releaseRoot='https://github.com/largetomatoes/wenjian-software/releases';
 const mac337={tag_name:'v3.141-build337',html_url:releaseRoot+'/tag/v3.141-build337',body:'<!-- wenjian-build:337 -->\n<!-- wenjian-platforms:darwin -->',assets:[{name:'Wenjian-3.141-build337-macOS-arm64.zip',state:'uploaded',browser_download_url:releaseRoot+'/download/v3.141-build337/Wenjian-3.141-build337-macOS-arm64.zip'}]};
-const publicReleases=JSON.parse(fs.readFileSync('updates/releases.json','utf8')).releases;
+const publicReleases=JSON.parse(fs.readFileSync('updates/releases.json','utf8')).releases.filter(r=>module.exports.releaseBuild(r)<=336);
 for(const [platform,arch,build]of [['darwin','arm64',337],['win32','x64',336],['android','universal',336]]){const result=legacy330.exports.selectUpdate([mac337,...publicReleases],{platform,arch,version:'3.14',build:'330'});assert.equal(result.state,'available');assert.equal(result.build,build);}
 console.log('PASS: actual public 330 finds Mac 337, Windows/Android 336 with platform-specific patches');
+
+const all338={...mac337,tag_name:'v3.141-build338',html_url:releaseRoot+'/tag/v3.141-build338',body:'<!-- wenjian-build:338 -->\n<!-- wenjian-platforms:darwin,win32,android -->',assets:['macOS-arm64.zip','Windows-x64.zip','Android.apk'].map(suffix=>({name:'Wenjian-3.141-build338-'+suffix,state:'uploaded',browser_download_url:releaseRoot+'/download/v3.141-build338/Wenjian-3.141-build338-'+suffix}))};
+for(const [platform,arch]of [['darwin','arm64'],['win32','x64'],['android','universal']]){const result=legacy330.exports.selectUpdate([all338,mac337,...publicReleases],{platform,arch,version:'3.141',build:'336'});assert.equal(result.state,'available');assert.equal(result.build,338);}
+console.log('PASS: one full 338 release is discoverable on all native platforms');

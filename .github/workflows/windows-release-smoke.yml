@@ -45,9 +45,12 @@ jobs:
             gh release download $env:RELEASE_TAG --repo $env:GITHUB_REPOSITORY --pattern '*Windows-x64-Setup.exe' --pattern '*Windows-x64.zip' --dir package-test
             if ($LASTEXITCODE -ne 0) { throw 'Release download failed' }
           }
+      - name: Preserve Windows graphics defaults and preferences
+        shell: pwsh
+        run: node --test tests/test-windows-performance-settings.cjs
       - name: Install, replace existing installation, launch and preserve data through uninstall
         shell: pwsh
-        run: ./scripts/test-windows-install.ps1 -ArtifactDirectory package-test
+        run: ./scripts/test-windows-install.ps1 -ArtifactDirectory package-test -InstallDirectory (Join-Path $env:RUNNER_TEMP 'Wenjian Custom Install')
       - uses: actions/upload-artifact@v4
         if: always()
         with:

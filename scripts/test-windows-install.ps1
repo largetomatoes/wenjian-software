@@ -1,4 +1,4 @@
-param([Parameter(Mandatory=$true)][string]$ArtifactDirectory)
+param([Parameter(Mandatory=$true)][string]$ArtifactDirectory,[string]$InstallDirectory)
 $ErrorActionPreference='Stop'
 & node --test tests/test-plugin-system.cjs
 if($LASTEXITCODE -ne 0){throw 'Native plugin program checks failed'}
@@ -9,12 +9,12 @@ if($setup.Count -ne 1 -or $zip.Count -ne 1){throw 'Exactly one installer and upd
 $expectedVersion=[regex]::Match($setup[0].Name,'^Wenjian-([0-9.]+)-build').Groups[1].Value
 $expectedBuild=[int]([regex]::Match($setup[0].Name,'-build([0-9]+)-').Groups[1].Value)
 if($expectedBuild -lt 1){throw 'Invalid build in installer filename'}
-$installed=Join-Path $env:LOCALAPPDATA 'Programs\Wenjian'
+$installed=if($InstallDirectory){[IO.Path]::GetFullPath($InstallDirectory)}else{Join-Path $env:LOCALAPPDATA 'Programs\Wenjian'}
 $data=Join-Path $env:APPDATA '问间'
 if((Test-Path $installed) -or (Test-Path $data)){throw 'This test requires an empty disposable Windows runner'}
 $report=[ordered]@{platform='Windows';installer=$setup[0].Name;checks=@()}
 function Check($condition,$label){if(-not $condition){throw $label};$script:report.checks+=@($label);Write-Output ('PASS: '+$label);$script:report|ConvertTo-Json -Depth 20|Set-Content (Join-Path $artifacts 'windows-install-report.json') -Encoding UTF8}
-function InstallSetup { Write-Host 'Starting silent setup';$process=Start-Process -FilePath $setup[0].FullName -ArgumentList '/S' -PassThru;if(-not $process.WaitForExit(180000)){Get-Process|Select-Object Id,ProcessName,MainWindowTitle|ConvertTo-Json|Set-Content (Join-Path $artifacts 'windows-process-report.json');Stop-Process -Id $process.Id -Force;throw 'Setup timed out after 180 seconds'};return $process }
+function InstallSetup { Write-Host 'Starting silent setup';$process=Start-Process -FilePath $setup[0].FullName -ArgumentList @('/S',('/D='+$installed)) -PassThru;if(-not $process.WaitForExit(180000)){Get-Process|Select-Object Id,ProcessName,MainWindowTitle|ConvertTo-Json|Set-Content (Join-Path $artifacts 'windows-process-report.json');Stop-Process -Id $process.Id -Force;throw 'Setup timed out after 180 seconds'};return $process }
 function Launch($exe){
  $app=Start-Process -FilePath $exe -ArgumentList '--remote-debugging-port=0' -PassThru
  for($i=0;$i -lt 120;$i++){

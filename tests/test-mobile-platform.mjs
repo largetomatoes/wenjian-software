@@ -35,6 +35,7 @@ function device({android=false,initial}={}){
  if(initial)state.store=initial;
  state.bridge={maxReadBytes:0,maxWriteChars:0,reads:0,writes:0};let readBytes,readOffset=0,staged=[];
  const native={
+  appReleases:async input=>{state.releaseChecks??=[];state.releaseChecks.push(input);return {releases:[]};},
   beginStoreRead:async()=>{readBytes=Buffer.from(JSON.stringify(state.store));readOffset=0;return {exists:true,id:"reader",size:readBytes.length};},
   readStoreChunk:async()=>{const b=readBytes.subarray(readOffset,readOffset+65536);readOffset+=b.length;state.bridge.maxReadBytes=Math.max(state.bridge.maxReadBytes,b.length);state.bridge.reads++;return {data:b.toString("base64"),done:!b.length};},
   endStoreRead:async()=>{readBytes=undefined},
@@ -189,4 +190,11 @@ test('Android plugin maintenance uses the actual bounded storage adapter and kee
  let store=await phone.module.mobileSnapshot();assert.equal(store.data.libraryBooks.length,0);assert.equal(store.drafts.reader.text,'未保存的草稿');
  const restored=await phone.api('/api/plugins',{action:'undo',id:applied.body.recoveryId});assert(restored.body.restored);
  store=await phone.module.mobileSnapshot();assert.equal(store.data.libraryBooks[0].id,'book-1');assert(phone.bridge.maxWriteChars<=49152);
+});
+
+test('Android forwards manual refresh to its native multi-source release client',async()=>{
+ const phone=device({android:true});
+ assert.equal((await phone.api('/api/app/releases')).status,200);
+ assert.equal((await phone.api('/api/app/releases?manual=1')).status,200);
+ assert.deepEqual(phone.releaseChecks.map(x=>x.manual),[false,true]);
 });
