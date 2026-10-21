@@ -3,9 +3,11 @@ import {graphOwners,type GraphProjection,type GraphData} from './graph-projectio
 export type GraphPosition={x:number;y:number};
 export const GRAPH_NODE_WIDTH=260,GRAPH_NODE_HEIGHT=84,GRAPH_COLUMN=308,GRAPH_ROW=144;
 export const CROSS_BADGE_WIDTH=198,CROSS_BADGE_HEIGHT=30;
+export const CROSS_VERTICAL_WIDTH=32,CROSS_VERTICAL_HEIGHT=76;
 const CROSS_ROW=120;
+export type CrossBadge={x:number;y:number;width:number;height:number;orientation:'horizontal'|'vertical';nearId?:string};
 export type CrossLane={id:string;area:string;x:number;y:number;width:number;height:number;nodes:{id:string;x:number;y:number;parent:string|null}[]};
-export type QuestionRowLayout={positions:Record<string,GraphPosition>;mainIds:string[];crossOwners:Record<string,string>;lanes:Record<string,CrossLane>;input?:{data:GraphData;projection:GraphProjection}};
+export type QuestionRowLayout={positions:Record<string,GraphPosition>;mainIds:string[];crossOwners:Record<string,string>;lanes:Record<string,CrossLane>;badges:Record<string,CrossBadge>;input?:{data:GraphData;projection:GraphProjection}};
 
 /** A folded crossing occupies only its badge. An opened tree reserves its
  * complete sibling rows inside that gap. Only that gap grows; later rows shift
@@ -34,7 +36,11 @@ export function layoutQuestionRows(data:GraphData,projection:GraphProjection,exp
  // Infer a source's row through its actual parent/cross, including deep sources.
  const rowMemo=new Map<string,number>(),xMemo=new Map<string,number>();
  function sourceRow(key:string,seen=new Set<string>()):number{key=owners.get(key)||key;if(ordinary[key])return ordinary[key].row;if(seen.has(key))return 0;if(rowMemo.has(key))return rowMemo.get(key)!;const next=new Set([...seen,key]),note=notes.get(key),cross=crossMap.get(key);const value=note?.parent?sourceRow(note.parent,next):cross?.anchorIds.length?cross.anchorIds.reduce((sum,id)=>sum+sourceRow(id,next),0)/cross.anchorIds.length:0;rowMemo.set(key,value);return value;}
- function sourceX(key:string,seen=new Set<string>()):number{key=owners.get(key)||key;if(ordinary[key])return ordinary[key].x;if(seen.has(key))return GRAPH_COLUMN;if(xMemo.has(key))return xMemo.get(key)!;const next=new Set([...seen,key]),note=notes.get(key),cross=crossMap.get(key);const value=note?.parent?sourceX(note.parent,next)+GRAPH_COLUMN:cross?.anchorIds.length?GRAPH_COLUMN*Math.max(1,Math.round(cross.anchorIds.reduce((sum,id)=>sum+sourceX(id,next),0)/cross.anchorIds.length/GRAPH_COLUMN)):GRAPH_COLUMN;xMemo.set(key,value);return value;}
+ // Use the actual vacant gap, rather than moving every crossing one column
+ // beyond its deepest source. A centre already occupied by a same-column
+ // question gets a side marker and an opened tree in the adjacent column.
+ function centreObstacle(id:string){const cross=crossMap.get(id),anchors=cross?.anchorIds.map(key=>ordinary[owners.get(key)||key]);if(!anchors?.length||anchors.some(p=>!p))return undefined;const first=anchors[0];if(anchors.some(p=>p.x!==first.x))return undefined;const row=anchors.reduce((sum,p)=>sum+p.row,0)/anchors.length;return mainIds.find(key=>key!==rootId&&ordinary[key].x===first.x&&Math.abs(ordinary[key].row-row)<.01);}
+ function sourceX(key:string,seen=new Set<string>()):number{key=owners.get(key)||key;if(ordinary[key])return ordinary[key].x;if(seen.has(key))return GRAPH_COLUMN;if(xMemo.has(key))return xMemo.get(key)!;const next=new Set([...seen,key]),note=notes.get(key),cross=crossMap.get(key);const value=note?.parent?sourceX(note.parent,next)+GRAPH_COLUMN:cross?.anchorIds.length?Math.max(...cross.anchorIds.map(id=>sourceX(id,next)))+(centreObstacle(key)?GRAPH_COLUMN:0):GRAPH_COLUMN;xMemo.set(key,value);return value;}
  const groups=new Map<number,{id:string;x:number;rows:number;nodes:CrossLane['nodes']}[]>();
  for(const cross of crosses){
   const row=sourceRow(cross.id),slot=rowIds.reduce((best,r)=>Math.abs(r+.5-row)<Math.abs(best+.5-row)?r:best,rowIds[0]);
@@ -60,7 +66,16 @@ export function layoutQuestionRows(data:GraphData,projection:GraphProjection,exp
   for(const cross of opened){assign(cross,cross.x,top);top+=height(cross)+24;}
  }
  for(const id of projection.visibleIds)if(!positions[id]){positions[id]={x:GRAPH_COLUMN,y};y+=GRAPH_ROW;mainIds.push(id);}
- return{positions,mainIds,crossOwners,lanes,input:{data,projection}};
+ const badges:Record<string,CrossBadge>={};
+ for(const cross of crosses)if(!expanded.has(cross.id)){const p=positions[cross.id];badges[cross.id]={x:p.x+(GRAPH_NODE_WIDTH-CROSS_BADGE_WIDTH)/2,y:p.y+(GRAPH_NODE_HEIGHT-CROSS_BADGE_HEIGHT)/2,width:CROSS_BADGE_WIDTH,height:CROSS_BADGE_HEIGHT,orientation:'horizontal'};}
+ // The upper-right corner leaves the ordinary question's centre exit free.
+ // Check real rectangles: a busy gutter falls back to the vacant horizontal
+ // gap instead of stacking vertical badges or covering a neighbouring card.
+ for(const cross of crosses){const nearId=centreObstacle(cross.id);if(!badges[cross.id]||!nearId)continue;const p=positions[nearId],candidate:CrossBadge={x:p.x+GRAPH_NODE_WIDTH+8,y:p.y+GRAPH_NODE_HEIGHT/2-CROSS_VERTICAL_HEIGHT-10,width:CROSS_VERTICAL_WIDTH,height:CROSS_VERTICAL_HEIGHT,orientation:'vertical',nearId};const overlap=(b:{x:number;y:number;width:number;height:number})=>candidate.x<b.x+b.width+3&&candidate.x+candidate.width+3>b.x&&candidate.y<b.y+b.height+3&&candidate.y+candidate.height+3>b.y;
+  if(mainIds.some(id=>overlap({...positions[id],width:GRAPH_NODE_WIDTH,height:GRAPH_NODE_HEIGHT}))||Object.values(lanes).some(lane=>expanded.has(lane.id)&&lane.nodes.some(n=>overlap({...positions[n.id],width:GRAPH_NODE_WIDTH,height:GRAPH_NODE_HEIGHT})))||Object.entries(badges).some(([id,b])=>id!==cross.id&&overlap(b)))continue;
+  badges[cross.id]=candidate;
+ }
+ return{positions,mainIds,crossOwners,lanes,badges,input:{data,projection}};
 }
 export function layoutGraph(data:GraphData,projection:GraphProjection){return layoutQuestionRows(data,projection).positions;}
 
@@ -72,7 +87,7 @@ export function expandCrossRows(layout:QuestionRowLayout,expandedIds:Iterable<st
  for(const lane of Object.values(layout.lanes)){
   displayIds.add(lane.id);
   if(expanded.has(lane.id)){for(const node of lane.nodes){displayIds.add(node.id);sizes[node.id]={width:GRAPH_NODE_WIDTH,height:GRAPH_NODE_HEIGHT};}bands.push({id:lane.id,x:lane.x,y:lane.y,width:lane.width,height:lane.height});}
-  else{positions[lane.id]={x:positions[lane.id].x+(GRAPH_NODE_WIDTH-CROSS_BADGE_WIDTH)/2,y:positions[lane.id].y+(GRAPH_NODE_HEIGHT-CROSS_BADGE_HEIGHT)/2};sizes[lane.id]={width:CROSS_BADGE_WIDTH,height:CROSS_BADGE_HEIGHT};}
+  else{const badge=layout.badges[lane.id];positions[lane.id]={x:badge.x,y:badge.y};sizes[lane.id]={width:badge.width,height:badge.height};}
  }
- return{positions,displayIds,sizes,expanded,bands};
+ return{positions,displayIds,sizes,expanded,bands,badges:layout.badges};
 }

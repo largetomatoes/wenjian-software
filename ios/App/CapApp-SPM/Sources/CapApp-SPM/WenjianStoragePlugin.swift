@@ -13,6 +13,7 @@ public class WenjianStoragePlugin: CAPPlugin, CAPBridgedPlugin, UIDocumentPicker
     public let pluginMethods: [CAPPluginMethod] = [
         CAPPluginMethod(name: "appReleases", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "openRelease", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "openExternalTool", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "readStore", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "writeStore", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "bookInfo", returnType: CAPPluginReturnPromise),
@@ -309,6 +310,18 @@ public class WenjianStoragePlugin: CAPPlugin, CAPBridgedPlugin, UIDocumentPicker
                 }
             }.resume()
         }
+    }
+
+    @objc func openExternalTool(_ call: CAPPluginCall) {
+        guard let value = call.getString("url"), value.count <= 2048, let url = URL(string: value), let host = url.host,
+              url.user == nil, url.password == nil,
+              url.scheme == "https" || (url.scheme == "http" && ["localhost", "127.0.0.1", "::1", "[::1]"].contains(host)) else {
+            call.reject("外部工具链接无效。")
+            return
+        }
+        DispatchQueue.main.async { UIApplication.shared.open(url, options: [:]) { opened in
+            if opened { call.resolve(["ok": true]) } else { call.reject("未能打开外部工具。") }
+        } }
     }
 
     @objc func openRelease(_ call: CAPPluginCall) {

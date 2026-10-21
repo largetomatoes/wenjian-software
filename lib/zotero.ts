@@ -185,7 +185,7 @@ export function mergeZoteroCatalog(data:Notebook,catalog:ZoteroCatalog):{data:No
    serverId:catalog.serverId,library:catalog.library||'users/0',itemKey:item.itemKey,
    attachmentKey:retainedAttachment||item.attachmentKey,itemVersion:item.itemVersion,itemType:item.itemType,
    title:item.title,sourceFile:item.storedFile||oldSource?.sourceFile,author:item.author,date:item.date,publisher:item.publisher,doi:item.doi,isbn:item.isbn,
-   collections:[...new Set(item.collections)].sort(),
+   collections:[...new Set(item.collections)].filter(key=>!ignored.has(collectionIdentity(catalog.serverId,key))).sort(),
    annotations:mergeAnnotations(oldSource?.annotations||[],item.annotations),sourceAvailable:item.sourceAvailable!==false,
   };
   if(previous){
@@ -208,7 +208,7 @@ export function mergeZoteroCatalog(data:Notebook,catalog:ZoteroCatalog):{data:No
  // complete snapshot and removes this source's obsolete collection definitions.
  const collections=catalog.collections===undefined?data.zoteroCollections:normalizeZoteroCollections([
   ...(data.zoteroCollections||[]).filter(collection=>collection.serverId!==catalog.serverId),
-  ...catalog.collections.map(collection=>({...collection,serverId:catalog.serverId})),
+  ...catalog.collections.filter(collection=>!ignored.has(collectionIdentity(catalog.serverId,collection.key))).map(collection=>({...collection,serverId:catalog.serverId})),
  ]);
  const collectionsChanged=catalog.collections!==undefined&&!equal(normalizeZoteroCollections(data.zoteroCollections),collections||[]);
  const changed=added+updated>0||collectionsChanged;

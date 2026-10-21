@@ -1,3 +1,4 @@
+import {UniversalDeleteButton} from '../components/universal-delete';
 import {CrossConnections} from '../components/cross-connections';
 import {MobileQuestionEditor} from './question-editor';
 import {cardQuestion} from '../lib/card-collection';
@@ -41,7 +42,7 @@ export function MobileQuestions({ data, graphData=data,rootId=ROOT,viewKey,selec
     {query.trim() ? <div className="mobile-board-results">{matches.map(item => row(item.id))}{!matches.length && <p>没有找到相关问题</p>}</div> : <div className="mobile-map-frame"><QuestionMap key={viewKey} viewKey={viewKey} rootId={rootId} data={graphData} loading={false} onOpen={onSelect} mobile/></div>}
     <Dialog open={!!item} onOpenChange={open => { if (!open) onSelect(null); }}><DialogContent className="mobile-question-dialog" showCloseButton={false}>
       <header className="mobile-detail-header"><button type="button" aria-label="返回关系图" onClick={() => onSelect(null)}><ArrowLeft size={22}/></button><div><DialogDescription>{selected && boardLabel(data, selected)}</DialogDescription><DialogTitle>{selected && itemText(data, selected)}</DialogTitle></div></header>
-      <div className="mobile-question-scroll" key={selected}>
+      <div className="mobile-question-scroll" key={selected}>{selected&&<UniversalDeleteButton showLabel target={{kind:cross?'cross':card?'card':'question',id:selected}} label="当前记录"/>}
         {(note?.body || cross?.text || card?.text) && <section className="mobile-original"><h3>最初记录</h3><p>{note?.body || cross?.text || card?.text}</p>{item?.origin && <small>{item.origin}</small>}{item?.source && <small>来源：{item.source}</small>}</section>}
         {cross&&<CrossConnections data={data} cross={cross} onOpen={onSelect}/>}
         {note?.parent && row(note.parent)}
@@ -50,7 +51,7 @@ export function MobileQuestions({ data, graphData=data,rootId=ROOT,viewKey,selec
         {(note || cross) && <ReadingNotes data={data} questionId={selected} saving={saving} save={save} onOpenBook={openBook}/>}
         <section className="mobile-thoughts"><h3>后来想到的 <small>{item?.thoughts?.length || 0}</small></h3>{item?.thoughts?.map(thought => {
           const reply = data.thoughtReplies.find(item => item.thoughtId === thought.id);
-          return <article key={thought.id}><small>{new Date(thought.at).toLocaleString('zh-CN')} · {thought.origin}</small><p>{thought.text}</p>{thought.reason && <aside>修改原因：{thought.reason}</aside>}{reply && <aside><small>我的回答 · {new Date(reply.at).toLocaleString('zh-CN')}</small><p>{reply.text}</p></aside>}</article>;
+          return <article key={thought.id}><UniversalDeleteButton target={{kind:'thought',id:thought.id}} label="这条思考"/><small>{new Date(thought.at).toLocaleString('zh-CN')} · {thought.origin}</small><p>{thought.text}</p>{thought.reason && <aside>修改原因：{thought.reason}</aside>}{reply && <aside><small>我的回答 · {new Date(reply.at).toLocaleString('zh-CN')}</small><p>{reply.text}</p></aside>}</article>;
         })}{!item?.thoughts?.length && <p className="mobile-muted">暂无后续思考</p>}</section>
         {selected&&<MobileQuestionEditor key={selected} data={data} id={selected} saving={saving} save={save}/>}
         {!!note?.revisions.length && <details className="mobile-revisions"><summary>修改记录 · {note.revisions.length}</summary>{note.revisions.map((revision, index) => <article key={index}><small>{new Date(revision.at).toLocaleString('zh-CN')}</small><h4>{revision.title}</h4><p>{revision.body}</p><aside>{revision.reason}</aside></article>)}</details>}

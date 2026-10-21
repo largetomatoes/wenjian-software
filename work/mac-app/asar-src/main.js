@@ -16,6 +16,8 @@ const fsp = require('node:fs/promises');
 const http = require('node:http');
 const path = require('node:path');
 const crypto = require('node:crypto');
+// Only the host webContents receives this process-local credential. Plugin sessions never do.
+const hostApiToken=crypto.randomBytes(32).toString('hex');
 const { URL } = require('node:url');
 let pdfExporter;
 const createAnnotatedPdf=(...args)=>{pdfExporter??=require('./pdf-export');return pdfExporter.createAnnotatedPdf(...args);};
@@ -833,23 +835,37 @@ async function handleAppUpdates(request,response,url){
   }catch(error){return jsonReply(response,500,{error:error.message||'更新检查未完成'});}
 }
 
-let pluginsManager;
+let pluginsManager,pluginsRuntime;
 function localPlugins(){return pluginsManager??=require('./plugin-manager.cjs').createPluginManager({directory:app.getPath('userData'),resources:process.resourcesPath,build:Number(require('./package.json').buildVersion),openExternal:url=>shell.openExternal(url),copyText:text=>clipboard.writeText(text)});}
+function pluginRuntime(){return pluginsRuntime??=require('./plugin-runtime.cjs').createPluginRuntime({electron:require('electron'),manager:localPlugins(),directory:app.getPath('userData'),owner:()=>mainWindow,readStore,serialize:serializeNotebook,writeStore,checkpoint:checkpointLocalData,validate:validNotebookData,notebookPath:()=>dataPath,localPort:()=>localPort,prepareHost:async()=>{if(restoringBackup||cloudBusy)throw Error('另一项资料操作仍在执行，请稍后再试。');if(mainWindow&&!mainWindow.isDestroyed()){const ready=await mainWindow.webContents.executeJavaScript('window.__wenjianPrepareClose ? window.__wenjianPrepareClose() : Promise.resolve(true)');if(ready===false)throw Error('请先保存当前草稿，再处理插件修改。');}await draftQueue;await notebookQueue;},onReview:(id,open)=>{if(mainWindow&&!mainWindow.isDestroyed()){mainWindow.show();mainWindow.focus();void mainWindow.webContents.executeJavaScript('window.dispatchEvent(new CustomEvent('+JSON.stringify(open?'wenjian:plugin-review':'wenjian:plugin-review-closed')+',{detail:'+JSON.stringify({id})+'}))').catch(()=>{});}},onChanged:()=>{if(mainWindow&&!mainWindow.isDestroyed())void mainWindow.webContents.executeJavaScript("fetch('/api/notebook').then(r=>r.json()).then(value=>window.dispatchEvent(new CustomEvent('wenjian-sync-updated',{detail:value})))").catch(()=>{});}});}
 async function handlePlugins(request,response,url){
  const origin=`http://127.0.0.1:${localPort}`;
  if(process.platform!=='darwin')return jsonReply(response,404,{error:'此插件接口当前仅用于 Mac。'});
  if(request.headers.host!==`127.0.0.1:${localPort}`||(request.headers.origin&&request.headers.origin!==origin)||request.headers['sec-fetch-site']==='cross-site')return jsonReply(response,403,{error:'来源不匹配'});
  try{
   const manager=localPlugins();
-  if(request.method==='GET'){if(url.pathname==='/api/plugins/invoke')return jsonReply(response,405,{error:'请主动选择文本后调用插件。'});if(url.searchParams.has('guide'))return jsonReply(response,200,{guide:await manager.guide()});return jsonReply(response,200,await manager.list(url.searchParams.get('refresh')==='1'));}
+  if(request.method==='GET'){if(url.pathname==='/api/plugins/invoke')return jsonReply(response,405,{error:'请主动选择文本后调用插件。'});if(url.searchParams.has('guide'))return jsonReply(response,200,{guide:await manager.guide()});if(url.searchParams.has('review'))return jsonReply(response,200,pluginRuntime().review(url.searchParams.get('review')));if(url.searchParams.has('choices'))return jsonReply(response,200,await pluginRuntime().choices());if(url.searchParams.has('recoveries'))return jsonReply(response,200,{entries:await pluginRuntime().recoveries()});return jsonReply(response,200,{...await manager.list(url.searchParams.get('refresh')==='1'),runtime:await pluginRuntime().status()});}
   if(request.method!=='POST')return jsonReply(response,405,{error:'不支持的插件操作。'});
-  const input=await requestBody(request,280000);
+  const input=await requestBody(request,1100000);
   if(url.pathname==='/api/plugins/invoke')return jsonReply(response,200,await manager.invoke(input.id,input.text));
   if(input.action==='import'){const choice=await dialog.showOpenDialog(mainWindow,{title:'安装问间插件接入包',properties:['openFile'],filters:[{name:'问间插件接入包',extensions:['wenjian-plugin','json']}]});return jsonReply(response,200,choice.canceled?{cancelled:true}:await manager.previewFile(choice.filePaths[0]));}
   if(input.action==='preview-market')return jsonReply(response,200,await manager.previewMarket(input.id));
-  if(input.action==='install')return jsonReply(response,200,await manager.install(input.token));
-  if(input.action==='enabled')return jsonReply(response,200,await manager.setEnabled(input.id,input.enabled));
-  if(input.action==='uninstall')return jsonReply(response,200,await manager.uninstall(input.id));
+  if(input.action==='install'){pluginsRuntime?.stopAll();return jsonReply(response,200,await manager.install(input.token));}
+  if(input.action==='enabled'){pluginsRuntime?.stop(input.id);return jsonReply(response,200,await manager.setEnabled(input.id,input.enabled));}
+  if(input.action==='universal-enabled'){pluginsRuntime?.revokeUniversal();return jsonReply(response,200,await manager.setUniversalEnabled(input.enabled));}
+  if(input.action==='universal-index')return jsonReply(response,200,await pluginRuntime().universalIndex());
+  if(input.action==='universal-preview')return jsonReply(response,200,await pluginRuntime().universalPreview(input.target));
+  if(input.action==='universal-apply')return jsonReply(response,200,await pluginRuntime().universalApply(input.token,input.confirmed));
+  if(input.action==='uninstall'){pluginsRuntime?.stop(input.id);return jsonReply(response,200,await manager.uninstall(input.id));}
+  if(input.action==='launch')return jsonReply(response,200,await pluginRuntime().launch(input.id,input.scope,input.permissions));
+  if(input.action==='review-decision')return jsonReply(response,200,pluginRuntime().decide(input.id,input.approved));
+  if(input.action==='stop'){pluginRuntime().stop(input.id);return jsonReply(response,200,{stopped:true});}
+  if(input.action==='pause')return jsonReply(response,200,await pluginRuntime().pause(input.paused));
+  if(input.action==='advanced')return jsonReply(response,200,await pluginRuntime().advanced(input.enabled));
+  if(input.action==='undo')return jsonReply(response,200,await pluginRuntime().undo(input.id));
+  if(input.action==='recovery-folder')return jsonReply(response,200,await pluginRuntime().revealRecovery());
+  if(input.action==='devkit-export'){const choice=await dialog.showOpenDialog(mainWindow,{title:'导出插件开发示例到文件夹',properties:['openDirectory','createDirectory']});if(choice.canceled)return jsonReply(response,200,{cancelled:true});const destination=await fsp.mkdtemp(path.join(choice.filePaths[0],'问间插件开发示例-'));for(const name of await fsp.readdir(path.join(process.resourcesPath,'plugin-devkit')))await fsp.cp(path.join(process.resourcesPath,'plugin-devkit',name),path.join(destination,name),{recursive:true,errorOnExist:true,force:false});shell.showItemInFolder(path.join(destination,'plugins','README.md'));return jsonReply(response,200,{exported:true});}
+  if(input.action==='clear-storage')return jsonReply(response,200,await pluginRuntime().clearStorage(input.id));
   if(input.action==='submission'){await shell.openExternal('https://github.com/largetomatoes/wenjian-software/issues/new');return jsonReply(response,200,{ok:true});}
   throw Error('插件操作无效。');
  }catch(error){return jsonReply(response,400,{error:error.message||'插件操作未完成。'});}
@@ -858,6 +874,7 @@ async function handlePlugins(request,response,url){
 async function startServer() {
   server = http.createServer((request, response) => {
     const url = new URL(request.url, 'http://127.0.0.1');
+    if(process.platform==='darwin'&&url.pathname.startsWith('/api/')&&url.pathname!=='/api/app/info'&&(request.headers.host!==`127.0.0.1:${localPort}`||request.headers['x-wenjian-host']!==hostApiToken))return jsonReply(response,403,{error:'此接口仅供问间主窗口使用，请通过已授权的插件 SDK 操作。'});
     if(restoringBackup&&request.method!=='GET'&&!url.pathname.startsWith('/api/app/'))return jsonReply(response,423,{error:'正在保护或恢复资料，请稍候。'});
     if (url.pathname === '/api/backup/restore' && request.method === 'POST') { if(request.headers.origin && request.headers.origin !== `http://127.0.0.1:${localPort}`)return jsonReply(response,403,{error:'来源不匹配'}); void restoreBackup().then(()=>jsonReply(response,200,{finished:true})).catch(()=>jsonReply(response,500,{error:'无法恢复备份'})); }
     else if (url.pathname.startsWith('/api/reader/ocr/')) void handleWindowsModel(request,response,url.pathname);
@@ -975,6 +992,7 @@ function createWindow() {
   mainWindow.webContents.on('will-prevent-unload',async event=>{if(installingUpdate||process.platform==='darwin'&&nativeQuitReady){event.preventDefault();return;}if(process.platform==='win32'&&windowsTray?.isQuitting()){windowsTray.cancelQuit();windowsTray.show();await dialog.showMessageBox(mainWindow,{type:'warning',title:'内容尚未提交',message:'当前编辑器仍有未提交内容，问间已取消退出。',detail:'请先保存或关闭正在编辑的内容，再从托盘菜单退出。收起到托盘不需要关闭这些内容。',buttons:['返回编辑']});}});
   if(process.platform==='win32'){if(!windowsTray)windowsTray=require('./windows-tray.cjs').createWindowsTray({app,...require('electron'),getWindow:()=>mainWindow,isUpdating:()=>installingUpdate,prepareQuit:async()=>{if(cloudBusy)throw Error('云端备份尚未结束，请稍后退出。');if(mainWindow&&!mainWindow.isDestroyed()){let timeout;try{await Promise.race([mainWindow.webContents.executeJavaScript('window.__wenjianPrepareClose ? window.__wenjianPrepareClose() : Promise.resolve(true)'),new Promise((_,reject)=>{timeout=setTimeout(()=>reject(Error('Saving timeout')),8000);})]);}finally{clearTimeout(timeout);}}await draftQueue;await notebookQueue;await checkpointLocalData();}});windowsTray.attach(mainWindow);}
   mainWindow.once('ready-to-show', () => mainWindow.show());
+  mainWindow.on('closed',()=>{mainWindow=null;pluginsRuntime?.stopAll();});
   mainWindow.loadURL(`http://127.0.0.1:${localPort}/`).catch((error) => { console.error(error); dialog.showErrorBox('问间无法打开', '本地页面载入失败，请重新打开问间。'); });
 }
 
@@ -983,6 +1001,7 @@ if (!gotLock) app.quit();
 else {
   app.on('second-instance', () => { if (mainWindow) { if(windowsTray){windowsTray.show();return;}if (mainWindow.isMinimized()) mainWindow.restore(); mainWindow.show(); mainWindow.focus(); } });
   app.whenReady().then(async () => {
+    if(process.platform==='darwin')session.defaultSession.webRequest.onBeforeSendHeaders({urls:['http://127.0.0.1/*']},(details,callback)=>{const headers={...details.requestHeaders};delete headers['x-wenjian-host'];delete headers['X-Wenjian-Host'];if(mainWindow&&!mainWindow.isDestroyed()&&(details.webContentsId===mainWindow.webContents.id||details.webContentsId===-1)&&new URL(details.url).origin===`http://127.0.0.1:${localPort}`)headers['x-wenjian-host']=hostApiToken;callback({requestHeaders:headers});});
     session.defaultSession.webRequest.onBeforeRequest({ urls: ['http://*/*', 'https://*/*', 'ws://*/*', 'wss://*/*'] }, (details, callback) => {
       try {
         const target = new URL(details.url);
@@ -1020,6 +1039,6 @@ else {
   app.on('activate', () => { if (BrowserWindow.getAllWindows().length === 0 && localPort) createWindow(); });
 }
 let nativeQuitReady=false,nativeQuitPending=false;
-app.on('before-quit',event=>{if(process.platform==='win32'&&windowsTray&&!windowsTray.isQuitting()&&!installingUpdate){event.preventDefault();void windowsTray.quit();return;}if(process.platform==='darwin'&&server&&!installingUpdate&&!nativeQuitReady){event.preventDefault();if(nativeQuitPending)return;nativeQuitPending=true;void(async()=>{try{if(mainWindow&&!mainWindow.isDestroyed())await mainWindow.webContents.executeJavaScript('window.__wenjianPrepareClose ? window.__wenjianPrepareClose() : Promise.resolve(true)');await draftQueue;await notebookQueue;await checkpointLocalData();nativeQuitReady=true;app.quit();}catch(error){dialog.showErrorBox('尚未退出',error.message||'保存尚未完成，请重试退出。');}finally{nativeQuitPending=false;}})();return;}if(process.platform!=='win32'&&server)server.close();});
+app.on('before-quit',event=>{pluginsRuntime?.stopAll();if(process.platform==='win32'&&windowsTray&&!windowsTray.isQuitting()&&!installingUpdate){event.preventDefault();void windowsTray.quit();return;}if(process.platform==='darwin'&&server&&!installingUpdate&&!nativeQuitReady){event.preventDefault();if(nativeQuitPending)return;nativeQuitPending=true;void(async()=>{try{if(mainWindow&&!mainWindow.isDestroyed())await mainWindow.webContents.executeJavaScript('window.__wenjianPrepareClose ? window.__wenjianPrepareClose() : Promise.resolve(true)');await draftQueue;await notebookQueue;await checkpointLocalData();nativeQuitReady=true;app.quit();}catch(error){dialog.showErrorBox('尚未退出',error.message||'保存尚未完成，请重试退出。');}finally{nativeQuitPending=false;}})();return;}if(process.platform!=='win32'&&server)server.close();});
 app.on('will-quit',()=>{windowsTray?.dispose();if(server)server.close();});
 app.on('window-all-closed', () => { if (process.platform !== 'darwin') app.quit(); });

@@ -53,6 +53,12 @@ for(let i=0;i<10;i++){dense.crossThoughts.push(cross(`dense-cross-${i}`,[`leaf-$
 verify(dense);
 const odd=structuredClone(data);odd.notes.push(note('orphan','missing'));verify(odd);
 const cyclic=structuredClone(data);cyclic.crossThoughts.push(cross('cycle-a',['cycle-b','action'],7),cross('cycle-b',['cycle-a','language'],8));verify(cyclic);
+// Three siblings must never make their crossing look like a fourth sibling.
+const qu=structuredClone(fixture);qu.notes=[note('qu-root',null),note('qu-1','qu-root',1),note('qu-2','qu-root',2),note('qu-3','qu-root',3),note('qu-21','qu-2'),note('qu-x-child','qu-x'),note('qu-x-child2','qu-x',2)];qu.cards=[];qu.links=[];qu.crossThoughts=[cross('qu-x',['qu-1','qu-2','qu-3'],1),cross('qu-deep',['qu-x-child','qu-21'],2)];
+const quProjection=graph.projectGraph(qu),quLayout=layout.layoutQuestionRows(qu,quProjection),quClosed=layout.expandCrossRows(quLayout,[]),quOpen=layout.expandCrossRows(quLayout,['qu-x','qu-deep']);
+for(const v of [quClosed,quOpen]){assert.equal(v.positions['qu-1'].x,v.positions['qu-2'].x);assert.equal(v.positions['qu-2'].x,v.positions['qu-3'].x);assert(v.positions['qu-x'].x>v.positions['qu-3'].x,'occupied-centre crossing stays distinct from ordinary siblings');assert(v.positions['qu-deep'].x>=v.positions['qu-x-child'].x,'nested crossing can use a vacant gap at its deepest source column');}
+assert(quOpen.positions['qu-x-child'].x>quOpen.positions['qu-x'].x);assert.equal(quOpen.positions['qu-x-child'].x,quOpen.positions['qu-x-child2'].x);assert.notEqual(quOpen.positions['qu-x-child'].y,quOpen.positions['qu-x-child2'].y);verify(qu);
+const routes=load('lib/graph-cross-routes.ts',{'./graph-layout':layout}),networks=routes.crossNetworks(quProjection.edges,quOpen.positions,quOpen.sizes,quOpen.displayIds),network=networks.find(n=>n.id==='qu-x');assert(network);assert.equal(network.routes.length,3);for(const route of network.routes)assert(route.points.length>=2,'every source remains connected');assert(network.segments.length<network.routes.reduce((n,r)=>n+r.points.length-1,0),'shared bracket stems are merged rather than painted repeatedly');
 const c={x:30,y:80,zoom:1},point={x:200,y:250};
 const z=camera.zoomAt(c,1.8,point);assert.ok(Math.abs((point.x-c.x)/c.zoom-(point.x-z.x)/z.zoom)<1e-9);assert.ok(Math.abs((point.y-c.y)/c.zoom-(point.y-z.y)/z.zoom)<1e-9);
 const pan=camera.wheelCamera(c,{x:120,y:250},point,false);assert.equal(pan.x,-90);assert.equal(pan.y,-170);assert.equal(pan.zoom,1);

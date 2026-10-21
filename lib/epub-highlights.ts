@@ -3,7 +3,7 @@
  * when an annotation is removed while no view exists. */
 export type EpubHighlightRendition={book?:any;views?:()=>any[]|{all:()=>any[]};getContents?:()=>any[];on?:(event:string,fn:(...args:any[])=>void)=>void;off?:(event:string,fn:(...args:any[])=>void)=>void};
 const CLASS='wenjian-process-highlight';
-export function createEpubHighlights(rendition:EpubHighlightRendition,{schedule=cb=>requestAnimationFrame(cb),cancel=id=>cancelAnimationFrame(id),onUnresolved=()=>{}}:{schedule?:(cb:()=>void)=>number;cancel?:(id:number)=>void;onUnresolved?:(count:number)=>void}={}){
+export function createEpubHighlights(rendition:EpubHighlightRendition,{schedule=cb=>requestAnimationFrame(cb),cancel=id=>cancelAnimationFrame(id),onUnresolved=()=>{},onActivate}:{schedule?:(cb:()=>void)=>number;cancel?:(id:number)=>void;onUnresolved?:(count:number)=>void;onActivate?:(cfi:string,event:MouseEvent|TouchEvent)=>void}={}){
  let disposed=false,frame:number|null=null,locations=new Set<string>(),lastErrors=-1;
  const painted=new Map<any,{document:Document;marks:Map<string,any>}>();
  const remove=(view:any,cfi:string,mark:any)=>{try{if(view.highlights?.[cfi]?.mark===mark)view.unhighlight(cfi);}catch{/* The old iframe may already have been destroyed. */}};
@@ -21,7 +21,7 @@ export function createEpubHighlights(rendition:EpubHighlightRendition,{schedule=
    for(const [cfi,mark] of row.marks)if(!wanted.has(cfi)){remove(view,cfi,mark);row.marks.delete(cfi);}
    for(const cfi of wanted){
     const mark=row.marks.get(cfi);if(mark&&view.highlights?.[cfi]?.mark===mark)continue;
-    try{const next=view.highlight(cfi,{},undefined,CLASS,{'fill':'#f2dfa0','fill-opacity':'0.3','mix-blend-mode':'multiply'});if(next)row.marks.set(cfi,next);else unresolved++;}catch{unresolved++;}
+    try{const next=view.highlight(cfi,{},onActivate?(event:MouseEvent|TouchEvent)=>onActivate(cfi,event):undefined,CLASS,{'fill':'#f2dfa0','fill-opacity':'0.3','mix-blend-mode':'multiply'});if(next)row.marks.set(cfi,next);else unresolved++;}catch{unresolved++;}
    }
    try{view.pane?.render?.();}catch{/* A closing view is painted by its replacement. */}
   }

@@ -1,6 +1,6 @@
-> 当前版本：**问间 3.14（330）**。Mac、Windows、Android 与 iPhone / iPad Web App 统一更新；[下载与发布说明](https://github.com/largetomatoes/wenjian-software/releases/tag/v3.14-build330) · [本次改动](RELEASE_NOTES_3.14_330.md) · [构建说明](BUILDING.md)。
+> 当前版本：**问间 3.141**。Mac、Windows、Android 与 iPhone / iPad Web App 统一更新；[下载与发布说明](https://github.com/largetomatoes/wenjian-software/releases/tag/v3.141-build336) · [本次改动](RELEASE_NOTES_3.141.md) · [构建说明](BUILDING.md)。
 
-# 问间 · 3.14
+# 问间 · 3.141
 
 问间是围绕使用者自己的核心问题组织问题、回答、卡片、阅读笔记和文稿的本地应用。想法可以先留在卡片集中，之后再连接到一个或多个问题；搜索可以直接找到某条思考、回应或书中的笔记。
 

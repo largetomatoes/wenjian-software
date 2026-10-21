@@ -1,3 +1,6 @@
+import portableModel from '../lib/plugin-model.cjs';
+import universalDelete from '../lib/universal-delete.cjs';
+import pluginContract from '../lib/plugin-contract.cjs';
 import organization from '../lib/page-organization.cjs';
 import archives from '../lib/record-archives.cjs';
 import fs from 'node:fs';
@@ -23,6 +26,7 @@ const notebook=load('lib/notebook.ts',{'./library-folders':folders,'./page-organ
 const core=load('lib/sync/core.ts');const equality=load('lib/value-equal.ts');const storeChunks=load('mobile/native-store.ts');
 const calculations=load('lib/sync/compute-tasks.ts',{'./core':core,'../value-equal':equality});const compute={compute:async(task,input)=>calculations.calculate(task,input)};
 const updates=load('lib/app-updates.ts');
+const portable=load('lib/portable-plugins.ts',{'./universal-delete.cjs':universalDelete,'./plugin-model.cjs':portableModel,'./notebook-settings.cjs':settings,'./plugin-contract.cjs':pluginContract},{URLSearchParams,AbortSignal});
 const original={id:'book-1',title:'中文书籍 📖',author:'测试作者',format:'pdf',storedFile:'中文原件.pdf',originalName:'中文原件.pdf',addedAt:'2026-10-13T00:00:00.000Z',progress:{page:3},inReadingLibrary:true};
 const cloudFile={key:'books/'+ 'a'.repeat(64)+'.pdf',sha256:'a'.repeat(64),size:128};
 
@@ -39,6 +43,7 @@ function device({android=false,initial}={}){
   finishStoreWrite:async()=>{if(state.failSave)throw Error("disk full");const text=staged.join("");const next=JSON.parse(text);state.writes.push(text.length);state.store=next;staged=[];},
   abortStoreWrite:async()=>{staged=[];state.aborted=true},
   beginSyncLease:async()=>({recoverableOwners:[],deviceName:"Android test"}),finishSyncLease:async()=>({}),
+  backupLocal:async()=>({backupPath:'fixture backup'}),openExternalTool:async()=>({ok:true}),
   getSyncIdentity:async()=>({configured:true,verified:true,target:"cloud-a",provider:"nutstore",protocol:1}),
   remote:async body=>{state.cloud??=new Map();if(body.action==="list")return {keys:[...state.cloud.keys()]};if(body.action==="get")return {text:state.cloud.get(body.key)};if(body.action==="put"){state.cloud.set(body.key,body.text);return {ok:true}}throw Error("unexpected cloud action")},
   readStore:async()=>{assert(!android,"Android must not read the entire native store through one bridge message");return {text:JSON.stringify(state.store)}},
@@ -47,13 +52,14 @@ function device({android=false,initial}={}){
   transferBook:async input=>{state.transfers.push(structuredClone(input));return state.transfer?state.transfer(input):structuredClone(cloudFile);},
   setSyncConnection:async({config})=>{state.store={...state.store,syncRevision:state.store.syncRevision+1,sync:{...state.store.sync,target:config.target,enabled:false}};return {configured:true,target:config.target};},
  };
- const window={fetch:async()=>{throw Error('unexpected external request');}};
+ const window={fetch:async()=>{throw Error('unexpected external request');},confirm:()=>true};
  state.module=load('mobile/platform.ts',{
   '@capacitor/app':{App:{}},'@capacitor/core':{Capacitor:{isNativePlatform:()=>true,getPlatform:()=>android?'android':'ios',convertFileSrc:uri=>uri},registerPlugin:name=>{assert.equal(name,'WenjianStorage');return native;}},
   '../lib/value-equal':equality,'./native-store':storeChunks,'../lib/sync/client':{setSyncTransport:fn=>{state.syncTransport=fn;}},'../lib/sync/protocol':{setLeaseRecovery:fn=>{state.leaseRecovery=fn;}},'../lib/record-archives.cjs':archives,'../lib/notebook-settings.cjs':settings,'../lib/maintenance.cjs':maintenance,'../lib/app-updates':updates,'../lib/notebook':notebook,'../lib/ocr-cache.cjs':ocrCache,'../lib/sync/core':core,
   '../lib/sync/compute':compute,
+  '../mobile/plugin-adapter':{...portable,choosePluginText:async()=>null,preparePluginChange:async()=>{},notifyPluginChange:()=>{}},
   '../lib/reader-platform':{setReaderPlatform:platform=>{state.reader=platform;}},
- },{window,location:{origin:'https://localhost'}});
+ },{window,document:{documentElement:{dataset:{}}},URLSearchParams,location:{origin:'https://localhost'}});
  state.module.installMobileApi();
  state.api=async(route,payload,method=payload===undefined?'GET':'POST')=>{const response=await window.fetch(route,{method,...(payload===undefined?{}:{body:JSON.stringify(payload)})});return {status:response.status,body:await response.json()};};
  state.deferTransfer=()=>{let start,finish;const started=new Promise(resolve=>{start=resolve;}),done=new Promise(resolve=>{finish=resolve;});state.transfer=input=>{start(input);return done;};return {started,finish:()=>finish(structuredClone(cloudFile))};};
@@ -169,4 +175,18 @@ test('Android large-store sync uses bounded bridge messages and a direct object 
  const done=await api.syncNow();assert.equal(done.sync.pending.length,0);assert.equal(done.data.ocrCache.length,367);assert.equal(done.drafts.reader.text,'不可丢失的草稿🙂');assert(phone.bridge.maxReadBytes<=65536);assert(phone.bridge.maxWriteChars<=48*1024);assert(phone.bridge.reads>100&&phone.bridge.writes>100);assert.equal(phone.store.data.ocrCache[366].text,data.ocrCache[366].text);
  const before=await phone.module.mobileSnapshot(),nextSync={...before.sync,lastSync:'2026-10-16T01:00:00Z'};phone.failSave=true;await assert.rejects(phone.syncTransport('commit',commit(before,nextSync)),/disk full/);assert(phone.aborted);assert.equal((await phone.module.mobileSnapshot()).sync.lastSync,before.sync.lastSync,'failed native persistence does not advance cache or overwrite the durable store');
  console.log('Large synthetic store bytes:',serialized,'native maximum read bytes:',phone.bridge.maxReadBytes,'maximum write chars:',phone.bridge.maxWriteChars);
+});
+
+
+test('Android plugin maintenance uses the actual bounded storage adapter and keeps drafts',async()=>{
+ const phone=device({android:true});
+ let result=await phone.api('/api/plugins');assert.equal(result.body.builtins.universalDelete,false);
+ assert.equal((await phone.api('/api/plugins',{action:'universal-index'})).status,500);
+ await phone.api('/api/plugins',{action:'universal-enabled',enabled:true});
+ const index=await phone.api('/api/plugins',{action:'universal-index'});assert(index.body.entries.some(e=>e.target.id==='book-1'));
+ const preview=await phone.api('/api/plugins',{action:'universal-preview',target:{kind:'book',id:'book-1'}});
+ const applied=await phone.api('/api/plugins',{action:'universal-apply',token:preview.body.token,confirmed:true});assert.equal(applied.status,200);assert(applied.body.saved);
+ let store=await phone.module.mobileSnapshot();assert.equal(store.data.libraryBooks.length,0);assert.equal(store.drafts.reader.text,'未保存的草稿');
+ const restored=await phone.api('/api/plugins',{action:'undo',id:applied.body.recoveryId});assert(restored.body.restored);
+ store=await phone.module.mobileSnapshot();assert.equal(store.data.libraryBooks[0].id,'book-1');assert(phone.bridge.maxWriteChars<=49152);
 });

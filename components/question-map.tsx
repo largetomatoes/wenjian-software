@@ -1,15 +1,16 @@
 'use client';
 
-import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { memo, useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
 import { Loader2, Maximize, Minus, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { type Notebook, ROOT, numberOf, crossNumber, crossSignature } from '@/lib/notebook';
-import { projectGraph } from '@/lib/graph-projection';
+import { projectGraph,graphOwners } from '@/lib/graph-projection';
 import { GRAPH_NODE_HEIGHT, GRAPH_NODE_WIDTH, layoutQuestionRows, expandCrossRows, CROSS_BADGE_WIDTH, CROSS_BADGE_HEIGHT, type GraphPosition } from '@/lib/graph-layout';
 import { fitGraph, wheelCamera, zoomAt, type GraphCamera } from '@/lib/graph-camera';
 import { pinchCamera, touchPair } from '@/lib/graph-touch';
 import {CrossConnections} from './cross-connections';
-import {crossRoutes} from '@/lib/graph-cross-routes';
+import {crossNetworks,hierarchyPath} from '@/lib/graph-cross-routes';
+import {UniversalDeleteButton} from './universal-delete';
 import './question-map-rows.css';
 
 const initialCamera: GraphCamera = { x: 40, y: 100, zoom: 1 };
@@ -22,6 +23,7 @@ function boundary(from: GraphPosition, to: GraphPosition) {
 
 export const QuestionMap = memo(function QuestionMap({ data, loading, onOpen, onAddRoot, onAddQuestion, rootId = ROOT, viewKey = 'page-world', mobile = false }: { data: Notebook; loading: boolean; onOpen: (id: string) => void; onAddRoot?: () => void; onAddQuestion?:(id:string)=>void; rootId?:string;viewKey?:string;mobile?: boolean }) {
   const canvasRef = useRef<HTMLDivElement>(null);
+  const routeMaskId='cross-clear-'+useId().replace(/[^a-zA-Z0-9_-]/g,'');
   const savedCamera = useMemo(()=>{try{const value=JSON.parse(localStorage.getItem('wenjian-camera:rows-v5:'+viewKey)||'null');return value&&[value.x,value.y,value.zoom].every(Number.isFinite)&&value.zoom>0?value as GraphCamera:null;}catch{return null;}},[viewKey]);
   const initialized = useRef(!!savedCamera);
   const cameraRef = useRef(savedCamera||initialCamera);
@@ -36,9 +38,7 @@ export const QuestionMap = memo(function QuestionMap({ data, loading, onOpen, on
   const focusedCross=data.crossThoughts.find(c=>c.id===crossFocus);
   const relatedIds=useMemo(()=>{
     const ids=new Set<string>();
-    if(focusedCross)for(let id of [focusedCross.id,...focusedCross.anchorIds]){
-      const seen=new Set<string>();while(id&&!seen.has(id)){seen.add(id);ids.add(id);id=data.notes.find(n=>n.id===id)?.parent||data.crossThoughts.find(c=>c.id===id)?.placementParentId||'';}
-    }
+    if(focusedCross){const owners=graphOwners(data);ids.add(focusedCross.id);for(const id of focusedCross.anchorIds)ids.add(owners.get(id)||id);for(const note of data.notes){let parent=note.parent;const seen=new Set<string>();while(parent&&!seen.has(parent)){if(parent===focusedCross.id){ids.add(note.id);break;}seen.add(parent);parent=data.notes.find(n=>n.id===parent)?.parent||null;}}}
     return ids;
   },[focusedCross,data.notes,data.crossThoughts]);
   const touches = useRef(new Map<number, { x: number; y: number }>());
@@ -52,8 +52,9 @@ export const QuestionMap = memo(function QuestionMap({ data, loading, onOpen, on
   const expandedLayout=useMemo(()=>expandCrossRows(layout,expandedCrosses),[layout,expandedCrosses]);
   const {positions}=expandedLayout;
   const routePositions=useMemo(()=>Object.fromEntries(Object.entries(positions).map(([id,p])=>[id,layout.crossOwners[id]&&!expandedLayout.expanded.has(layout.crossOwners[id])?positions[layout.crossOwners[id]]:p])),[layout,positions,expandedLayout]);
-  const routeSizes=useMemo(()=>Object.fromEntries([...data.crossThoughts.map(c=>c.id),...Object.keys(layout.crossOwners)].map(id=>[id,expandedLayout.sizes[id]||{width:CROSS_BADGE_WIDTH,height:CROSS_BADGE_HEIGHT}])),[layout,data.crossThoughts,expandedLayout]);
-  const routedCrosses=useMemo(()=>crossRoutes(projection.edges,routePositions,routeSizes),[projection,routePositions,routeSizes]);
+  const routeSizes=useMemo(()=>Object.fromEntries([...data.crossThoughts.map(c=>c.id),...Object.keys(layout.crossOwners)].map(id=>[id,expandedLayout.sizes[id]||expandedLayout.sizes[layout.crossOwners[id]]||{width:CROSS_BADGE_WIDTH,height:CROSS_BADGE_HEIGHT}])),[layout,data.crossThoughts,expandedLayout]);
+  const networks=useMemo(()=>crossNetworks(projection.edges,routePositions,routeSizes,expandedLayout.displayIds),[projection,routePositions,routeSizes,expandedLayout.displayIds]);
+  const hierarchyPaths=useMemo(()=>projection.edges.filter(edge=>edge.kind==='hierarchy'&&expandedLayout.displayIds.has(edge.from)&&expandedLayout.displayIds.has(edge.to)&&!data.crossThoughts.some(c=>c.id===edge.to)).map(edge=>({edge,path:hierarchyPath(positions[edge.from],positions[edge.to],!!layout.crossOwners[edge.to])})),[projection,expandedLayout,positions,layout,data.crossThoughts]);
   const openBranch=(id:string)=>setExpandedCrosses(current=>{
     const next=new Set(current),visit=(key:string)=>{if(next.has(key))return;next.add(key);for(const e of projection.edges)if(e.kind==='cross'&&e.to===key){const source=layout.crossOwners[e.from];if(source&&source!==key)visit(source);}};visit(id);return next;
   });
@@ -182,37 +183,37 @@ export const QuestionMap = memo(function QuestionMap({ data, loading, onOpen, on
     {onAddRoot && <Button type="button" variant="outline" size="sm" className="map-add-root" disabled={loading} onClick={onAddRoot}><Plus/>添加一级问题</Button>}
     <svg className="graph-svg" width="100%" height="100%" viewBox={`0 0 ${viewport.width} ${viewport.height}`} role="group" aria-label="全部问题与联系">
       <g transform={`translate(${camera.x} ${camera.y}) scale(${camera.zoom})`}>
+        <defs><mask id={routeMaskId} maskUnits="userSpaceOnUse" x={bounds.left-400} y={bounds.top-400} width={bounds.right-bounds.left+800} height={bounds.bottom-bounds.top+800}><rect x={bounds.left-400} y={bounds.top-400} width={bounds.right-bounds.left+800} height={bounds.bottom-bounds.top+800} fill="white"/>{hierarchyPaths.map(({edge,path})=><path key={edge.id} d={path} fill="none" stroke="black" strokeWidth="8"/>)}</mask></defs>
         {expandedLayout.bands.map(band=><rect key={'band:'+band.id} className="cross-canvas-band" x={band.x} y={band.y} width={band.width} height={band.height} rx="11" pointerEvents="none"/>)}
+        {networks.map(network=><g key={network.id} className="cross-source-junction" mask={`url(#${routeMaskId})`} pointerEvents="none"><path data-cross-network={network.id} data-edge-to={network.id} d={network.path} className={'edge cross'+(focusedCross?(focusedCross.id===network.id?' is-cross-focus':' is-cross-muted'):'')} fill="none"><title>交叉来源</title></path></g>)}
         {projection.edges.map(edge => {
+          if(edge.kind==='cross')return null;
           if(edge.kind==='hierarchy'&&(!expandedLayout.displayIds.has(edge.from)||!expandedLayout.displayIds.has(edge.to)||(data.crossThoughts.some(c=>c.id===edge.to))))return null;
           const a = routePositions[edge.from], b = routePositions[edge.to];
           if (!a || !b || edge.from === edge.to) return null;
           if(Math.max(a.x,b.x)+GRAPH_NODE_WIDTH<viewBounds.left||Math.min(a.x,b.x)>viewBounds.right||Math.max(a.y,b.y)+GRAPH_NODE_HEIGHT<viewBounds.top||Math.min(a.y,b.y)>viewBounds.bottom)return null;
           let path: string;
           if (edge.kind === 'hierarchy') {
-            const ax = a.x + GRAPH_NODE_WIDTH, bx = b.x, ay = a.y + GRAPH_NODE_HEIGHT / 2, by = b.y + GRAPH_NODE_HEIGHT / 2;
-            const mid = (ax + bx) / 2;
-            if(layout.crossOwners[edge.to]){const joint=bx-36;path=ay===by?`M${ax} ${ay} L${bx} ${by}`:`M${ax} ${ay} L${joint} ${ay} L${joint} ${by} L${bx} ${by}`;}else path = `M${ax} ${ay} C${mid} ${ay},${mid} ${by},${bx} ${by}`;
-          } else if(edge.kind==='cross'&&routedCrosses.has(edge.id)){
-            path=routedCrosses.get(edge.id)!;
+            path=hierarchyPath(a,b,!!layout.crossOwners[edge.to]);
           } else {
             const start = boundary(a, b), end = boundary(b, a);
             path = `M${start.x} ${start.y} L${end.x} ${end.y}`;
           }
-          return <path key={edge.id} data-edge-from={edge.from} data-edge-to={edge.to} d={path} className={`edge ${edge.kind}${edge.kind==='hierarchy'&&layout.crossOwners[edge.to]?' is-cross-tree':''}${focusedCross?((edge.kind==='cross'&&edge.to===focusedCross.id)||(edge.kind==='hierarchy'&&relatedIds.has(edge.from)&&relatedIds.has(edge.to))?' is-cross-focus':' is-cross-muted'):''}`} fill="none" pointerEvents="none"><title>{edge.type}</title></path>;
+          return <path key={edge.id} data-edge-from={edge.from} data-edge-to={edge.to} d={path} className={`edge ${edge.kind}${edge.kind==='hierarchy'&&layout.crossOwners[edge.to]?' is-cross-tree':''}${focusedCross?(layout.crossOwners[edge.to]===focusedCross.id?' is-cross-focus':' is-cross-muted'):''}`} fill="none" pointerEvents="none"><title>{edge.type}</title></path>;
         })}
         {items.map(item => {
           const position = positions[item.id];
           if (!position||!inView(position)||!expandedLayout.displayIds.has(item.id)) return null;
-          if(item.kind==='cross'&&!expandedLayout.expanded.has(item.id)){const c=data.crossThoughts.find(c=>c.id===item.id)!,expanded=expandedCrosses.has(c.id);return <foreignObject key={item.id} x={position.x} y={position.y} width={CROSS_BADGE_WIDTH} height={CROSS_BADGE_HEIGHT} overflow="visible"><div className={'cross-badge'+(crossFocus===c.id?' is-focused':'')} data-cross-badge={c.id}><button type="button" className="cross-badge-label" aria-label={`${crossNumber(c)} 关联 ${c.anchorIds.length} 个问题`} aria-pressed={crossFocus===c.id} title={c.title||c.text||'交叉思考'} onClick={()=>activateNode(c.id)}><i/>{crossNumber(c)}<span>关联 {c.anchorIds.length} 个问题</span></button><button type="button" className="cross-badge-expand" aria-label={`${expanded?'收起':'展开'} ${crossNumber(c)} 交叉分支`} aria-expanded={expanded} onClick={()=>toggleCross(c.id)}>{expanded?'收起':'展开'}</button></div></foreignObject>;}
+          if(item.kind==='cross'&&!expandedLayout.expanded.has(item.id)){const c=data.crossThoughts.find(c=>c.id===item.id)!,expanded=expandedCrosses.has(c.id),badge=expandedLayout.badges[c.id],vertical=badge.orientation==='vertical';return <foreignObject key={item.id} x={position.x} y={position.y} width={badge.width} height={badge.height} overflow="visible"><div className={'cross-badge'+(vertical?' is-vertical':'')+(crossFocus===c.id?' is-focused':'')} data-cross-badge={c.id} data-orientation={badge.orientation}><button type="button" className="cross-badge-label" aria-label={`${crossNumber(c)} 关联 ${c.anchorIds.length} 个问题`} aria-pressed={crossFocus===c.id} title={`${crossNumber(c)} · ${c.title||c.text||'交叉思考'} · 关联 ${c.anchorIds.length} 个问题`} onClick={()=>activateNode(c.id)}><i/>{crossNumber(c)}<span>{vertical?`${c.anchorIds.length}源`:`关联 ${c.anchorIds.length} 个问题`}</span></button><button type="button" className="cross-badge-expand" title="在画布中展开" aria-label={`${expanded?'收起':'展开'} ${crossNumber(c)} 交叉分支`} aria-expanded={expanded} onClick={()=>toggleCross(c.id)}>{vertical?'⤢':expanded?'收起':'展开'}</button><UniversalDeleteButton target={{kind:'cross',id:c.id}} label={crossNumber(c)}/></div></foreignObject>;}
           return <g key={item.id} data-node={item.id} data-cross-node={(layout.crossOwners[item.id]||expandedLayout.expanded.has(item.id))?item.id:undefined} role="button" tabIndex={0} aria-label={`${item.label}：${item.text}`}
             className={`map-node ${item.kind}${item.id === rootId ? ' root-node' : ''}${relatedIds.has(item.id)?' is-cross-related':''}${layout.crossOwners[item.id]?' cross-descendant':''}`} transform={`translate(${position.x} ${position.y})`}
             aria-pressed={item.kind==='cross'?crossFocus===item.id:undefined}
             onClick={() => { if (Date.now() > ignoreClickUntil.current) onOpen(item.id); }} onKeyDown={event => { if (event.target === event.currentTarget && (event.key === 'Enter' || event.key === ' ')) { event.preventDefault(); onOpen(item.id); } }}>
             <title>{item.label} · {item.text}</title>
             <rect className="node-surface" width={GRAPH_NODE_WIDTH} height={GRAPH_NODE_HEIGHT} rx="10" />
-            {camera.zoom>=.25&&<><foreignObject x="16" y="9" width={GRAPH_NODE_WIDTH-32} height="18"><div className="node-tag">{item.kind==='cross'?crossNumber(data.crossThoughts.find(c=>c.id===item.id)!):item.label}</div></foreignObject><foreignObject x="16" y="30" width={GRAPH_NODE_WIDTH-32} height="46"><div className="node-words">{item.text}</div></foreignObject>{onAddQuestion&&item.kind!=='card'&&item.kind!=='answer'&&<foreignObject x={GRAPH_NODE_WIDTH-112} y={GRAPH_NODE_HEIGHT-23} width="104" height="20"><button type="button" className="map-node-add" aria-label={`为 ${item.kind==='cross'?crossNumber(data.crossThoughts.find(c=>c.id===item.id)!):item.label} 添加子问题`} onClick={e=>{e.stopPropagation();onAddQuestion(item.id);}}>＋ 子问题</button></foreignObject>}</>}
+            {camera.zoom>=.25&&<><foreignObject x="16" y="9" width={GRAPH_NODE_WIDTH-32} height="18"><div className="node-tag">{item.kind==='cross'?crossNumber(data.crossThoughts.find(c=>c.id===item.id)!):item.label}</div></foreignObject><foreignObject x="16" y="30" width={GRAPH_NODE_WIDTH-32} height="46"><div className="node-words">{item.text}</div></foreignObject></>}
             {item.kind==='cross'&&<foreignObject x={GRAPH_NODE_WIDTH-65} y="6" width="55" height="24"><button type="button" className="cross-node-collapse" aria-label={`收起 ${crossNumber(data.crossThoughts.find(c=>c.id===item.id)!)} 交叉分支`} onClick={e=>{e.stopPropagation();toggleCross(item.id);}}>收起</button></foreignObject>}
+            <foreignObject x={GRAPH_NODE_WIDTH-36} y={GRAPH_NODE_HEIGHT-31} width="28" height="27" className="map-node-delete"><UniversalDeleteButton target={{kind:item.kind==='cross'?'cross':item.kind==='card'?'card':'question',id:item.id}} label={item.text}/></foreignObject>
 
           </g>;
         })}

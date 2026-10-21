@@ -1,13 +1,13 @@
 {
   "name": "wenjian",
-  "version": "3.3.32",
-  "releaseVersion": "3.14",
+  "version": "3.4.1",
+  "releaseVersion": "3.141",
   "description": "问间桌面笔记应用",
   "main": "main.js",
   "dependencies": {
     "pdf-lib": "1.17.1"
   },
-  "buildVersion": "332",
+  "buildVersion": "336",
   "organizationTrial": false,
-  "displayBuild": "330.2"
+  "displayBuild": "336"
 }

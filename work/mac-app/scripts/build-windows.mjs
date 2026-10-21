@@ -80,6 +80,14 @@ async function prepare() {
   await mkdir(stage, { recursive: true });
   await mkdir(resourceStage, { recursive: true });
   await cp(path.join(macAppRoot, 'asar-src'), stage, { recursive: true });
+  for(const name of ['plugin-contract.cjs','plugin-model.cjs','universal-delete.cjs'])await cp(path.join(projectRoot,'lib',name),path.join(stage,name));
+  await cp(path.join(projectRoot,'plugins/catalog.json'),path.join(resourceStage,'plugin-catalog.json'));
+  await cp(path.join(projectRoot,'plugins/README.md'),path.join(resourceStage,'plugin-guide.md'));
+  const kit=path.join(resourceStage,'plugin-devkit');
+  await mkdir(path.join(kit,'plugins'),{recursive:true});await mkdir(path.join(kit,'lib'),{recursive:true});
+  for(const name of ['README.md','sdk.d.ts','validate.cjs'])await cp(path.join(projectRoot,'plugins',name),path.join(kit,'plugins',name));
+  await cp(path.join(projectRoot,'plugins/examples'),path.join(kit,'plugins/examples'),{recursive:true});
+  await cp(path.join(projectRoot,'lib/plugin-contract.cjs'),path.join(kit,'lib/plugin-contract.cjs'));
   await cp(path.join(projectRoot,'lib/maintenance.cjs'),path.join(stage,'maintenance.cjs'));
   for(const file of ['page-organization.cjs','record-archives.cjs'])await cp(path.join(projectRoot,'lib',file),path.join(stage,file));
   await cp(path.join(projectRoot, 'lib/notebook-settings.cjs'), path.join(stage, 'notebook-settings.cjs'));
@@ -135,7 +143,7 @@ if (prepareOnly) {
     prune: false,
     overwrite: true,
     icon,
-    extraResource: [path.join(resourceStage, 'static'), path.join(macAppRoot, 'seed.json')],
+    extraResource: [path.join(resourceStage, 'static'), path.join(macAppRoot, 'seed.json'),path.join(resourceStage,'plugin-catalog.json'),path.join(resourceStage,'plugin-guide.md'),path.join(resourceStage,'plugin-devkit')],
   });
   if (paths.length !== 1) throw new Error('Windows 打包没有生成唯一的应用目录。');
   const appRoot = path.join(outputRoot, `Wenjian-${version}-win64`);

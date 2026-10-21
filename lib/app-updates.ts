@@ -1,7 +1,7 @@
 export const RELEASES_API='https://api.github.com/repos/largetomatoes/wenjian-software/releases?per_page=30';
 export const RELEASES_PAGE='https://github.com/largetomatoes/wenjian-software/releases';
 const RELEASE_ROOTS=['/largetomatoes/wenjian-software/releases','/largetomatoes/mac-/releases'];
-export const PREVIEW_VERSION='3.14';
+export const PREVIEW_VERSION='3.141';
 export type AppInfo={version:string;build:string;displayBuild?:string;platform:'android'|'darwin'|'win32';arch:string};
 export type Release={tag_name:string;html_url:string;body?:string;published_at?:string;draft?:boolean;prerelease?:boolean;assets?:{name:string;browser_download_url:string;state?:string}[]};
 export type UpdateResult={state:'available'|'current'|'ahead'|'missing'|'empty';version?:string;build?:number;displayBuild?:string;release?:Release;download?:string};

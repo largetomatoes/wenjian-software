@@ -48,12 +48,18 @@ async function prepare() {
   await mkdir(stage, { recursive: true });
   await mkdir(resourceStage, { recursive: true });
   await cp(path.join(appRoot, 'asar-src'), stage, { recursive: true });
-  await cp(path.join(projectRoot,'lib/plugin-contract.cjs'),path.join(stage,'plugin-contract.cjs'));
+  for(const name of ['plugin-contract.cjs','plugin-model.cjs'])await cp(path.join(projectRoot,'lib',name),path.join(stage,name));
   await cp(path.join(projectRoot,'plugins/catalog.json'),path.join(resourceStage,'plugin-catalog.json'));
   await cp(path.join(projectRoot,'plugins/README.md'),path.join(resourceStage,'plugin-guide.md'));
+  const kit=path.join(resourceStage,'plugin-devkit');
+  await mkdir(path.join(kit,'plugins'),{recursive:true});await mkdir(path.join(kit,'lib'),{recursive:true});
+  for(const name of ['README.md','sdk.d.ts','validate.cjs'])await cp(path.join(projectRoot,'plugins',name),path.join(kit,'plugins',name));
+  await cp(path.join(projectRoot,'plugins/examples'),path.join(kit,'plugins/examples'),{recursive:true});
+  await cp(path.join(projectRoot,'lib/plugin-contract.cjs'),path.join(kit,'lib/plugin-contract.cjs'));
   await cp(path.join(projectRoot,'lib/record-archives.cjs'),path.join(stage,'record-archives.cjs'));
   await cp(path.join(projectRoot,'lib/page-organization.cjs'),path.join(stage,'page-organization.cjs'));
   await cp(path.join(projectRoot,'lib/maintenance.cjs'),path.join(stage,'maintenance.cjs'));
+  await cp(path.join(projectRoot,'lib/universal-delete.cjs'),path.join(stage,'universal-delete.cjs'));
   await cp(path.join(projectRoot, 'lib/notebook-settings.cjs'), path.join(stage, 'notebook-settings.cjs'));
   await cp(path.join(projectRoot, 'lib/ocr-cache.cjs'), path.join(stage, 'ocr-cache.cjs')); 
   await cp(spaDist, path.join(resourceStage, 'static'), { recursive: true });
@@ -109,6 +115,7 @@ if (prepareOnly) {
     execFileSync('/usr/bin/plutil', ['-convert', 'xml1', path.join(contents, 'Info.plist')]);
     await cp(path.join(resourceStage, 'static'), path.join(resources, 'static'), {recursive:true});
     for(const name of ['plugin-catalog.json','plugin-guide.md'])await cp(path.join(resourceStage,name),path.join(resources,name));
+    await cp(path.join(resourceStage,'plugin-devkit'),path.join(resources,'plugin-devkit'),{recursive:true});
     for (const name of ['seed.json', 'AppIcon.icns']) await cp(path.join(appRoot, name), path.join(resources, name));
   } else {
   const paths = await packager({
@@ -126,7 +133,7 @@ if (prepareOnly) {
     prune: false,
     overwrite: true,
     icon: path.join(appRoot, 'AppIcon.icns'),
-    extraResource: [path.join(resourceStage, 'static'), path.join(appRoot, 'seed.json'),path.join(resourceStage,'plugin-catalog.json'),path.join(resourceStage,'plugin-guide.md')],
+    extraResource: [path.join(resourceStage, 'static'), path.join(appRoot, 'seed.json'),path.join(resourceStage,'plugin-catalog.json'),path.join(resourceStage,'plugin-guide.md'),path.join(resourceStage,'plugin-devkit')],
   });
   if (paths.length !== 1) throw new Error('Mac 打包没有生成唯一的应用目录。');
   application = path.join(paths[0], '问间.app');

@@ -1,0 +1,5 @@
+import {createPortablePlugins,type PortableStore} from '../lib/portable-plugins';
+export async function choosePluginText(){const file=await new Promise<File|null>(resolve=>{const input=document.createElement('input');input.type='file';input.accept='.json,.wenjian-plugin';input.onchange=()=>resolve(input.files?.[0]||null);input.addEventListener('cancel',()=>resolve(null));input.click();});if(!file)return null;if(file.size>1048576)throw Error('插件接入包超过 1 MB。');return new TextDecoder('utf-8',{fatal:true}).decode(await file.arrayBuffer());}
+export async function preparePluginChange(){const prepare=(window as unknown as {__wenjianPrepareClose?:()=>Promise<boolean>}).__wenjianPrepareClose;if(prepare&&await prepare()===false)throw Error('草稿尚未保存，请先完成保存。');}
+export function notifyPluginChange(store:PortableStore){window.dispatchEvent(new CustomEvent('wenjian-sync-updated',{detail:{version:store.version,syncRevision:store.syncRevision,data:store.data,drafts:store.drafts}}));}
+export {createPortablePlugins};

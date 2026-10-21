@@ -126,3 +126,24 @@ html[data-wenjian-mobile] .maintenance-heading{padding:20px 46px 12px 18px}html[
 html[data-wenjian-mobile] .question-page-tabs{padding:0 5px;height:44px;min-height:44px;gap:2px}html[data-wenjian-mobile] .question-page-tab-list{align-items:stretch;gap:1px;scrollbar-width:none}html[data-wenjian-mobile] .question-page-tab{display:flex;align-items:center;max-width:220px;flex-shrink:0}html[data-wenjian-mobile] .question-page-tab>button{min-width:0;min-height:40px;padding:6px}html[data-wenjian-mobile] .question-page-tab>button:first-child span{max-width:150px}html[data-wenjian-mobile] .page-tab-menu{width:28px;flex-shrink:0}html[data-wenjian-mobile] .page-list-popover{width:min(350px,calc(100vw - 24px));max-height:65vh;overflow:auto}html[data-wenjian-mobile] .page-list-popover>div>button{display:flex;text-align:left;gap:10px;padding:12px;width:100%;font-size:13px}html[data-wenjian-mobile] .page-list-popover small{margin-left:auto}
 
 .mobile-card-editor{width:calc(100vw - 24px)!important;max-height:calc(var(--mobile-vh,100dvh) - 48px);overflow-y:auto;overscroll-behavior:contain}.mobile-card-editor .card-editor{min-width:0}.mobile-card-editor textarea{max-height:200px}.mobile-cards>select{max-width:100%;padding:8px;border:1px solid #d9dfd3;border-radius:6px}
+/* Native touch targets keep plugin actions separate from navigation. */
+.mobile-folder-item{display:inline-flex;align-items:center;gap:3px;flex:none}
+.mobile-folder-item>.universal-delete-button,.mobile-book-row>.universal-delete-button{flex:none;min-width:32px;min-height:36px}
+html[data-wenjian-mobile=true] .plugin-hub,html[data-wenjian-mobile=true] .universal-delete-manager{width:min(100%,760px);max-width:100%;height:min(90dvh,850px);max-height:calc(var(--mobile-viewport-height,100dvh) - 28px)}
+html[data-wenjian-mobile=true] .plugin-hub-actions{flex-wrap:wrap;gap:8px}
+html[data-wenjian-mobile=true] .plugin-hub-actions nav{flex-wrap:wrap}
+html[data-wenjian-mobile=true] .plugin-row-actions{flex-wrap:wrap}
+html[data-wenjian-mobile=true] .universal-delete-areas{flex-wrap:wrap}
+html[data-wenjian-mobile=true] .universal-delete-filters{grid-template-columns:minmax(0,1fr)}
+html[data-wenjian-mobile=true] .universal-delete-list article{gap:8px;min-width:0}
+html[data-wenjian-mobile=true] .universal-delete-list article>div{min-width:0;overflow-wrap:anywhere}
+html[data-wenjian-mobile=true] .universal-delete-confirm{max-height:calc(var(--mobile-viewport-height,100dvh) - 28px)}
+html[data-wenjian-mobile=true] .cross-badge.is-vertical .cross-badge-expand{min-height:25px}
+.mobile-collection-row{display:flex;align-items:center;gap:6px;min-width:0}
+.mobile-collection-row>.mobile-zotero-collection{flex:1;min-width:0;max-width:100%}
+.mobile-collection-row>.universal-delete-button{flex:none;min-width:36px;min-height:36px}
+html[data-wenjian-mobile=true] .universal-delete-notice{top:auto;bottom:calc(72px + env(safe-area-inset-bottom));left:12px;right:12px;transform:none;max-width:calc(100% - 24px);min-height:44px;justify-content:center;gap:12px}
+html[data-wenjian-mobile=true] .universal-delete-notice button{min-height:32px;min-width:32px;justify-content:center;flex:none}
+.mobile-book-row>.universal-delete-button{position:absolute;right:0;top:70px;width:32px;height:34px;min-height:34px}
+.mobile-folder-item>button.universal-delete-button{width:32px;height:36px;padding:0;border-radius:7px;color:#9a655b}
+@media(min-width:768px){html[data-wenjian-web=true] .mobile-book-row>.universal-delete-button{right:9px;top:62px}}

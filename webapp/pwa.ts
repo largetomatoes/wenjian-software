@@ -13,4 +13,4 @@ export function installPwa(){
  window.addEventListener('load',()=>void register(),{once:true});
  if(document.readyState==='complete')void register();
 }
-export function applyWebUpdate(){if(!state.update)return;let requested=false;const reload=()=>{if(requested)return;requested=true;location.reload();};navigator.serviceWorker.addEventListener('controllerchange',reload,{once:true});state.update.postMessage({type:'ACTIVATE_UPDATE'});}
+export async function applyWebUpdate(){const update=state.update;if(!update)return;try{const prepare=(window as unknown as {__wenjianPrepareClose?:()=>Promise<boolean>}).__wenjianPrepareClose;if(prepare&&await prepare()===false)throw Error('草稿尚未保存，请完成保存后更新。');let requested=false;const reload=()=>{if(requested)return;requested=true;location.reload();};navigator.serviceWorker.addEventListener('controllerchange',reload,{once:true});update.postMessage({type:'ACTIVATE_UPDATE'});}catch(error){state={...state,error:error instanceof Error?error.message:'保存尚未完成，暂未更新。'};emit();}}

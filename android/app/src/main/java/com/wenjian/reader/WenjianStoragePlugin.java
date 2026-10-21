@@ -43,6 +43,12 @@ public class WenjianStoragePlugin extends Plugin {
         conn.setConnectTimeout(8000);conn.setReadTimeout(8000);conn.setInstanceFollowRedirects(false);conn.setRequestProperty("User-Agent","Wenjian-Update-Check");conn.setRequestProperty("Accept","application/vnd.github+json");
         try{int status=conn.getResponseCode();if(status!=200)throw new IOException(status==403||status==429?"更新检查达到访问限额，请稍后重试。":"未能读取正式发布信息，请稍后重试。");JSONArray releases=new JSONArray(new String(read(conn.getInputStream(),4L*1024*1024),StandardCharsets.UTF_8));return new JSObject().put("releases",releases);}catch(SocketTimeoutException e){throw new IOException("连接发布服务器超时，请稍后重试。");}finally{conn.disconnect();}
     });}
+    @PluginMethod public void openExternalTool(PluginCall call){
+        String value=call.getString("url");
+        try{if(value==null||value.length()>2048)throw new Exception();URI uri=new URI(value);String host=uri.getHost();boolean local="http".equals(uri.getScheme())&&("localhost".equals(host)||"127.0.0.1".equals(host)||"[::1]".equals(host));if(host==null||uri.getUserInfo()!=null||!("https".equals(uri.getScheme())||local))throw new Exception();
+            getActivity().runOnUiThread(()->{try{getActivity().startActivity(new Intent(Intent.ACTION_VIEW,Uri.parse(value)));call.resolve(new JSObject().put("ok",true));}catch(Exception e){call.reject("未能打开外部工具，请检查系统浏览器。");}});
+        }catch(Exception e){call.reject("外部工具链接无效。");}
+    }
     @PluginMethod public void openRelease(PluginCall call){
         String value=call.getString("url");
         try{URI uri=new URI(value==null?"":value);String p=uri.getPath();if(!"https".equals(uri.getScheme())||!"github.com".equals(uri.getHost())||uri.getPort()!=-1||uri.getUserInfo()!=null||uri.getQuery()!=null||uri.getFragment()!=null||p==null||!(p.equals("/largetomatoes/mac-/releases")||p.startsWith("/largetomatoes/mac-/releases/tag/")||p.startsWith("/largetomatoes/mac-/releases/download/")||p.equals("/largetomatoes/wenjian-software/releases")||p.startsWith("/largetomatoes/wenjian-software/releases/tag/")||p.startsWith("/largetomatoes/wenjian-software/releases/download/")))throw new Exception("发布链接无效");

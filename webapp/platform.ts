@@ -1,3 +1,4 @@
+import {createPortablePlugins,choosePluginText,preparePluginChange,notifyPluginChange} from '../mobile/plugin-adapter';
 import {compute} from '../lib/sync/compute';
 import {beginWebLease,endWebLease} from './lease';
 import {dbGet,dbPut,dbDelete,dbKeys} from './storage';
@@ -20,7 +21,7 @@ import type {Envelope} from '../lib/sync/client';
 import {newSyncState} from '../lib/sync/core';
 type CloudFile={key:string;sha256:string;size:number};
 type Config={configured:boolean;region?:string;bucket?:string;prefix?:string;accessKeyId?:string};
-interface NativeStorage extends StoreChunks{beginSyncLease(input:{target:string;owner:string}):Promise<{recoverableOwners:string[];deviceName:string}>;finishSyncLease(input:{target:string;owner:string;released:boolean;succeeded:boolean}):Promise<unknown>;exportDiagnostics():Promise<unknown>;appUpdate(input:{action:string;version?:string;manifestUrl?:string}):Promise<unknown>;backupLocal():Promise<{backupPath:string}>;appReleases():Promise<{releases:unknown[]}>;openRelease(input:{url:string}):Promise<{ok:boolean}>;connectSync(input:{config:unknown}):Promise<unknown>;detachSync(input:{target:string}):Promise<unknown>;getSyncIdentity():Promise<{provider:string;configured:boolean;target:string}>;setSyncConnection(input:{config:unknown}):Promise<unknown>;readStore():Promise<{text?:string}>;writeStore(input:{text:string}):Promise<{ok:boolean}>;bookInfo(input:{name:string}):Promise<{available:boolean;uri:string;size:number}>;importBook():Promise<{cancelled?:boolean;name:string;storedFile:string;format:'pdf'|'epub'}>;getConfig():Promise<Config>;setConfig(input:{config:unknown}):Promise<Config>;remote(input:unknown):Promise<unknown>;transferBook(input:{name:string;action:string;file?:CloudFile;target?:string}):Promise<CloudFile>}
+interface NativeStorage extends StoreChunks{beginSyncLease(input:{target:string;owner:string}):Promise<{recoverableOwners:string[];deviceName:string}>;finishSyncLease(input:{target:string;owner:string;released:boolean;succeeded:boolean}):Promise<unknown>;exportDiagnostics():Promise<unknown>;appUpdate(input:{action:string;version?:string;manifestUrl?:string}):Promise<unknown>;backupLocal():Promise<{backupPath:string}>;appReleases():Promise<{releases:unknown[]}>;openRelease(input:{url:string}):Promise<{ok:boolean}>;openExternalTool(input:{url:string}):Promise<{ok:boolean}>;connectSync(input:{config:unknown}):Promise<unknown>;detachSync(input:{target:string}):Promise<unknown>;getSyncIdentity():Promise<{provider:string;configured:boolean;target:string}>;setSyncConnection(input:{config:unknown}):Promise<unknown>;readStore():Promise<{text?:string}>;writeStore(input:{text:string}):Promise<{ok:boolean}>;bookInfo(input:{name:string}):Promise<{available:boolean;uri:string;size:number}>;importBook():Promise<{cancelled?:boolean;name:string;storedFile:string;format:'pdf'|'epub'}>;getConfig():Promise<Config>;setConfig(input:{config:unknown}):Promise<Config>;remote(input:unknown):Promise<unknown>;transferBook(input:{name:string;action:string;file?:CloudFile;target?:string}):Promise<CloudFile>}
 const native=registerPlugin<NativeStorage>('WenjianStorage');
 const isNative=Capacitor.isNativePlatform();
 const chunked=isNative&&Capacitor.getPlatform?.()==='android';
@@ -52,7 +53,9 @@ async function commitSync(payload:Record<string,any>){const current=await peekSt
 const originalFetch=window.fetch.bind(window);
 const json=(body:unknown,status=200)=>new Response(JSON.stringify(body),{status,headers:{'Content-Type':'application/json'}});
 export async function exportMobileDiagnostics(){if(!isNative)return exportWebNotes();if(!chunked)throw Error('请在安卓修复版导出诊断记录');return native.exportDiagnostics();}
+const portablePlugins=createPortablePlugins({platform:'web',build:336,read:peekStore,write:writeStore,serial,prepare:preparePluginChange,notify:notifyPluginChange,choose:choosePluginText,fetch:originalFetch,confirm:message=>window.confirm(message),copy:async text=>{if(!navigator.clipboard?.writeText)throw Error('当前浏览器无法复制文本，请在系统浏览器打开。');await navigator.clipboard.writeText(text);},open:async url=>{if(isNative)await native.openExternalTool({url});else window.open(url,'_blank','noopener,noreferrer');},backup:async store=>{if(isNative)await native.backupLocal();else await dbPut('plugin-backup/'+new Date().toISOString()+'-'+crypto.randomUUID(),JSON.stringify({format:'wenjian-plugin-recovery',schema:1,store}));}});
 export function installMobileApi(){
+ document.documentElement.dataset.wenjianPlugins='true';
  if(!isNative)setLeaseRecovery({begin:beginWebLease,end:endWebLease});
  if(chunked)setLeaseRecovery({begin:(target,owner)=>native.beginSyncLease({target,owner}),end:(target,owner,released,succeeded)=>native.finishSyncLease({target,owner,released,succeeded}).then(()=>{})});
  setSyncTransport(async(path,body)=>{
@@ -72,7 +75,8 @@ export function installMobileApi(){
  window.fetch=async(input,init)=>{
  const url=typeof input==='string'?input:input instanceof URL?input.toString():input.url;const route=new URL(url,location.origin).pathname;if(!route.startsWith('/api/')||route==='/api/webdav')return originalFetch(input,init);
  try{const payload=typeof init?.body==='string'?JSON.parse(init.body):{},method=init?.method||'GET';
-  if(route==='/api/app/info')return json(isNative?{...await App.getInfo(),platform:'android',arch:'universal'}:{version:PREVIEW_VERSION,build:'330',displayBuild:'330',platform:'web',arch:'universal'});
+  if(route==='/api/plugins'||route==='/api/plugins/invoke')return json(await portablePlugins.handle(payload,new URL(url,location.origin).searchParams,method,route.endsWith('/invoke')));
+  if(route==='/api/app/info')return json(isNative?{...await App.getInfo(),platform:'android',arch:'universal'}:{version:PREVIEW_VERSION,build:'336',displayBuild:'336',platform:'web',arch:'universal'});
   if(route==='/api/app/releases'){if(!isNative)return json([]);if(isNative)return json((await native.appReleases()).releases);const response=await originalFetch('/api/app/releases');return response;}
   if(route==='/api/app/update'){
    if(!isNative)return json({state:'idle'});

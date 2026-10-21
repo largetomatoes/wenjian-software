@@ -1,0 +1,32 @@
+{
+  "format": "wenjian-plugin",
+  "schema": 2,
+  "manifest": {
+    "id": "org.wenjian.example.graph",
+    "name": "示例 · 自己的问题图",
+    "author": "问间开发示例",
+    "description": "在独立窗口展示授权的问题图；只读原始记录，保存自己的行距。",
+    "version": "1.0.0",
+    "apiVersion": 2,
+    "minAppBuild": 333,
+    "kind": "sandbox",
+    "platforms": [
+      "mac"
+    ],
+    "permissions": [
+      "graph.read",
+      "storage"
+    ],
+    "network": {
+      "local": [],
+      "remote": []
+    },
+    "license": "MIT"
+  },
+  "view": {
+    "html": "<h1>自己的问题图</h1><p>此示例只改变自己的展示，不修改问间中的结构。</p><button id=\"load\">读取问题图</button> <label>行距 <input id=\"spacing\" type=\"range\" min=\"65\" max=\"180\" value=\"100\"></label><p id=\"status\"></p><div id=\"canvas\"></div>",
+    "css": "#canvas{overflow:auto;max-height:65vh;border:1px solid #ded5c7;border-radius:12px}svg{display:block}h1{font-size:22px}",
+    "js": "let graph,spacing=100;const status=document.querySelector('#status'),canvas=document.querySelector('#canvas');function draw(){if(!graph)return;canvas.replaceChildren();const ns='http://www.w3.org/2000/svg',svg=document.createElementNS(ns,'svg'),positions=new Map();let row=0;for(const n of graph.nodes){let depth=0,parent=n.parentId,seen=new Set([n.id]);while(parent&&!seen.has(parent)){seen.add(parent);depth++;parent=graph.nodes.find(p=>p.id===parent&&p.pageId===n.pageId)?.parentId;}positions.set(n.key,{x:30+depth*270,y:30+row++*spacing});}svg.setAttribute('width',String(Math.max(800,...[...positions.values()].map(p=>p.x+270))));svg.setAttribute('height',String(Math.max(300,row*spacing+70)));for(const e of graph.edges){const a=positions.get(e.fromKey),b=positions.get(e.toKey);if(!a||!b)continue;const line=document.createElementNS(ns,'path');line.setAttribute('d','M'+(a.x+230)+' '+(a.y+24)+' C'+(a.x+250)+' '+(a.y+24)+' '+(b.x-20)+' '+(b.y+24)+' '+b.x+' '+(b.y+24));line.setAttribute('stroke',e.kind==='cross'?'#9278ad':'#c3b79f');line.setAttribute('fill','none');svg.append(line);}for(const n of graph.nodes){const p=positions.get(n.key),g=document.createElementNS(ns,'g'),rect=document.createElementNS(ns,'rect'),label=document.createElementNS(ns,'text');g.setAttribute('transform','translate('+p.x+' '+p.y+')');rect.setAttribute('width','230');rect.setAttribute('height','48');rect.setAttribute('rx','9');rect.setAttribute('fill',n.kind==='cross'?'#eee5f6':'#fff');rect.setAttribute('stroke','#d8cebd');label.setAttribute('x','12');label.setAttribute('y','30');label.setAttribute('font-size','13');label.textContent=(n.code+' '+n.title).slice(0,22);const title=document.createElementNS(ns,'title');title.textContent=n.title;g.append(rect,label,title);svg.append(g);}canvas.append(svg);status.textContent=graph.nodes.length+' 个位置 · '+graph.edges.length+' 条关系';}document.querySelector('#load').onclick=async()=>{try{graph=await wenjian.graph.read();const saved=await wenjian.storage.get('layout');spacing=saved?.spacing||100;document.querySelector('#spacing').value=spacing;draw();}catch(e){status.textContent=e.message;}};document.querySelector('#spacing').oninput=async e=>{spacing=Number(e.target.value);draw();await wenjian.storage.set('layout',{spacing});};"
+  },
+  "readme": "需要 graph.read 和 storage。启动时自行选择问题页；无网络、无写入权限。展示为接口示例，可自由修改布局。许可 MIT。"
+}

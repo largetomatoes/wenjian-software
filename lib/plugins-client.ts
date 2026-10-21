@@ -1,6 +1,7 @@
-import type {ExternalPlugin} from './plugin-contract.cjs';
-export type InstalledPlugin=ExternalPlugin&{enabled:boolean;installedAt:string;updatedAt:string;source:string;sha256:string};
+import type {PluginPackage} from './plugin-contract.cjs';
+export type InstalledPlugin=PluginPackage&{enabled:boolean;installedAt:string;updatedAt:string;source:string;sha256:string};
 export type MarketPlugin={id:string;name:string;author:string;description:string;version:string;minAppBuild:number;platforms:string[];url:string;sha256:string};
-export type PluginStatus={build:number;apiVersion:number;installed:InstalledPlugin[];catalog:MarketPlugin[];notice?:string};
+export type PluginScope={pageIds:string[];bookIds:string[];cards:boolean;includeArchived:boolean};
+export type PluginStatus={platform?:'mac'|'windows'|'android'|'web';capabilities?:{packages:boolean;sandbox:boolean;localPrograms:boolean;recoveryFolder:boolean};build:number;apiVersion:number;builtins?:{universalDelete:boolean};installed:InstalledPlugin[];catalog:MarketPlugin[];notice?:string;runtime?:{advanced:boolean;paused:boolean;running:{id:string;name:string;startedAt:string;scope:PluginScope;permissions:string[];busy:number}[]}};
 export async function pluginApi<T>(input?:Record<string,unknown>,query='',invoke=false):Promise<T>{const response=await fetch('/api/plugins'+(invoke?'/invoke':'')+query,input?{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(input)}:{cache:'no-store'}),result=await response.json() as T&{error?:string};if(!response.ok)throw Error(result.error||'插件操作未完成');return result as T;}
-export const pluginPermissions:Record<string,string>={'external.open':'打开声明的外部工具','selection.read':'使用你主动选中的片段','clipboard.write':'将所选片段复制到剪贴板'};
+export const pluginPermissions:Record<string,string>={'external.open':'打开声明的外部工具','selection.read':'使用你主动选中的片段','clipboard.write':'将所选片段复制到剪贴板','notebook.read':'读取所选范围的笔记、引用和历史','graph.read':'读取所选问题图的节点与关系','notebook.write':'提交编辑、新增和结构调整','notebook.archive':'归档与恢复记录','notebook.delete':'清除记录','storage':'保存插件自己的结果与布局','network.local':'连接声明的本机服务','network.remote':'连接声明的远程服务','files.read':'读取你单独选择的文本文件','files.write':'导出文本文件','system.execute':'运行你选择的本机程序（高级）'};

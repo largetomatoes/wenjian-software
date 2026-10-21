@@ -4,6 +4,7 @@ $artifacts=(Resolve-Path $ArtifactDirectory).Path
 $setup=@(Get-ChildItem $artifacts -Filter '*Windows-x64-Setup.exe')
 $zip=@(Get-ChildItem $artifacts -Filter '*Windows-x64.zip')
 if($setup.Count -ne 1 -or $zip.Count -ne 1){throw 'Exactly one installer and update zip required'}
+$expectedVersion=[regex]::Match($setup[0].Name,'^Wenjian-([0-9.]+)-build').Groups[1].Value
 $expectedBuild=[int]([regex]::Match($setup[0].Name,'-build([0-9]+)-').Groups[1].Value)
 if($expectedBuild -lt 1){throw 'Invalid build in installer filename'}
 $installed=Join-Path $env:LOCALAPPDATA 'Programs\Wenjian'
@@ -64,7 +65,7 @@ try{
  New-Item -ItemType Directory -Force $cache | Out-Null
  $nonce=[guid]::NewGuid().ToString()
  $confirmation=Join-Path $cache ('boot-'+$nonce+'.json')
- $spec=@{directory=$cache;zip=$zip[0].FullName;target=$installed;pid=2147483647;platform='win32';exe=(Join-Path $installed 'Wenjian.exe');version='3.14';build=$expectedBuild;nonce=$nonce;confirmation=$confirmation}
+ $spec=@{directory=$cache;zip=$zip[0].FullName;target=$installed;pid=2147483647;platform='win32';exe=(Join-Path $installed 'Wenjian.exe');version=$expectedVersion;build=$expectedBuild;nonce=$nonce;confirmation=$confirmation}
  $config=Join-Path $cache 'install-fixture.json'
  $jobJson=$spec|ConvertTo-Json
  [IO.File]::WriteAllText($config,$jobJson,[Text.UTF8Encoding]::new($false))

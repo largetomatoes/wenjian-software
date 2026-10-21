@@ -29,7 +29,7 @@ export function validateOperation(value:unknown):value is Operation {
  const [collection,id,...extra]=op.key.split('/');if(extra.length||!id)return false;
  if(collection==='settings')return (legacyScalars as readonly string[]).includes(id)&&(id==='dismissedSuggestions'?Array.isArray(op.value):id==='organizationVersion'?op.value===2:typeof op.value==='boolean');
  if(collection!=='readingProgress'&&!(collections as readonly string[]).includes(collection))return false;
- if(op.value===null)return !(collection==='notes'&&decodeURIComponent(id)==='world');
+ if(op.value===null)return true;
  if(typeof op.value!=='object'||Array.isArray(op.value))return false;
  const record=op.value as Record<string,unknown>;
  try{return decodeURIComponent(id)===(collection==='ocrCache'?JSON.stringify([record.libraryBookId,record.page]):collection==='zoteroCollections'?JSON.stringify([record.serverId,record.key]):record.id);}catch{return false;}
@@ -107,7 +107,7 @@ export function materialize(state:SyncState,local:Notebook):{data:Notebook;confl
  // Preserve existing order. Newly received records use an explicit stable tie breaker.
  for(const collection of collections){const identity=(v:unknown)=>{const record=v as Record<string,unknown>;return collection==='ocrCache'?JSON.stringify([record.libraryBookId,record.page]):collection==='zoteroCollections'?JSON.stringify([record.serverId,record.key]):String(record.id||'');};const order=new Map((local[collection]||[]).map((v,i)=>[identity(v),i]));(data[collection] as unknown as {id?:string;at?:string}[]).sort((a,b)=>(order.get(identity(a))??Infinity)-(order.get(identity(b))??Infinity)||String(a.at||'').localeCompare(String(b.at||''))||identity(a).localeCompare(identity(b)));}
  for(const book of data.libraryBooks){const progress=heads.get('readingProgress/'+encodeURIComponent(book.id));book.progress=progress?.length?structuredClone((([...progress].sort((a,b)=>b.at.localeCompare(a.at)||b.id.localeCompare(a.id))[0].value as {progress?:typeof book.progress})?.progress)||{}):{};}
- if(!data.notes.some(n=>n.id==='world'&&!n.parent))throw Error('同步资料缺少核心问题，未修改本机资料。');
+ if(!data.notes.some(n=>n.kind==='question'&&!n.parent))throw Error('同步资料缺少核心问题，未修改本机资料。');
  const ids=new Set([...data.notes.map(n=>n.id),...data.crossThoughts.map(n=>n.id)]);
  if(data.notes.some(n=>n.parent&&!ids.has(n.parent)))throw Error('某个问题在一端被删除、另一端添加了子问题。请先恢复该父问题，再同步。');
  return {data,conflicts};
