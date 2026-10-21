@@ -23,7 +23,7 @@ html[data-wenjian-platform=windows] .book-thoughts-sheet .chapter-note-body>arti
 .book-search-panel form{display:flex;align-items:center;gap:7px}.book-search-panel form>svg{width:17px;flex-shrink:0;color:#758a90}.book-search-panel input{min-width:0;flex:1;outline:none;padding:8px 3px;font-size:14px;background:transparent}.book-search-panel>p{font-size:12px;line-height:1.6;color:#72858b;padding:8px 0}.book-search-panel>p[role=alert]{color:#966548}.book-search-results{max-height:min(380px,55dvh);overflow:auto;overscroll-behavior:contain}.book-search-results>button{display:grid;gap:5px;width:100%;text-align:left;padding:12px 8px;border-top:1px solid #e4e9e9;border-radius:4px;cursor:pointer}.book-search-results>button:hover,.book-search-results>button:focus-visible{background:#edf3f3}.book-search-results small{color:#7b898c;font-size:11px}.book-search-results span{font:14px/1.8 "Songti SC","STSong",serif;white-space:pre-wrap;overflow-wrap:anywhere}.book-search-results mark{color:inherit;background:#d8e9ef;border-radius:2px}
 ::highlight(wenjian-search){background:rgba(118,181,211,.48);color:transparent}
 
-.reader-cache-status{display:flex;align-items:center;justify-content:center;gap:.5rem;padding:.3rem .75rem;font-size:12px;color:var(--muted-foreground);flex-shrink:0;}
+.reader-feedback{position:absolute;right:16px;bottom:14px;z-index:20;max-width:calc(100% - 32px);display:flex;flex-direction:column;gap:6px;pointer-events:none}.reader-feedback:empty{display:none}.reader-feedback>.reader-error,.reader-feedback>.reader-notice{position:static;margin:0;padding:6px 10px;border-radius:8px;background:#fffffff2;font-size:12px;line-height:1.5}.reader-cache-status{display:flex;align-items:center;gap:.5rem;max-width:100%;padding:6px 10px;border:1px solid #dce4df;border-radius:8px;background:#fffffff2;font-size:12px;line-height:1.5;color:var(--muted-foreground);box-shadow:0 2px 8px #23364c12;overflow-wrap:anywhere;pointer-events:none}.reader-cache-status button{pointer-events:auto;flex-shrink:0}
 
 .ocr-text-runs{position:absolute;inset:0;text-align:left}.ocr-text-runs>span{padding:0;margin:0;line-height:1;letter-spacing:0;word-spacing:0}
 
@@ -36,7 +36,7 @@ html[data-wenjian-platform=windows] .book-thoughts-sheet .chapter-note-body>arti
 
 .process-pdf-overlay{position:absolute;inset:0;z-index:2;pointer-events:none}.process-pdf-overlay i{position:absolute;display:block;background:rgba(246,214,105,.23);pointer-events:none;border-radius:1px}
 
-html[data-wenjian-platform=windows] .reader-ocr-status{position:absolute;right:24px;bottom:18px;z-index:20;pointer-events:none;padding:6px 12px;border:1px solid #dce4ed;border-radius:8px;background:#fffffff2;color:#516477;font-size:12px;box-shadow:0 2px 8px #23364c12}
+.reader-ocr-progress{position:relative;display:flex;align-items:center;gap:5px;flex:0 1 164px;width:164px;min-width:0;height:24px;margin-left:auto;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;color:#71858c;font-size:11px;pointer-events:none}.reader-ocr-progress svg{width:13px;height:13px;flex-shrink:0}
 
 .reader-quality-status{position:absolute;left:24px;bottom:18px;z-index:20;pointer-events:none;padding:5px 10px;border-radius:6px;background:#fffffff0;color:#647482;font-size:12px}
 .reader-note-slot{min-width:0;overflow-anchor:none}

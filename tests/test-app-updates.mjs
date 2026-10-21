@@ -72,3 +72,12 @@ const legacySource=execFileSync('git',['show','17ec495:lib/app-updates.ts'],{enc
 vm.runInNewContext(ts.transpileModule(legacySource,{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText,{module:legacyModule,exports:legacyModule.exports,URL});
 assert.equal(legacyModule.exports.selectUpdate([windowsPatch,independent],{platform:'win32',arch:'x64',version:'3.14',build:'321'}).download,windowsPatch.assets[0].browser_download_url);
 console.log('PASS: integer 322 upgrade from actual 321 parser, display revision 321.1, no downgrade from test 325, platform-specific releases for new clients');
+
+// The public 330 parser must continue to find its own platform when Mac alone is patched.
+const legacy330={exports:{}};
+vm.runInNewContext(ts.transpileModule(execFileSync('git',['show','ec5f09a:lib/app-updates.ts'],{encoding:'utf8'}),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText,{module:legacy330,exports:legacy330.exports,URL});
+const releaseRoot='https://github.com/largetomatoes/wenjian-software/releases';
+const mac337={tag_name:'v3.141-build337',html_url:releaseRoot+'/tag/v3.141-build337',body:'<!-- wenjian-build:337 -->\n<!-- wenjian-platforms:darwin -->',assets:[{name:'Wenjian-3.141-build337-macOS-arm64.zip',state:'uploaded',browser_download_url:releaseRoot+'/download/v3.141-build337/Wenjian-3.141-build337-macOS-arm64.zip'}]};
+const publicReleases=JSON.parse(fs.readFileSync('updates/releases.json','utf8')).releases;
+for(const [platform,arch,build]of [['darwin','arm64',337],['win32','x64',336],['android','universal',336]]){const result=legacy330.exports.selectUpdate([mac337,...publicReleases],{platform,arch,version:'3.14',build:'330'});assert.equal(result.state,'available');assert.equal(result.build,build);}
+console.log('PASS: actual public 330 finds Mac 337, Windows/Android 336 with platform-specific patches');

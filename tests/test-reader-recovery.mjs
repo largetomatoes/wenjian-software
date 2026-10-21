@@ -50,7 +50,7 @@ function readerFunction(name){let found;function visit(node){if(ts.isFunctionDec
 // original OCR text, otherwise a successfully saved highlight disappears.
 const originalHyphen='soft\u00ad\nware',textNode={data:originalHyphen},highlightRanges=[];
 vm.runInNewContext(readerFunction('applyPdfHighlights')+';applyPdfHighlights();',{
- paneKey:'test-pane',requestAnimationFrame:callback=>callback(),window:{Highlight:class{constructor(...ranges){highlightRanges.push(...ranges);}}},CSS:{highlights:{delete(){},set(){}}},
+ highlightFrameRef:{current:null},readerOpenRef:{current:true},pdfHighlightRangesRef:{current:[]},cancelAnimationFrame(){},paneKey:'test-pane',requestAnimationFrame:callback=>callback(),window:{Highlight:class{constructor(...ranges){highlightRanges.push(...ranges);}}},CSS:{highlights:{delete(){},set(){}}},
  document:{getElementById:()=>true,createTreeWalker:()=>{let read=false;return {nextNode:()=>read?null:(read=true,textNode)};},createRange:()=>({setStart(node,offset){this.start=offset;},setEnd(node,offset){this.end=offset;}})},NodeFilter:{SHOW_TEXT:4},
  dataRef:{current:{libraryHighlights:[{libraryBookId:'b',sourceLocation:'pdf:1',quote:'software',rawQuote:originalHyphen}]}},activeId:'b',page:1,pdfTextLayerRef:{current:null},ocrTextLayerRef:{current:{}},...load('lib/reader-text.ts'),
 });

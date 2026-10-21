@@ -1,3 +1,5 @@
+> Mac 修复版：**3.141（337）**。[下载](https://github.com/largetomatoes/wenjian-software/releases/tag/v3.141-build337) · [修复内容](RELEASE_NOTES_3.141_337.md)。其他平台沿用下方 336。
+
 > 当前版本：**问间 3.141**。Mac、Windows、Android 与 iPhone / iPad Web App 统一更新；[下载与发布说明](https://github.com/largetomatoes/wenjian-software/releases/tag/v3.141-build336) · [本次改动](RELEASE_NOTES_3.141.md) · [构建说明](BUILDING.md)。
 
 # 问间 · 3.141

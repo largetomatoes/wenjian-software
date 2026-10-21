@@ -12,6 +12,7 @@ await mkdir(path.join(stage,'.openai'),{recursive:true});
 await cp(path.join(root,'webapp/host/hosting.json'),path.join(stage,'.openai/hosting.json'));
 await mkdir(path.join(stage,'webapp'),{recursive:true});await cp(path.join(root,'webapp/relay.mjs'),path.join(stage,'webapp/relay.mjs'));
 await cp(path.join(root,'webapp/public'),path.join(stage,'public'),{recursive:true});
+await cp(path.join(root,'updates'),path.join(stage,'updates'),{recursive:true});
 const pkg=JSON.parse(await readFile(path.join(root,'package.json'),'utf8'));pkg.scripts={build:'node scripts/run-framework.mjs build'};
 await writeFile(path.join(stage,'package.json'),JSON.stringify(pkg,null,2)+'\n');
 await mkdir(path.join(stage,'node_modules'),{recursive:true});

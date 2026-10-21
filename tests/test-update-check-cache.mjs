@@ -1,0 +1,13 @@
+import assert from 'node:assert/strict';
+import {load,plain} from './load-ts.cjs';
+const {failedUpdateCheck,reusableUpdateCheck}=load('lib/update-check-cache.ts');
+const releases=[{tag_name:'v3.141-build336'}],old={at:1000,releases};
+const failed=plain(failedUpdateCheck(old,'offline',2000));
+assert.deepEqual(failed,{at:2000,error:'offline',releases,successAt:1000});
+assert.equal(plain(failedUpdateCheck(failed,'still offline',3000)).successAt,1000);
+assert.equal(reusableUpdateCheck(failed,121999),true);
+assert.equal(reusableUpdateCheck(failed,122000),false);
+assert.equal(reusableUpdateCheck(old,86400001),true);
+assert.equal(reusableUpdateCheck(old,86401000),false);
+assert.equal(reusableUpdateCheck(undefined),false);
+console.log('PASS: failed checks preserve the last successful release list; short error retry and 24-hour success reuse');
