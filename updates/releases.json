@@ -1,7 +1,62 @@
 {
   "schema": 1,
-  "generatedAt": "2026-10-21T10:00:50Z",
+  "generatedAt": "2026-10-21T10:58:49Z",
   "releases": [
+    {
+      "tag_name": "v3.141-build338",
+      "html_url": "https://github.com/largetomatoes/wenjian-software/releases/tag/v3.141-build338",
+      "body": "# 问间 3.141（338）· 全平台统一更新\n\n- 修复 PDF 识别、保存文字时挤动阅读区域，保持阅读位置与缩放。\n- Mac、Windows、Android 更新检查加入官网与备用来源，失败时保留上次成功的版本信息。\n- iPhone／iPad Web App 增加“检查更新”，保存草稿后再切换新版。\n- 保留 Windows 的托盘、安装磁盘选择与硬件加速设置；Android 沿用原签名覆盖安装。\n\n安装包从空白资料库开始，覆盖升级保留已有资料，请勿先卸载。iPhone／iPad 使用 [Web App](https://reader.wenjian-app.workers.dev/read/)，通过 Safari 分享菜单添加到主屏幕。部分网络可能需要代理。\n\n源码包包含构建说明、许可与修改记录。\n\n<!-- wenjian-build:338 -->\n<!-- wenjian-display-build:338 -->\n<!-- wenjian-platforms:darwin,win32,android -->\n",
+      "published_at": "2026-10-21T10:58:49Z",
+      "draft": false,
+      "prerelease": false,
+      "assets": [
+        {
+          "name": "release-notes.md",
+          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.141-build338/release-notes.md",
+          "state": "uploaded"
+        },
+        {
+          "name": "SHA256SUMS.txt",
+          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.141-build338/SHA256SUMS.txt",
+          "state": "uploaded"
+        },
+        {
+          "name": "update-manifest-338.json",
+          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.141-build338/update-manifest-338.json",
+          "state": "uploaded"
+        },
+        {
+          "name": "validation-338.json",
+          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.141-build338/validation-338.json",
+          "state": "uploaded"
+        },
+        {
+          "name": "Wenjian-3.141-build338-Android.apk",
+          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.141-build338/Wenjian-3.141-build338-Android.apk",
+          "state": "uploaded"
+        },
+        {
+          "name": "Wenjian-3.141-build338-macOS-arm64.zip",
+          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.141-build338/Wenjian-3.141-build338-macOS-arm64.zip",
+          "state": "uploaded"
+        },
+        {
+          "name": "Wenjian-3.141-build338-Source.zip",
+          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.141-build338/Wenjian-3.141-build338-Source.zip",
+          "state": "uploaded"
+        },
+        {
+          "name": "Wenjian-3.141-build338-Windows-x64-Setup.exe",
+          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.141-build338/Wenjian-3.141-build338-Windows-x64-Setup.exe",
+          "state": "uploaded"
+        },
+        {
+          "name": "Wenjian-3.141-build338-Windows-x64.zip",
+          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.141-build338/Wenjian-3.141-build338-Windows-x64.zip",
+          "state": "uploaded"
+        }
+      ]
+    },
     {
       "tag_name": "v3.141-build337",
       "html_url": "https://github.com/largetomatoes/wenjian-software/releases/tag/v3.141-build337",
