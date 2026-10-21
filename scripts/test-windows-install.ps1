@@ -1,5 +1,7 @@
 param([Parameter(Mandatory=$true)][string]$ArtifactDirectory)
 $ErrorActionPreference='Stop'
+& node --test tests/test-plugin-system.cjs
+if($LASTEXITCODE -ne 0){throw 'Native plugin program checks failed'}
 $artifacts=(Resolve-Path $ArtifactDirectory).Path
 $setup=@(Get-ChildItem $artifacts -Filter '*Windows-x64-Setup.exe')
 $zip=@(Get-ChildItem $artifacts -Filter '*Windows-x64.zip')
