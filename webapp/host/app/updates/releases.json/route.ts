@@ -4,7 +4,7 @@ const source='https://largetomatoes.github.io/wenjian-web/updates/releases.json'
 export async function GET(){
  const headers={'Content-Type':'application/json; charset=utf-8','Cache-Control':'public, max-age=300','Access-Control-Allow-Origin':'*'};
  try{
-  const response=await fetch(source,{headers:{Accept:'application/json'},signal:AbortSignal.timeout(4500)});
+  const response=await fetch(source,{headers:{Accept:'application/json'},signal:AbortSignal.timeout(2000)});
   if(!response.ok)throw Error('Source unavailable');
   const text=await response.text();if(text.length>4*1024*1024)throw Error('Index too large');
   const value=JSON.parse(text);if(value?.schema!==1||!Array.isArray(value.releases))throw Error('Invalid index');

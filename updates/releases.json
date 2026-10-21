@@ -1,801 +1,841 @@
 {
   "schema": 1,
-  "generatedAt": "2026-10-21T09:30:58.085192+00:00",
+  "generatedAt": "2026-10-21T10:00:50Z",
   "releases": [
     {
+      "tag_name": "v3.141-build337",
+      "html_url": "https://github.com/largetomatoes/wenjian-software/releases/tag/v3.141-build337",
+      "body": "# 问间 3.141（337）· Mac 修复\n\n- 修复扫描 PDF 在识别、保存文字后上下跳动；识别期间滚动保持阅读位置。\n- 更新检查加入官网和备用清单，减少 GitHub 访问限额影响；失败时保留上次成功的版本信息。\n\n本次安装包适用于 Apple 芯片 Mac，覆盖安装保留资料和草稿。Windows、Android 继续使用 336；原有下载链接保留。公开源码含构建说明与改动记录。\n\n<!-- wenjian-build:337 -->\n<!-- wenjian-display-build:337 -->\n<!-- wenjian-platforms:darwin -->\n",
+      "published_at": "2026-10-21T10:00:50Z",
+      "draft": false,
+      "prerelease": false,
       "assets": [
         {
-          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.141-build336/release-notes.md",
-          "name": "release-notes.md",
+          "name": "release-notes-337.md",
+          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.141-build337/release-notes-337.md",
           "state": "uploaded"
         },
         {
-          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.141-build336/SHA256SUMS.txt",
-          "name": "SHA256SUMS.txt",
+          "name": "SHA256SUMS-337.txt",
+          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.141-build337/SHA256SUMS-337.txt",
           "state": "uploaded"
         },
         {
-          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.141-build336/update-manifest-336.json",
-          "name": "update-manifest-336.json",
+          "name": "update-manifest-337.json",
+          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.141-build337/update-manifest-337.json",
           "state": "uploaded"
         },
         {
-          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.141-build336/validation-336.json",
-          "name": "validation-336.json",
+          "name": "validation-337.json",
+          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.141-build337/validation-337.json",
           "state": "uploaded"
         },
         {
-          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.141-build336/Wenjian-3.141-build336-Android.apk",
-          "name": "Wenjian-3.141-build336-Android.apk",
+          "name": "Wenjian-3.141-build337-macOS-arm64.zip",
+          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.141-build337/Wenjian-3.141-build337-macOS-arm64.zip",
           "state": "uploaded"
         },
         {
-          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.141-build336/Wenjian-3.141-build336-macOS-arm64.zip",
-          "name": "Wenjian-3.141-build336-macOS-arm64.zip",
-          "state": "uploaded"
-        },
-        {
-          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.141-build336/Wenjian-3.141-build336-Source.zip",
-          "name": "Wenjian-3.141-build336-Source.zip",
-          "state": "uploaded"
-        },
-        {
-          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.141-build336/Wenjian-3.141-build336-Windows-x64-Setup.exe",
-          "name": "Wenjian-3.141-build336-Windows-x64-Setup.exe",
-          "state": "uploaded"
-        },
-        {
-          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.141-build336/Wenjian-3.141-build336-Windows-x64.zip",
-          "name": "Wenjian-3.141-build336-Windows-x64.zip",
+          "name": "Wenjian-3.141-build337-Source.zip",
+          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.141-build337/Wenjian-3.141-build337-Source.zip",
           "state": "uploaded"
         }
-      ],
-      "body": "<!-- wenjian-build:336 -->\n<!-- wenjian-display-build:336 -->\n<!-- wenjian-platforms:darwin,win32,android -->\n\n问间 3.141 是一次围绕阅读与思考整理的大更新。\n\n- **关系图更清楚**：交叉思考按实际空位横向或竖向收纳，在原画布展开；来源用括线汇合，子问题各有行列。\n- **插件与扩展**：新增插件市场、投稿与安装入口。电脑支持可编程沙箱及资料授权，手机和平板支持外部工具接入。\n- **可选的万用删除**：默认关闭。开启后可在内容原处或分类管理页处理问题、卡片、书籍、笔记与高亮，并恢复误删。\n- **阅读更稳定**：修复 EPUB 翻页后的高亮恢复、PDF 阅读退出和卡片集滚动等问题，统一各端体验。\n\niPhone／iPad：在 Safari 打开 [问间 Web App](https://reader.wenjian-app.workers.dev/read/)，分享 → 添加到主屏幕。已有 Web App 提示更新后即可更新。\n\n安装包从空白资料库开始；已有用户覆盖更新会沿用原资料。对应源码、构建说明及修改记录随本次标签提供。\n",
-      "draft": false,
+      ]
+    },
+    {
+      "tag_name": "v3.141-build336",
       "html_url": "https://github.com/largetomatoes/wenjian-software/releases/tag/v3.141-build336",
-      "prerelease": false,
+      "body": "<!-- wenjian-build:336 -->\n<!-- wenjian-display-build:336 -->\n<!-- wenjian-platforms:darwin,win32,android -->\n\n问间 3.141 是一次围绕阅读与思考整理的大更新。\n\n- **关系图更清楚**：交叉思考按实际空位横向或竖向收纳，在原画布展开；来源用括线汇合，子问题各有行列。\n- **插件与扩展**：新增插件市场、投稿与安装入口。电脑支持可编程沙箱及资料授权，手机和平板支持外部工具接入。\n- **可选的万用删除**：默认关闭。开启后可在内容原处或分类管理页处理问题、卡片、书籍、笔记与高亮，并恢复误删。\n- **阅读更稳定**：修复 EPUB 翻页后的高亮恢复、PDF 阅读退出和卡片集滚动等问题，统一各端体验。\n\niPhone／iPad：在 Safari 打开 [问间 Web App](https://reader.wenjian-app.workers.dev/read/)，分享 → 添加到主屏幕。已有 Web App 提示更新后即可更新。\n\n安装包从空白资料库开始；已有用户覆盖更新会沿用原资料。对应源码、构建说明及修改记录随本次标签提供。\n",
       "published_at": "2026-10-21T02:15:24Z",
-      "tag_name": "v3.141-build336"
-    },
-    {
+      "draft": false,
+      "prerelease": false,
       "assets": [
         {
-          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.14-build330/release-notes.md",
           "name": "release-notes.md",
+          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.141-build336/release-notes.md",
           "state": "uploaded"
         },
         {
-          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.14-build330/SHA256SUMS.txt",
           "name": "SHA256SUMS.txt",
+          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.141-build336/SHA256SUMS.txt",
           "state": "uploaded"
         },
         {
-          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.14-build330/update-manifest-330.json",
-          "name": "update-manifest-330.json",
+          "name": "update-manifest-336.json",
+          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.141-build336/update-manifest-336.json",
           "state": "uploaded"
         },
         {
-          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.14-build330/validation-330.json",
-          "name": "validation-330.json",
+          "name": "validation-336.json",
+          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.141-build336/validation-336.json",
           "state": "uploaded"
         },
         {
-          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.14-build330/Wenjian-3.14-build330-Android.apk",
-          "name": "Wenjian-3.14-build330-Android.apk",
+          "name": "Wenjian-3.141-build336-Android.apk",
+          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.141-build336/Wenjian-3.141-build336-Android.apk",
           "state": "uploaded"
         },
         {
-          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.14-build330/Wenjian-3.14-build330-macOS-arm64.zip",
-          "name": "Wenjian-3.14-build330-macOS-arm64.zip",
+          "name": "Wenjian-3.141-build336-macOS-arm64.zip",
+          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.141-build336/Wenjian-3.141-build336-macOS-arm64.zip",
           "state": "uploaded"
         },
         {
-          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.14-build330/Wenjian-3.14-build330-Source.zip",
-          "name": "Wenjian-3.14-build330-Source.zip",
+          "name": "Wenjian-3.141-build336-Source.zip",
+          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.141-build336/Wenjian-3.141-build336-Source.zip",
           "state": "uploaded"
         },
         {
-          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.14-build330/Wenjian-3.14-build330-Windows-x64-Setup.exe",
-          "name": "Wenjian-3.14-build330-Windows-x64-Setup.exe",
+          "name": "Wenjian-3.141-build336-Windows-x64-Setup.exe",
+          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.141-build336/Wenjian-3.141-build336-Windows-x64-Setup.exe",
           "state": "uploaded"
         },
         {
-          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.14-build330/Wenjian-3.14-build330-Windows-x64.zip",
-          "name": "Wenjian-3.14-build330-Windows-x64.zip",
+          "name": "Wenjian-3.141-build336-Windows-x64.zip",
+          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.141-build336/Wenjian-3.141-build336-Windows-x64.zip",
           "state": "uploaded"
         }
-      ],
-      "body": "<!-- wenjian-build:330 -->\n<!-- wenjian-display-build:330 -->\n<!-- wenjian-platforms:darwin,win32,android -->\n\n# 问间 3.14（330）\n\n本次统一提供 macOS（Apple 芯片）、Windows x64、Android 与 iPhone / iPad Web App。四端显示版本为 3.14（330），原生内部构建号为 330。\n\n## 更容易找到关联问题\n\n关联选择默认收在「所有关联问题」中。打开后先显示主问题，再逐层展开子问题；也可搜索编号、标题或完整路径。已经选择的关联在折叠后仍可见并可取消。这套选择用于过程笔记、读书笔记、共同思考、文稿选文与交叉思考。\n\nX 编号表示独立的交叉思考，显示所有参与问题的路径，不再让它看起来只属于第一个问题。交叉思考可以产生自己的子问题。两路及更多来源均以一个汇合节点表达，多条联系共用一个问题时使用独立连接位置。图中悬停或聚焦交叉思考会突出其全部连线，并显示完整来源；缩小时简化文字。原有问题树、编号和全部展开的全貌保留。\n\n## EPUB 章节与页码\n\n阅读栏支持多级目录、章节内小节跳转、全书阅读页码和输入数字跳页。首次打开时在后台计算并缓存实际排版页，期间可以继续阅读。窗口变化后重新分页，笔记和同步进度通过原文位置定位。\n\n「阅读页」随排版变化；若 EPUB 提供原书页码，另行显示，二者不混用。笔记记录章节与阅读位置。修复切换章节后，字体加载引起的跳转偏移；目录、恢复阅读与笔记回到原文采用同一套稳定定位。\n\n窗口变化、收起书架或打开笔记栏时，正文列宽与页码同步重新排版，修复按旧宽度显示导致右侧文字裁切的问题。\n\n## 阅读与保存性能\n\n- Windows 保留已通过试用的阅读调度、托盘恢复、小事务保存和默认关闭的可选图形硬件加速。\n- Mac 引入后台计算、增量保存与恢复日志、大列表按需显示、绘制续作、识别实例复用和稳定模型缓存，并按内存调整 Retina 绘制预算，保留原识别模型与图形默认值。\n- Android 与 Web 延续原生分块／浏览器资料库保存，将同步计算和较重的序列化移到后台，共用阅读调度、识别复用与受限缓存。\n- Web App 首次准备离线应用时缓存全部程序分块，确保断网重新打开后仍可读取本机笔记与草稿。\n- Mac 正常退出前保存最新草稿并形成本地检查点。\n\n## 安装与更新\n\n更新前可在设置导出完整备份。Mac 解压后移入「应用程序」；首次被系统拦截时，先尝试打开，再到「系统设置 → 隐私与安全性 → 仍要打开」。当前 Mac 包没有 Apple 开发者公证。\n\nWindows 推荐安装版，保留选择磁盘与文件夹的安装流程，覆盖更新使用原安装目录。另附便携 ZIP。Windows 包没有商业代码签名。图形硬件加速在设置中按需开启，完整退出托盘后重新打开生效。\n\nAndroid 沿用正式版证书，可覆盖原应用。原生应用从「设置 → 版本与更新」检查本次更新；旧版是否支持直接安装取决于其更新功能，始终可以从本次 Release 下载覆盖更新。\n\niPhone / iPad：在 Safari 打开 https://reader.wenjian-app.workers.dev/read/ ，点击分享按钮 → 添加到主屏幕 → 添加，从问间图标进入并连接自己的坚果云。现有 Web App 出现更新提示后，先保存输入再点击更新。部分网络需要使用代理访问。\n\n## 资料与验证范围\n\n初始安装包为空白资料库，不包含作者书籍、笔记、密码或签名私钥。原书、笔记、批注及云同步格式保持兼容。完整备份会形成包含最新本地增量的检查点；运行中不要只复制单个 notebook.json 作为完整备份。\n\n本次完成数据恢复、同步、旧版更新发现与签名清单检查；Mac 原生及 Windows 应用分支的阅读交互、EPUB 多级目录/原书页码/数字跳转/重排，以及 Web 的手机和平板尺寸、离线保存与模拟同步检查。Windows 本地分支的模拟运行不等于真实 Windows 驱动性能测试；Android APK 构建、lint、签名与资源检查不等于全型号实机测试，Web 的浏览器检查不等于 iOS Safari 实机测试。详细范围记录在 docs/release-330-plan.md。\n\n对应源码、构建说明及修改记录随本次标签和源码归档提供。项目继续使用仓库 LICENSE 中的源码公开与商业发行许可，第三方材料保留原许可。\n\nWindows 最终安装验收：[15 项检查通过](https://github.com/largetomatoes/wenjian-software/actions/runs/39248500448)。\n\n对应源码标签：[v3.14-build330](https://github.com/largetomatoes/wenjian-software/tree/v3.14-build330)；[构建说明](https://github.com/largetomatoes/wenjian-software/blob/v3.14-build330/BUILDING.md)、[实施与验证记录](https://github.com/largetomatoes/wenjian-software/blob/v3.14-build330/docs/release-330-plan.md)。附件提供完整源码 ZIP、SHA256SUMS.txt 和验证报告。\n",
-      "draft": false,
+      ]
+    },
+    {
+      "tag_name": "v3.14-build330",
       "html_url": "https://github.com/largetomatoes/wenjian-software/releases/tag/v3.14-build330",
-      "prerelease": false,
+      "body": "<!-- wenjian-build:330 -->\n<!-- wenjian-display-build:330 -->\n<!-- wenjian-platforms:darwin,win32,android -->\n\n# 问间 3.14（330）\n\n本次统一提供 macOS（Apple 芯片）、Windows x64、Android 与 iPhone / iPad Web App。四端显示版本为 3.14（330），原生内部构建号为 330。\n\n## 更容易找到关联问题\n\n关联选择默认收在「所有关联问题」中。打开后先显示主问题，再逐层展开子问题；也可搜索编号、标题或完整路径。已经选择的关联在折叠后仍可见并可取消。这套选择用于过程笔记、读书笔记、共同思考、文稿选文与交叉思考。\n\nX 编号表示独立的交叉思考，显示所有参与问题的路径，不再让它看起来只属于第一个问题。交叉思考可以产生自己的子问题。两路及更多来源均以一个汇合节点表达，多条联系共用一个问题时使用独立连接位置。图中悬停或聚焦交叉思考会突出其全部连线，并显示完整来源；缩小时简化文字。原有问题树、编号和全部展开的全貌保留。\n\n## EPUB 章节与页码\n\n阅读栏支持多级目录、章节内小节跳转、全书阅读页码和输入数字跳页。首次打开时在后台计算并缓存实际排版页，期间可以继续阅读。窗口变化后重新分页，笔记和同步进度通过原文位置定位。\n\n「阅读页」随排版变化；若 EPUB 提供原书页码，另行显示，二者不混用。笔记记录章节与阅读位置。修复切换章节后，字体加载引起的跳转偏移；目录、恢复阅读与笔记回到原文采用同一套稳定定位。\n\n窗口变化、收起书架或打开笔记栏时，正文列宽与页码同步重新排版，修复按旧宽度显示导致右侧文字裁切的问题。\n\n## 阅读与保存性能\n\n- Windows 保留已通过试用的阅读调度、托盘恢复、小事务保存和默认关闭的可选图形硬件加速。\n- Mac 引入后台计算、增量保存与恢复日志、大列表按需显示、绘制续作、识别实例复用和稳定模型缓存，并按内存调整 Retina 绘制预算，保留原识别模型与图形默认值。\n- Android 与 Web 延续原生分块／浏览器资料库保存，将同步计算和较重的序列化移到后台，共用阅读调度、识别复用与受限缓存。\n- Web App 首次准备离线应用时缓存全部程序分块，确保断网重新打开后仍可读取本机笔记与草稿。\n- Mac 正常退出前保存最新草稿并形成本地检查点。\n\n## 安装与更新\n\n更新前可在设置导出完整备份。Mac 解压后移入「应用程序」；首次被系统拦截时，先尝试打开，再到「系统设置 → 隐私与安全性 → 仍要打开」。当前 Mac 包没有 Apple 开发者公证。\n\nWindows 推荐安装版，保留选择磁盘与文件夹的安装流程，覆盖更新使用原安装目录。另附便携 ZIP。Windows 包没有商业代码签名。图形硬件加速在设置中按需开启，完整退出托盘后重新打开生效。\n\nAndroid 沿用正式版证书，可覆盖原应用。原生应用从「设置 → 版本与更新」检查本次更新；旧版是否支持直接安装取决于其更新功能，始终可以从本次 Release 下载覆盖更新。\n\niPhone / iPad：在 Safari 打开 https://reader.wenjian-app.workers.dev/read/ ，点击分享按钮 → 添加到主屏幕 → 添加，从问间图标进入并连接自己的坚果云。现有 Web App 出现更新提示后，先保存输入再点击更新。部分网络需要使用代理访问。\n\n## 资料与验证范围\n\n初始安装包为空白资料库，不包含作者书籍、笔记、密码或签名私钥。原书、笔记、批注及云同步格式保持兼容。完整备份会形成包含最新本地增量的检查点；运行中不要只复制单个 notebook.json 作为完整备份。\n\n本次完成数据恢复、同步、旧版更新发现与签名清单检查；Mac 原生及 Windows 应用分支的阅读交互、EPUB 多级目录/原书页码/数字跳转/重排，以及 Web 的手机和平板尺寸、离线保存与模拟同步检查。Windows 本地分支的模拟运行不等于真实 Windows 驱动性能测试；Android APK 构建、lint、签名与资源检查不等于全型号实机测试，Web 的浏览器检查不等于 iOS Safari 实机测试。详细范围记录在 docs/release-330-plan.md。\n\n对应源码、构建说明及修改记录随本次标签和源码归档提供。项目继续使用仓库 LICENSE 中的源码公开与商业发行许可，第三方材料保留原许可。\n\nWindows 最终安装验收：[15 项检查通过](https://github.com/largetomatoes/wenjian-software/actions/runs/39248500448)。\n\n对应源码标签：[v3.14-build330](https://github.com/largetomatoes/wenjian-software/tree/v3.14-build330)；[构建说明](https://github.com/largetomatoes/wenjian-software/blob/v3.14-build330/BUILDING.md)、[实施与验证记录](https://github.com/largetomatoes/wenjian-software/blob/v3.14-build330/docs/release-330-plan.md)。附件提供完整源码 ZIP、SHA256SUMS.txt 和验证报告。\n",
       "published_at": "2026-10-19T12:04:53Z",
-      "tag_name": "v3.14-build330"
-    },
-    {
+      "draft": false,
+      "prerelease": false,
       "assets": [
         {
-          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.14-build322/package-audit-322.json",
-          "name": "package-audit-322.json",
+          "name": "release-notes.md",
+          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.14-build330/release-notes.md",
           "state": "uploaded"
         },
         {
-          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.14-build322/release-notes-322.md",
-          "name": "release-notes-322.md",
+          "name": "SHA256SUMS.txt",
+          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.14-build330/SHA256SUMS.txt",
           "state": "uploaded"
         },
         {
-          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.14-build322/SHA256SUMS-322.txt",
-          "name": "SHA256SUMS-322.txt",
+          "name": "update-manifest-330.json",
+          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.14-build330/update-manifest-330.json",
           "state": "uploaded"
         },
         {
-          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.14-build322/update-manifest-322.json",
-          "name": "update-manifest-322.json",
+          "name": "validation-330.json",
+          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.14-build330/validation-330.json",
           "state": "uploaded"
         },
         {
-          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.14-build322/upstream-verification-322.json",
-          "name": "upstream-verification-322.json",
+          "name": "Wenjian-3.14-build330-Android.apk",
+          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.14-build330/Wenjian-3.14-build330-Android.apk",
           "state": "uploaded"
         },
         {
-          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.14-build322/verification-322.json",
-          "name": "verification-322.json",
+          "name": "Wenjian-3.14-build330-macOS-arm64.zip",
+          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.14-build330/Wenjian-3.14-build330-macOS-arm64.zip",
           "state": "uploaded"
         },
         {
-          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.14-build322/Wenjian-3.14-build322-source.zip",
-          "name": "Wenjian-3.14-build322-source.zip",
+          "name": "Wenjian-3.14-build330-Source.zip",
+          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.14-build330/Wenjian-3.14-build330-Source.zip",
           "state": "uploaded"
         },
         {
-          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.14-build322/Wenjian-3.14-build322-Windows-x64-Setup.exe",
-          "name": "Wenjian-3.14-build322-Windows-x64-Setup.exe",
+          "name": "Wenjian-3.14-build330-Windows-x64-Setup.exe",
+          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.14-build330/Wenjian-3.14-build330-Windows-x64-Setup.exe",
           "state": "uploaded"
         },
         {
-          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.14-build322/Wenjian-3.14-build322-Windows-x64.zip",
-          "name": "Wenjian-3.14-build322-Windows-x64.zip",
+          "name": "Wenjian-3.14-build330-Windows-x64.zip",
+          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.14-build330/Wenjian-3.14-build330-Windows-x64.zip",
           "state": "uploaded"
         }
-      ],
-      "body": "<!-- wenjian-build:322 -->\n<!-- wenjian-display-build:321.1 -->\n<!-- wenjian-platforms:win32 -->\n\n本次仅更新 **Windows x64**。产品版本继续为 **3.14**，界面显示 **3.14（321.1）**，内部构建号为 **322**。Mac、Android 与桌面演示版保持原版。\n\n### Windows 阅读与运行\n\n- 整合 Windows 测试交付版的阅读修复；当前扫描页约 650ms 开始 OCR，滚动、点击和笔记输入不再取消当前页识别，避免反复重算。\n- 翻页、旋转、换书、关闭阅读或隐藏窗口时取消旧页任务；命中已有文字或缓存时优先复用。清晰页面替换预览时保留识别文字。\n- PDF 先预览、后清晰化；限制缓存规模，长笔记列表分段渲染，后台搜索与同步工作向阅读让行。\n- 关闭窗口时可选择收起到托盘，重新打开继续使用原窗口；真正退出仍保护草稿与保存状态。\n- 安装向导可选择目录，拒绝覆盖无关文件夹；脚本显式 UTF-8，保留独立安装图标。\n\n### 安装与应用内更新\n\n- 首次使用下载 `Wenjian-3.14-build322-Windows-x64-Setup.exe`。\n- 正式版 **321** 可在「设置 → 版本与更新」发现本次更新。旧界面第一次提示可能显示 **3.14（322）**；升级后显示 **3.14（321.1）**。\n- 软件内更新使用本 Release 的 ZIP、发布签名与 SHA-256 校验。EXE 与 ZIP 均为完整包，空白资料库，不含作者的书籍、笔记或云端凭据。\n- 安装包未购买 Windows 商业代码签名，操作系统提示与应用内发布签名属于不同机制。\n- 若安装过未公开的本地测试构建 **323–325**，它们不会自动降级到 322。先完整备份并从托盘退出，可卸载测试程序后安装正式版（卸载保留 AppData 资料）；也可解压 ZIP 到独立目录使用同一资料库。不要删除个人资料目录。\n- 旧 Mac / Android 如看到“本平台暂无安装包”，继续使用 **321** 即可。本次没有对应新包。新代码已支持按平台筛选；已安装旧客户端的检测行为不能通过改网页回溯修改。\n\n### 官网\n\n官网改为可操作的演示：卡片联系问题、问题与形成过程、两本书的示例选文和共同笔记、从问题找回思考、原话选入文稿并回看来源。使用虚构资料，输入仅临时留在本页，刷新即清除。正式 Web App 入口独立保留。\n\n### 源码与验证\n\n- 对应标签：`v3.14-build322`；完整源码 ZIP 随本 Release 提供，构建与修改说明见源码中的 `WINDOWS-RELEASE.md`。\n- 安装器与更新 ZIP 的全部 **320** 个程序文件已逐一核对，ZIP CRC、空白初始资料库和无 Mac 程序资源检查通过。\n- 桌面 TypeScript、更新发现、整数构建与显示修订分离、旧 321 检测兼容、签名与哈希、OCR 生命周期、缓存、选文和本地阅读回归检查通过。\n- 上游提供了 Windows Ryzen 7 4800H 的连续滚动 OCR 与输入测试记录；本次不把其中的耗时推广为所有电脑的保证，也未测量真实坚果云的网络吞吐。\n- Windows 运行体验参考随包提供的实机交付记录；本轮重新编号为 322 后完成了构建、签名与程序包一致性验证，未另行完成最终 322 包的 Windows 实机复测。校验值见 `SHA256SUMS-322.txt`。\n\nMac 和 Android 的稳定下载仍在 [3.14（321）发行页](https://github.com/largetomatoes/wenjian-software/releases/tag/v3.14-build321)。\n",
-      "draft": false,
+      ]
+    },
+    {
+      "tag_name": "v3.14-build322",
       "html_url": "https://github.com/largetomatoes/wenjian-software/releases/tag/v3.14-build322",
-      "prerelease": false,
+      "body": "<!-- wenjian-build:322 -->\n<!-- wenjian-display-build:321.1 -->\n<!-- wenjian-platforms:win32 -->\n\n本次仅更新 **Windows x64**。产品版本继续为 **3.14**，界面显示 **3.14（321.1）**，内部构建号为 **322**。Mac、Android 与桌面演示版保持原版。\n\n### Windows 阅读与运行\n\n- 整合 Windows 测试交付版的阅读修复；当前扫描页约 650ms 开始 OCR，滚动、点击和笔记输入不再取消当前页识别，避免反复重算。\n- 翻页、旋转、换书、关闭阅读或隐藏窗口时取消旧页任务；命中已有文字或缓存时优先复用。清晰页面替换预览时保留识别文字。\n- PDF 先预览、后清晰化；限制缓存规模，长笔记列表分段渲染，后台搜索与同步工作向阅读让行。\n- 关闭窗口时可选择收起到托盘，重新打开继续使用原窗口；真正退出仍保护草稿与保存状态。\n- 安装向导可选择目录，拒绝覆盖无关文件夹；脚本显式 UTF-8，保留独立安装图标。\n\n### 安装与应用内更新\n\n- 首次使用下载 `Wenjian-3.14-build322-Windows-x64-Setup.exe`。\n- 正式版 **321** 可在「设置 → 版本与更新」发现本次更新。旧界面第一次提示可能显示 **3.14（322）**；升级后显示 **3.14（321.1）**。\n- 软件内更新使用本 Release 的 ZIP、发布签名与 SHA-256 校验。EXE 与 ZIP 均为完整包，空白资料库，不含作者的书籍、笔记或云端凭据。\n- 安装包未购买 Windows 商业代码签名，操作系统提示与应用内发布签名属于不同机制。\n- 若安装过未公开的本地测试构建 **323–325**，它们不会自动降级到 322。先完整备份并从托盘退出，可卸载测试程序后安装正式版（卸载保留 AppData 资料）；也可解压 ZIP 到独立目录使用同一资料库。不要删除个人资料目录。\n- 旧 Mac / Android 如看到“本平台暂无安装包”，继续使用 **321** 即可。本次没有对应新包。新代码已支持按平台筛选；已安装旧客户端的检测行为不能通过改网页回溯修改。\n\n### 官网\n\n官网改为可操作的演示：卡片联系问题、问题与形成过程、两本书的示例选文和共同笔记、从问题找回思考、原话选入文稿并回看来源。使用虚构资料，输入仅临时留在本页，刷新即清除。正式 Web App 入口独立保留。\n\n### 源码与验证\n\n- 对应标签：`v3.14-build322`；完整源码 ZIP 随本 Release 提供，构建与修改说明见源码中的 `WINDOWS-RELEASE.md`。\n- 安装器与更新 ZIP 的全部 **320** 个程序文件已逐一核对，ZIP CRC、空白初始资料库和无 Mac 程序资源检查通过。\n- 桌面 TypeScript、更新发现、整数构建与显示修订分离、旧 321 检测兼容、签名与哈希、OCR 生命周期、缓存、选文和本地阅读回归检查通过。\n- 上游提供了 Windows Ryzen 7 4800H 的连续滚动 OCR 与输入测试记录；本次不把其中的耗时推广为所有电脑的保证，也未测量真实坚果云的网络吞吐。\n- Windows 运行体验参考随包提供的实机交付记录；本轮重新编号为 322 后完成了构建、签名与程序包一致性验证，未另行完成最终 322 包的 Windows 实机复测。校验值见 `SHA256SUMS-322.txt`。\n\nMac 和 Android 的稳定下载仍在 [3.14（321）发行页](https://github.com/largetomatoes/wenjian-software/releases/tag/v3.14-build321)。\n",
       "published_at": "2026-10-18T08:42:24Z",
-      "tag_name": "v3.14-build322"
-    },
-    {
+      "draft": false,
+      "prerelease": false,
       "assets": [
         {
-          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.14-build321/android-signature-321.txt",
-          "name": "android-signature-321.txt",
+          "name": "package-audit-322.json",
+          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.14-build322/package-audit-322.json",
           "state": "uploaded"
         },
         {
-          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.14-build321/package-audit-321.json",
-          "name": "package-audit-321.json",
+          "name": "release-notes-322.md",
+          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.14-build322/release-notes-322.md",
           "state": "uploaded"
         },
         {
-          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.14-build321/release-notes-321.md",
-          "name": "release-notes-321.md",
+          "name": "SHA256SUMS-322.txt",
+          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.14-build322/SHA256SUMS-322.txt",
           "state": "uploaded"
         },
         {
-          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.14-build321/SHA256SUMS-321.txt",
-          "name": "SHA256SUMS-321.txt",
+          "name": "update-manifest-322.json",
+          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.14-build322/update-manifest-322.json",
           "state": "uploaded"
         },
         {
-          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.14-build321/update-manifest-321.json",
-          "name": "update-manifest-321.json",
+          "name": "upstream-verification-322.json",
+          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.14-build322/upstream-verification-322.json",
           "state": "uploaded"
         },
         {
-          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.14-build321/verification-321.json",
-          "name": "verification-321.json",
+          "name": "verification-322.json",
+          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.14-build322/verification-322.json",
           "state": "uploaded"
         },
         {
-          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.14-build321/Wenjian-3.14-build321-Android.apk",
-          "name": "Wenjian-3.14-build321-Android.apk",
+          "name": "Wenjian-3.14-build322-source.zip",
+          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.14-build322/Wenjian-3.14-build322-source.zip",
           "state": "uploaded"
         },
         {
-          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.14-build321/Wenjian-3.14-build321-macOS-arm64.zip",
-          "name": "Wenjian-3.14-build321-macOS-arm64.zip",
+          "name": "Wenjian-3.14-build322-Windows-x64-Setup.exe",
+          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.14-build322/Wenjian-3.14-build322-Windows-x64-Setup.exe",
           "state": "uploaded"
         },
         {
-          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.14-build321/Wenjian-3.14-build321-source.zip",
-          "name": "Wenjian-3.14-build321-source.zip",
-          "state": "uploaded"
-        },
-        {
-          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.14-build321/Wenjian-3.14-build321-Windows-x64-Setup.exe",
-          "name": "Wenjian-3.14-build321-Windows-x64-Setup.exe",
-          "state": "uploaded"
-        },
-        {
-          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.14-build321/Wenjian-3.14-build321-Windows-x64.zip",
-          "name": "Wenjian-3.14-build321-Windows-x64.zip",
-          "state": "uploaded"
-        },
-        {
-          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.14-build321/windows-font-report-321.json",
-          "name": "windows-font-report-321.json",
-          "state": "uploaded"
-        },
-        {
-          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.14-build321/windows-install-report-321.json",
-          "name": "windows-install-report-321.json",
+          "name": "Wenjian-3.14-build322-Windows-x64.zip",
+          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.14-build322/Wenjian-3.14-build322-Windows-x64.zip",
           "state": "uploaded"
         }
-      ],
-      "body": "<!-- wenjian-build:321 -->\n\n# 问间 3.14（321）· 书籍随同步与 Windows 安装版\n\n本次为独立 Release `v3.14-build321`。公开版本仍为 3.14，三端内部构建号均为 321。\n\n## 三端同步：点击一次，笔记和原书一起传输\n\nMac、Windows、Android 的同步均先合并笔记、批注与书籍信息，再上传本机新增原件、下载其他设备新增的 PDF / EPUB，最后发布原件地址。任何一端都可以作为原书的来源。\n\n修正旧云端地址记录可能导致原书被跳过的问题：每次同步读取一次原件目录，缺失的云端原件由持有原书的设备补传；本机没有原书且云端也没有时，会明确列入待传输书籍。未变化的原件不重复传输。书籍目录或个别原件传输失败不会清空本机文件，也不会把笔记成功误报为全部完成。\n\n坚果云使用独立的「问间资料库」，不会进入 Obsidian 的文件夹。WebDAV 单本书仍受 500 MB 限制；账户流量和请求额度取决于坚果云。目录达到服务器安全读取上限时会暂停，而不是以不完整列表覆盖资料。请等待同步窗口的书籍状态完成后，再到另一端同步。\n\n## Windows 安装版与字体\n\n新增完整离线 `Setup.exe`，安装到当前用户的 `%LOCALAPPDATA%\\Programs\\Wenjian`，无需管理员权限；创建快捷方式和卸载入口。原便携版默认使用的 `%APPDATA%\\问间` 资料目录继续沿用。自定义外部资料目录配置也保留，不需要重新导入笔记。\n\n覆盖安装前请先保存并退出问间；安装失败保留原应用。卸载保留本机笔记和书籍。应用内后续更新仍使用签名 ZIP 覆盖安装目录，并保留卸载程序；ZIP 是更新载荷，不是首次安装必须手动解压的要求。\n\n内置 Noto Sans SC 和 Noto Serif SC 离线字体，分别用于界面和笔记正文，接近 Mac 的黑体/宋体搭配。Mac 继续使用系统字体；PDF 原书排版保持不变。字体的 SIL OFL 许可证单独保留于 `assets/fonts/`，不受项目自定义许可限制。\n\n## Android 同步中断修复与诊断\n\n降低整库 JSON 在 JavaScript/原生桥之间反复复制的峰值内存：分块传输、流式原子保存、流式备份，并保留版本竞争检查与失败回滚。同步锁记录当前任务归属，重新打开后仅能恢复本机确已中断的原任务，不能凭设备名称解除别人的有效锁。\n\n新增「导出同步诊断」，记录阶段、异常代码位置、设备和内存信息，不包含笔记正文、密码或云端地址。阅读进程异常后暂停自动同步，允许手动重试。321 之前崩溃留下的锁没有可验证的本机任务记录，首次升级后可能仍需等待旧锁过期（最长约十分钟）。\n\n这项修复针对排查发现的内存峰值与恢复缺陷。尚未取得用户一加 12 的崩溃日志，不能断言已验证其闪退根因。若仍闪退，请通过设置导出同步诊断；若来不及导出，可连接 Mac 开启 USB 调试后采集问间专属崩溃日志。请不要卸载或清除资料。\n\n## 下载与升级\n\n- [Mac · Apple 芯片](https://github.com/largetomatoes/wenjian-software/releases/download/v3.14-build321/Wenjian-3.14-build321-macOS-arm64.zip)\n- [Windows x64 · 安装版](https://github.com/largetomatoes/wenjian-software/releases/download/v3.14-build321/Wenjian-3.14-build321-Windows-x64-Setup.exe)\n- [Android · 原证书覆盖安装](https://github.com/largetomatoes/wenjian-software/releases/download/v3.14-build321/Wenjian-3.14-build321-Android.apk)\n- [完整对应源码 ZIP](https://github.com/largetomatoes/wenjian-software/releases/download/v3.14-build321/Wenjian-3.14-build321-source.zip)\n- [源码、构建说明与修改记录](https://github.com/largetomatoes/wenjian-software/tree/v3.14-build321)\n\n**320 及以前请手动覆盖升级一次。** 这些旧客户端不能识别独立的 `-build321` 发布标签；远端改名或改说明不能改变已安装二进制。321 起按公开版本和内部构建号排序识别独立 Release，并验证精确标签、签名、摘要和平台身份。此次不向旧 Release 堆放新安装包。\n\nMac 请覆盖原应用，Windows 直接运行 Setup，Android 覆盖安装；都不要先卸载或清除数据。桌面上的隔离阅读演示版不作修改。\n\n## 检查范围\n\n三端虚构书库验证各端新增图书的双向原件传输、字节校验、缺失补传、失败重试及未变化文件复用；完整数据与同步回归、类型检查、Android lint 与原证书签名、Mac 隔离窗口检查、包体无私人资料审计。Windows 安装与覆盖验收的实际结果另见随附验证报告；Android 未连接实体手机验收。\n\n\n## 最终验证结果\n\n45 组回归全部通过，三端类型检查通过；Android 构建、lint 与原证书签名通过。Windows 虚拟机完成 15 项安装/覆盖/原资料沿用/生产 ZIP 更新助手/卸载保留资料检查，界面与 EPUB 离线字体实际加载验证通过，见 [Windows 验收记录](https://github.com/largetomatoes/wenjian-software/actions/runs/38882952699)。Mac 最终包已原位安装，原记录、书籍、草稿及桌面演示版均保留。未连接一加12实机，因此仍需在手机覆盖安装后确认闪退是否消失。\n",
-      "draft": false,
+      ]
+    },
+    {
+      "tag_name": "v3.14-build321",
       "html_url": "https://github.com/largetomatoes/wenjian-software/releases/tag/v3.14-build321",
-      "prerelease": false,
+      "body": "<!-- wenjian-build:321 -->\n\n# 问间 3.14（321）· 书籍随同步与 Windows 安装版\n\n本次为独立 Release `v3.14-build321`。公开版本仍为 3.14，三端内部构建号均为 321。\n\n## 三端同步：点击一次，笔记和原书一起传输\n\nMac、Windows、Android 的同步均先合并笔记、批注与书籍信息，再上传本机新增原件、下载其他设备新增的 PDF / EPUB，最后发布原件地址。任何一端都可以作为原书的来源。\n\n修正旧云端地址记录可能导致原书被跳过的问题：每次同步读取一次原件目录，缺失的云端原件由持有原书的设备补传；本机没有原书且云端也没有时，会明确列入待传输书籍。未变化的原件不重复传输。书籍目录或个别原件传输失败不会清空本机文件，也不会把笔记成功误报为全部完成。\n\n坚果云使用独立的「问间资料库」，不会进入 Obsidian 的文件夹。WebDAV 单本书仍受 500 MB 限制；账户流量和请求额度取决于坚果云。目录达到服务器安全读取上限时会暂停，而不是以不完整列表覆盖资料。请等待同步窗口的书籍状态完成后，再到另一端同步。\n\n## Windows 安装版与字体\n\n新增完整离线 `Setup.exe`，安装到当前用户的 `%LOCALAPPDATA%\\Programs\\Wenjian`，无需管理员权限；创建快捷方式和卸载入口。原便携版默认使用的 `%APPDATA%\\问间` 资料目录继续沿用。自定义外部资料目录配置也保留，不需要重新导入笔记。\n\n覆盖安装前请先保存并退出问间；安装失败保留原应用。卸载保留本机笔记和书籍。应用内后续更新仍使用签名 ZIP 覆盖安装目录，并保留卸载程序；ZIP 是更新载荷，不是首次安装必须手动解压的要求。\n\n内置 Noto Sans SC 和 Noto Serif SC 离线字体，分别用于界面和笔记正文，接近 Mac 的黑体/宋体搭配。Mac 继续使用系统字体；PDF 原书排版保持不变。字体的 SIL OFL 许可证单独保留于 `assets/fonts/`，不受项目自定义许可限制。\n\n## Android 同步中断修复与诊断\n\n降低整库 JSON 在 JavaScript/原生桥之间反复复制的峰值内存：分块传输、流式原子保存、流式备份，并保留版本竞争检查与失败回滚。同步锁记录当前任务归属，重新打开后仅能恢复本机确已中断的原任务，不能凭设备名称解除别人的有效锁。\n\n新增「导出同步诊断」，记录阶段、异常代码位置、设备和内存信息，不包含笔记正文、密码或云端地址。阅读进程异常后暂停自动同步，允许手动重试。321 之前崩溃留下的锁没有可验证的本机任务记录，首次升级后可能仍需等待旧锁过期（最长约十分钟）。\n\n这项修复针对排查发现的内存峰值与恢复缺陷。尚未取得用户一加 12 的崩溃日志，不能断言已验证其闪退根因。若仍闪退，请通过设置导出同步诊断；若来不及导出，可连接 Mac 开启 USB 调试后采集问间专属崩溃日志。请不要卸载或清除资料。\n\n## 下载与升级\n\n- [Mac · Apple 芯片](https://github.com/largetomatoes/wenjian-software/releases/download/v3.14-build321/Wenjian-3.14-build321-macOS-arm64.zip)\n- [Windows x64 · 安装版](https://github.com/largetomatoes/wenjian-software/releases/download/v3.14-build321/Wenjian-3.14-build321-Windows-x64-Setup.exe)\n- [Android · 原证书覆盖安装](https://github.com/largetomatoes/wenjian-software/releases/download/v3.14-build321/Wenjian-3.14-build321-Android.apk)\n- [完整对应源码 ZIP](https://github.com/largetomatoes/wenjian-software/releases/download/v3.14-build321/Wenjian-3.14-build321-source.zip)\n- [源码、构建说明与修改记录](https://github.com/largetomatoes/wenjian-software/tree/v3.14-build321)\n\n**320 及以前请手动覆盖升级一次。** 这些旧客户端不能识别独立的 `-build321` 发布标签；远端改名或改说明不能改变已安装二进制。321 起按公开版本和内部构建号排序识别独立 Release，并验证精确标签、签名、摘要和平台身份。此次不向旧 Release 堆放新安装包。\n\nMac 请覆盖原应用，Windows 直接运行 Setup，Android 覆盖安装；都不要先卸载或清除数据。桌面上的隔离阅读演示版不作修改。\n\n## 检查范围\n\n三端虚构书库验证各端新增图书的双向原件传输、字节校验、缺失补传、失败重试及未变化文件复用；完整数据与同步回归、类型检查、Android lint 与原证书签名、Mac 隔离窗口检查、包体无私人资料审计。Windows 安装与覆盖验收的实际结果另见随附验证报告；Android 未连接实体手机验收。\n\n\n## 最终验证结果\n\n45 组回归全部通过，三端类型检查通过；Android 构建、lint 与原证书签名通过。Windows 虚拟机完成 15 项安装/覆盖/原资料沿用/生产 ZIP 更新助手/卸载保留资料检查，界面与 EPUB 离线字体实际加载验证通过，见 [Windows 验收记录](https://github.com/largetomatoes/wenjian-software/actions/runs/38882952699)。Mac 最终包已原位安装，原记录、书籍、草稿及桌面演示版均保留。未连接一加12实机，因此仍需在手机覆盖安装后确认闪退是否消失。\n",
       "published_at": "2026-10-16T09:56:26Z",
-      "tag_name": "v3.14-build321"
-    },
-    {
+      "draft": false,
+      "prerelease": false,
       "assets": [
         {
-          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.14/android-signature-319.txt",
-          "name": "android-signature-319.txt",
+          "name": "android-signature-321.txt",
+          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.14-build321/android-signature-321.txt",
           "state": "uploaded"
         },
         {
-          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.14/android-signature-320.txt",
-          "name": "android-signature-320.txt",
+          "name": "package-audit-321.json",
+          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.14-build321/package-audit-321.json",
           "state": "uploaded"
         },
         {
-          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.14/android-signature.txt",
-          "name": "android-signature.txt",
+          "name": "release-notes-321.md",
+          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.14-build321/release-notes-321.md",
           "state": "uploaded"
         },
         {
-          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.14/package-audit-319.json",
-          "name": "package-audit-319.json",
+          "name": "SHA256SUMS-321.txt",
+          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.14-build321/SHA256SUMS-321.txt",
           "state": "uploaded"
         },
         {
-          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.14/package-audit-320.json",
-          "name": "package-audit-320.json",
+          "name": "update-manifest-321.json",
+          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.14-build321/update-manifest-321.json",
           "state": "uploaded"
         },
         {
-          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.14/package-audit.json",
-          "name": "package-audit.json",
+          "name": "verification-321.json",
+          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.14-build321/verification-321.json",
           "state": "uploaded"
         },
         {
-          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.14/release-notes-319.md",
-          "name": "release-notes-319.md",
+          "name": "Wenjian-3.14-build321-Android.apk",
+          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.14-build321/Wenjian-3.14-build321-Android.apk",
           "state": "uploaded"
         },
         {
-          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.14/release-notes-320.md",
-          "name": "release-notes-320.md",
+          "name": "Wenjian-3.14-build321-macOS-arm64.zip",
+          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.14-build321/Wenjian-3.14-build321-macOS-arm64.zip",
           "state": "uploaded"
         },
         {
-          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.14/release-notes.md",
-          "name": "release-notes.md",
+          "name": "Wenjian-3.14-build321-source.zip",
+          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.14-build321/Wenjian-3.14-build321-source.zip",
           "state": "uploaded"
         },
         {
-          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.14/SHA256SUMS-319.txt",
-          "name": "SHA256SUMS-319.txt",
+          "name": "Wenjian-3.14-build321-Windows-x64-Setup.exe",
+          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.14-build321/Wenjian-3.14-build321-Windows-x64-Setup.exe",
           "state": "uploaded"
         },
         {
-          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.14/SHA256SUMS-320.txt",
-          "name": "SHA256SUMS-320.txt",
+          "name": "Wenjian-3.14-build321-Windows-x64.zip",
+          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.14-build321/Wenjian-3.14-build321-Windows-x64.zip",
           "state": "uploaded"
         },
         {
-          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.14/SHA256SUMS.txt",
-          "name": "SHA256SUMS.txt",
+          "name": "windows-font-report-321.json",
+          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.14-build321/windows-font-report-321.json",
           "state": "uploaded"
         },
         {
-          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.14/update-manifest-319.json",
-          "name": "update-manifest-319.json",
-          "state": "uploaded"
-        },
-        {
-          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.14/update-manifest-320.json",
-          "name": "update-manifest-320.json",
-          "state": "uploaded"
-        },
-        {
-          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.14/update-manifest.json",
-          "name": "update-manifest.json",
-          "state": "uploaded"
-        },
-        {
-          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.14/verification-report-319.md",
-          "name": "verification-report-319.md",
-          "state": "uploaded"
-        },
-        {
-          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.14/verification-report-320.md",
-          "name": "verification-report-320.md",
-          "state": "uploaded"
-        },
-        {
-          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.14/verification-report.md",
-          "name": "verification-report.md",
-          "state": "uploaded"
-        },
-        {
-          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.14/Wenjian-3.14-Android.apk",
-          "name": "Wenjian-3.14-Android.apk",
-          "state": "uploaded"
-        },
-        {
-          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.14/Wenjian-3.14-build319-Android.apk",
-          "name": "Wenjian-3.14-build319-Android.apk",
-          "state": "uploaded"
-        },
-        {
-          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.14/Wenjian-3.14-build319-macOS-arm64.zip",
-          "name": "Wenjian-3.14-build319-macOS-arm64.zip",
-          "state": "uploaded"
-        },
-        {
-          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.14/Wenjian-3.14-build319-source.zip",
-          "name": "Wenjian-3.14-build319-source.zip",
-          "state": "uploaded"
-        },
-        {
-          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.14/Wenjian-3.14-build319-Windows-x64.zip",
-          "name": "Wenjian-3.14-build319-Windows-x64.zip",
-          "state": "uploaded"
-        },
-        {
-          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.14/Wenjian-3.14-build320-Android.apk",
-          "name": "Wenjian-3.14-build320-Android.apk",
-          "state": "uploaded"
-        },
-        {
-          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.14/Wenjian-3.14-build320-macOS-arm64.zip",
-          "name": "Wenjian-3.14-build320-macOS-arm64.zip",
-          "state": "uploaded"
-        },
-        {
-          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.14/Wenjian-3.14-build320-source.zip",
-          "name": "Wenjian-3.14-build320-source.zip",
-          "state": "uploaded"
-        },
-        {
-          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.14/Wenjian-3.14-build320-Windows-x64.zip",
-          "name": "Wenjian-3.14-build320-Windows-x64.zip",
-          "state": "uploaded"
-        },
-        {
-          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.14/Wenjian-3.14-macOS-arm64.zip",
-          "name": "Wenjian-3.14-macOS-arm64.zip",
-          "state": "uploaded"
-        },
-        {
-          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.14/Wenjian-3.14-Windows-x64.zip",
-          "name": "Wenjian-3.14-Windows-x64.zip",
+          "name": "windows-install-report-321.json",
+          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.14-build321/windows-install-report-321.json",
           "state": "uploaded"
         }
-      ],
-      "body": "<!-- wenjian-build:320 -->\n\n# 问间 3.14（320）· 仓库更名与更新兼容\n\n本次只调整项目地址与更新来源，公开版本继续为3.14。构建号从319增加为320，原有阅读、卡片、问题页和数据格式不变。\n\n## 新地址\n\n- 软件、源码与安装包：[wenjian-software](https://github.com/largetomatoes/wenjian-software)\n- 官网工程：[wenjian-web](https://github.com/largetomatoes/wenjian-web)\n- 官网与下载页：[问间官网](https://largetomatoes.github.io/wenjian-web/)\n\n软件仓库由`mac-`改名，官网仓库由`wenjian`改名；保留同一仓库的历史提交、标签、发行版本和附件。不复用两个旧名称，以保留GitHub的仓库跳转。\n\n## 更新说明\n\n三端320直接从新软件仓库检查更新，兼容旧`mac-`和新`wenjian-software`两处历史发布链接；签名、SHA-256、平台身份、构建号及可信来源验证继续有效。\n\n**319及以前的客户端需要手动覆盖升级一次。** 它们使用旧API地址且部分原生实现不跟随改名跳转，不能通过修改远端设置修正已安装的程序。请从下列链接下载320，覆盖原程序，不要先卸载。Mac本机由维护流程先备份再原位替换，桌面演示版保持不动。\n\n- [Mac · Apple芯片](https://github.com/largetomatoes/wenjian-software/releases/download/v3.14/Wenjian-3.14-build320-macOS-arm64.zip)\n- [Windows · x64](https://github.com/largetomatoes/wenjian-software/releases/download/v3.14/Wenjian-3.14-build320-Windows-x64.zip)\n- [Android · 原证书覆盖安装](https://github.com/largetomatoes/wenjian-software/releases/download/v3.14/Wenjian-3.14-build320-Android.apk)\n- [完整源码ZIP](https://github.com/largetomatoes/wenjian-software/releases/download/v3.14/Wenjian-3.14-build320-source.zip)\n- [对应源码标签与构建说明](https://github.com/largetomatoes/wenjian-software/tree/v3.14-build320)\n\n320以后同为3.14时也比较构建号。升级保留账号配置、本机笔记、原书和草稿。同步继续使用319的云格式4；本次不运行个人云账号联调。\n\n原有319及更早的附件和签名清单不被覆盖；它们仍可通过GitHub的旧仓库链接跳转下载。历史`v3.14`标签保持原位；请使用`v3.14-build320`或本说明的源码ZIP获取本构建对应的源码。\n\n## 验证范围\n\n更新回归包含三端在新旧仓库链接下的发现与选择、签名清单下载、旧签名包兼容、仿冒仓库和错误版本拒绝、同版本构建号比较、类型检查。Mac、Windows与Android重新构建并验证空白种子、无个人资料和签名；Mac在隔离窗口和正式原位安装后检查，Windows和Android未做实体设备运行验收。iOS仅同步源码中的地址，本次不构建或发布iOS。\n\n功能变化与已有界面说明继续见[319版说明](https://github.com/largetomatoes/wenjian-software/blob/v3.14-build319/RELEASE_NOTES_3.14_319.md)。\n\n验证记录见[VERIFICATION_3.14_320.md](https://github.com/largetomatoes/wenjian-software/blob/v3.14-build320/VERIFICATION_3.14_320.md)。\n",
-      "draft": false,
+      ]
+    },
+    {
+      "tag_name": "v3.14",
       "html_url": "https://github.com/largetomatoes/wenjian-software/releases/tag/v3.14",
-      "prerelease": false,
+      "body": "<!-- wenjian-build:320 -->\n\n# 问间 3.14（320）· 仓库更名与更新兼容\n\n本次只调整项目地址与更新来源，公开版本继续为3.14。构建号从319增加为320，原有阅读、卡片、问题页和数据格式不变。\n\n## 新地址\n\n- 软件、源码与安装包：[wenjian-software](https://github.com/largetomatoes/wenjian-software)\n- 官网工程：[wenjian-web](https://github.com/largetomatoes/wenjian-web)\n- 官网与下载页：[问间官网](https://largetomatoes.github.io/wenjian-web/)\n\n软件仓库由`mac-`改名，官网仓库由`wenjian`改名；保留同一仓库的历史提交、标签、发行版本和附件。不复用两个旧名称，以保留GitHub的仓库跳转。\n\n## 更新说明\n\n三端320直接从新软件仓库检查更新，兼容旧`mac-`和新`wenjian-software`两处历史发布链接；签名、SHA-256、平台身份、构建号及可信来源验证继续有效。\n\n**319及以前的客户端需要手动覆盖升级一次。** 它们使用旧API地址且部分原生实现不跟随改名跳转，不能通过修改远端设置修正已安装的程序。请从下列链接下载320，覆盖原程序，不要先卸载。Mac本机由维护流程先备份再原位替换，桌面演示版保持不动。\n\n- [Mac · Apple芯片](https://github.com/largetomatoes/wenjian-software/releases/download/v3.14/Wenjian-3.14-build320-macOS-arm64.zip)\n- [Windows · x64](https://github.com/largetomatoes/wenjian-software/releases/download/v3.14/Wenjian-3.14-build320-Windows-x64.zip)\n- [Android · 原证书覆盖安装](https://github.com/largetomatoes/wenjian-software/releases/download/v3.14/Wenjian-3.14-build320-Android.apk)\n- [完整源码ZIP](https://github.com/largetomatoes/wenjian-software/releases/download/v3.14/Wenjian-3.14-build320-source.zip)\n- [对应源码标签与构建说明](https://github.com/largetomatoes/wenjian-software/tree/v3.14-build320)\n\n320以后同为3.14时也比较构建号。升级保留账号配置、本机笔记、原书和草稿。同步继续使用319的云格式4；本次不运行个人云账号联调。\n\n原有319及更早的附件和签名清单不被覆盖；它们仍可通过GitHub的旧仓库链接跳转下载。历史`v3.14`标签保持原位；请使用`v3.14-build320`或本说明的源码ZIP获取本构建对应的源码。\n\n## 验证范围\n\n更新回归包含三端在新旧仓库链接下的发现与选择、签名清单下载、旧签名包兼容、仿冒仓库和错误版本拒绝、同版本构建号比较、类型检查。Mac、Windows与Android重新构建并验证空白种子、无个人资料和签名；Mac在隔离窗口和正式原位安装后检查，Windows和Android未做实体设备运行验收。iOS仅同步源码中的地址，本次不构建或发布iOS。\n\n功能变化与已有界面说明继续见[319版说明](https://github.com/largetomatoes/wenjian-software/blob/v3.14-build319/RELEASE_NOTES_3.14_319.md)。\n\n验证记录见[VERIFICATION_3.14_320.md](https://github.com/largetomatoes/wenjian-software/blob/v3.14-build320/VERIFICATION_3.14_320.md)。\n",
       "published_at": "2026-10-15T00:35:21Z",
-      "tag_name": "v3.14"
-    },
-    {
+      "draft": false,
+      "prerelease": false,
       "assets": [
         {
-          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.01/android-signature.txt",
+          "name": "android-signature-319.txt",
+          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.14/android-signature-319.txt",
+          "state": "uploaded"
+        },
+        {
+          "name": "android-signature-320.txt",
+          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.14/android-signature-320.txt",
+          "state": "uploaded"
+        },
+        {
           "name": "android-signature.txt",
+          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.14/android-signature.txt",
           "state": "uploaded"
         },
         {
-          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.01/package-audit.json",
+          "name": "package-audit-319.json",
+          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.14/package-audit-319.json",
+          "state": "uploaded"
+        },
+        {
+          "name": "package-audit-320.json",
+          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.14/package-audit-320.json",
+          "state": "uploaded"
+        },
+        {
           "name": "package-audit.json",
+          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.14/package-audit.json",
           "state": "uploaded"
         },
         {
-          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.01/release-notes.md",
+          "name": "release-notes-319.md",
+          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.14/release-notes-319.md",
+          "state": "uploaded"
+        },
+        {
+          "name": "release-notes-320.md",
+          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.14/release-notes-320.md",
+          "state": "uploaded"
+        },
+        {
           "name": "release-notes.md",
+          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.14/release-notes.md",
           "state": "uploaded"
         },
         {
-          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.01/SHA256SUMS.txt",
+          "name": "SHA256SUMS-319.txt",
+          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.14/SHA256SUMS-319.txt",
+          "state": "uploaded"
+        },
+        {
+          "name": "SHA256SUMS-320.txt",
+          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.14/SHA256SUMS-320.txt",
+          "state": "uploaded"
+        },
+        {
           "name": "SHA256SUMS.txt",
+          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.14/SHA256SUMS.txt",
           "state": "uploaded"
         },
         {
-          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.01/verification-report.md",
+          "name": "update-manifest-319.json",
+          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.14/update-manifest-319.json",
+          "state": "uploaded"
+        },
+        {
+          "name": "update-manifest-320.json",
+          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.14/update-manifest-320.json",
+          "state": "uploaded"
+        },
+        {
+          "name": "update-manifest.json",
+          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.14/update-manifest.json",
+          "state": "uploaded"
+        },
+        {
+          "name": "verification-report-319.md",
+          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.14/verification-report-319.md",
+          "state": "uploaded"
+        },
+        {
+          "name": "verification-report-320.md",
+          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.14/verification-report-320.md",
+          "state": "uploaded"
+        },
+        {
           "name": "verification-report.md",
+          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.14/verification-report.md",
           "state": "uploaded"
         },
         {
-          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.01/Wenjian-3.01-Android.apk",
-          "name": "Wenjian-3.01-Android.apk",
+          "name": "Wenjian-3.14-Android.apk",
+          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.14/Wenjian-3.14-Android.apk",
           "state": "uploaded"
         },
         {
-          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.01/Wenjian-3.01-macOS-arm64.zip",
-          "name": "Wenjian-3.01-macOS-arm64.zip",
+          "name": "Wenjian-3.14-build319-Android.apk",
+          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.14/Wenjian-3.14-build319-Android.apk",
           "state": "uploaded"
         },
         {
-          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.01/Wenjian-3.01-Windows-x64.zip",
-          "name": "Wenjian-3.01-Windows-x64.zip",
+          "name": "Wenjian-3.14-build319-macOS-arm64.zip",
+          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.14/Wenjian-3.14-build319-macOS-arm64.zip",
+          "state": "uploaded"
+        },
+        {
+          "name": "Wenjian-3.14-build319-source.zip",
+          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.14/Wenjian-3.14-build319-source.zip",
+          "state": "uploaded"
+        },
+        {
+          "name": "Wenjian-3.14-build319-Windows-x64.zip",
+          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.14/Wenjian-3.14-build319-Windows-x64.zip",
+          "state": "uploaded"
+        },
+        {
+          "name": "Wenjian-3.14-build320-Android.apk",
+          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.14/Wenjian-3.14-build320-Android.apk",
+          "state": "uploaded"
+        },
+        {
+          "name": "Wenjian-3.14-build320-macOS-arm64.zip",
+          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.14/Wenjian-3.14-build320-macOS-arm64.zip",
+          "state": "uploaded"
+        },
+        {
+          "name": "Wenjian-3.14-build320-source.zip",
+          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.14/Wenjian-3.14-build320-source.zip",
+          "state": "uploaded"
+        },
+        {
+          "name": "Wenjian-3.14-build320-Windows-x64.zip",
+          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.14/Wenjian-3.14-build320-Windows-x64.zip",
+          "state": "uploaded"
+        },
+        {
+          "name": "Wenjian-3.14-macOS-arm64.zip",
+          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.14/Wenjian-3.14-macOS-arm64.zip",
+          "state": "uploaded"
+        },
+        {
+          "name": "Wenjian-3.14-Windows-x64.zip",
+          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.14/Wenjian-3.14-Windows-x64.zip",
           "state": "uploaded"
         }
-      ],
-      "body": "# 问间 3.01\n\nZotero 书库现在与“读书”书库使用一致的文件夹抽屉。电脑端默认只显示当前分类一行，展开选择后自动收起，下方只列出该分类的文献。\n\n- 延用 Zotero 已有分类，保留父分类和子分类层级；折叠子分类只改变显示，选择分类才收起抽屉。\n- 分类很多时在抽屉内独立滚动，为下方文献列表保留阅读空间。\n- 切换分类自动清除旧搜索条件，支持全部文献、未分类和空分类。\n- 分类来自本机 Zotero，管理仍在 Zotero 中进行；选择分类不改写文献、批注和个人笔记。\n\nMac、Windows 和 Android 版本统一为 3.01（build 301，桌面内部版本 3.1.0）。本次抽屉更新适用于桌面 Zotero 书库；Android 保持现有阅读及同步功能，并沿用用户当前证书签名。\n\n继续保留 3.00 的同步基准、版本恢复、原书主动下载、503 清理续做、OCR 摘录重排、双书对照及 Windows UTF-8 功能。本次未改变同步协议，无需重新建立资料库或重新发布共享基准。\n\n## 下载与升级\n\n- Mac Apple 芯片：解压 `Wenjian-3.01-macOS-arm64.zip`，退出旧版后替换应用程序中的同名“问间”。\n- Windows x64：完整解压 `Wenjian-3.01-Windows-x64.zip`，运行 `Wenjian.exe`。\n- Android 8.0+：使用 `Wenjian-3.01-Android.apk` 覆盖安装，签名与当前 2.4.2 / 3.00 相同。不要卸载原应用来升级。\n\n安装包均为空白资料库，不包含个人笔记、书籍或签名私钥；既有用户沿用原应用身份和本机资料。\n\n## 验证\n\nTypeScript、修改文件 ESLint、现有 Zotero 分类和图书文件夹回归已通过；虚构资料验证 33 个 Zotero 分类、父子层级、筛选、空分类、未分类、搜索清除、独立滚动和键盘关闭。三端构建成功；Android v1/v2/v3、对齐、证书及离线资源核验通过，Windows ZIP UTF-8 和无 macOS 元数据检查通过。没有 Windows / Android 真机环境，本次未完成真机覆盖安装与真实 Zotero / 云端联合验收。Mac 未作 Apple 公证，Windows 没有商业代码签名。\n",
-      "draft": false,
+      ]
+    },
+    {
+      "tag_name": "v3.01",
       "html_url": "https://github.com/largetomatoes/wenjian-software/releases/tag/v3.01",
-      "prerelease": false,
+      "body": "# 问间 3.01\n\nZotero 书库现在与“读书”书库使用一致的文件夹抽屉。电脑端默认只显示当前分类一行，展开选择后自动收起，下方只列出该分类的文献。\n\n- 延用 Zotero 已有分类，保留父分类和子分类层级；折叠子分类只改变显示，选择分类才收起抽屉。\n- 分类很多时在抽屉内独立滚动，为下方文献列表保留阅读空间。\n- 切换分类自动清除旧搜索条件，支持全部文献、未分类和空分类。\n- 分类来自本机 Zotero，管理仍在 Zotero 中进行；选择分类不改写文献、批注和个人笔记。\n\nMac、Windows 和 Android 版本统一为 3.01（build 301，桌面内部版本 3.1.0）。本次抽屉更新适用于桌面 Zotero 书库；Android 保持现有阅读及同步功能，并沿用用户当前证书签名。\n\n继续保留 3.00 的同步基准、版本恢复、原书主动下载、503 清理续做、OCR 摘录重排、双书对照及 Windows UTF-8 功能。本次未改变同步协议，无需重新建立资料库或重新发布共享基准。\n\n## 下载与升级\n\n- Mac Apple 芯片：解压 `Wenjian-3.01-macOS-arm64.zip`，退出旧版后替换应用程序中的同名“问间”。\n- Windows x64：完整解压 `Wenjian-3.01-Windows-x64.zip`，运行 `Wenjian.exe`。\n- Android 8.0+：使用 `Wenjian-3.01-Android.apk` 覆盖安装，签名与当前 2.4.2 / 3.00 相同。不要卸载原应用来升级。\n\n安装包均为空白资料库，不包含个人笔记、书籍或签名私钥；既有用户沿用原应用身份和本机资料。\n\n## 验证\n\nTypeScript、修改文件 ESLint、现有 Zotero 分类和图书文件夹回归已通过；虚构资料验证 33 个 Zotero 分类、父子层级、筛选、空分类、未分类、搜索清除、独立滚动和键盘关闭。三端构建成功；Android v1/v2/v3、对齐、证书及离线资源核验通过，Windows ZIP UTF-8 和无 macOS 元数据检查通过。没有 Windows / Android 真机环境，本次未完成真机覆盖安装与真实 Zotero / 云端联合验收。Mac 未作 Apple 公证，Windows 没有商业代码签名。\n",
       "published_at": "2026-10-13T13:37:40Z",
-      "tag_name": "v3.01"
-    },
-    {
+      "draft": false,
+      "prerelease": false,
       "assets": [
         {
-          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.00/android-signature.txt",
           "name": "android-signature.txt",
+          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.01/android-signature.txt",
           "state": "uploaded"
         },
         {
-          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.00/package-audit.json",
           "name": "package-audit.json",
+          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.01/package-audit.json",
           "state": "uploaded"
         },
         {
-          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.00/release-notes.md",
           "name": "release-notes.md",
+          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.01/release-notes.md",
           "state": "uploaded"
         },
         {
-          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.00/SHA256SUMS.txt",
           "name": "SHA256SUMS.txt",
+          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.01/SHA256SUMS.txt",
           "state": "uploaded"
         },
         {
-          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.00/verification-report.md",
           "name": "verification-report.md",
+          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.01/verification-report.md",
           "state": "uploaded"
         },
         {
-          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.00/Wenjian-3.00-Android.apk",
-          "name": "Wenjian-3.00-Android.apk",
+          "name": "Wenjian-3.01-Android.apk",
+          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.01/Wenjian-3.01-Android.apk",
           "state": "uploaded"
         },
         {
-          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.00/Wenjian-3.00-macOS-arm64.zip",
-          "name": "Wenjian-3.00-macOS-arm64.zip",
+          "name": "Wenjian-3.01-macOS-arm64.zip",
+          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.01/Wenjian-3.01-macOS-arm64.zip",
           "state": "uploaded"
         },
         {
-          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.00/Wenjian-3.00-Windows-x64.zip",
-          "name": "Wenjian-3.00-Windows-x64.zip",
+          "name": "Wenjian-3.01-Windows-x64.zip",
+          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.01/Wenjian-3.01-Windows-x64.zip",
           "state": "uploaded"
         }
-      ],
-      "body": "# 问间 3.00\n\n本版提供 macOS Apple 芯片、Windows x64 与 Android 三端安装包。Android 使用与当前 2.4.2 相同的证书签名，版本号 3.00，构建编号 300。升级顺序、校验方式及实际验证范围见下文。\n\n## 本次修正\n\n- **先选设备基准，再继续多端合并。** 在 Mac、Windows 或 Android 中任选资料正确的一台，查看相对云端新增、替换和移除的数量，备份后发布为共享基准。其余设备接入这一版资料，之后任意设备的新书、笔记和阅读进度仍会参与同步。\n- **保留可恢复的切换前版本。** “资料库版本与恢复…”可查看基准切换前的云端记录，恢复时再次备份当前资料。旧设备未修改的过时记录不会重新出现；尚未上传的独有改动会保留或显示冲突供核对。\n- **减少没有操作时的持续同步。** 本机资料与云端状态没有变化时只做读取检查，不重复写同步租约、笔记库或书籍检查时间。传输失败后逐步延长重试间隔，凭据错误时暂停自动尝试。此修正针对问间自身的无变化写入，Windows 坚果云客户端的实际同步记录尚未取得。\n- **旧历史分批续做。** 每次最多清理 40 个旧记录，遇到 503 或其他失败即停止；再次整理会接续已保存的清理队列，不重复建立快照或完整备份。清理暂停与笔记同步状态分别提示。\n- **同步书目后主动取得原书。** 自动下载本机缺失的 PDF / EPUB，校验文件，并显示失败状态；已存在的完整书籍不重复下载。仍可在前台手动“立即同步”。\n- **PDF / OCR 摘录按段落排版。** 新摘录合并 PDF 版面造成的行内换行，随笔记窗口自然折行，保留可识别段落与英文词间空格。可切回“保留原文分行”；原始摘录、页码与选区坐标保留，已保存笔记不会自动改写。\n- **Windows UTF-8。** JSON 读取严格检查 UTF-8，支持 UTF-8 BOM，拒绝把错误编码读成乱码后保存。Windows 压缩包继续使用英文外层目录和 `Wenjian.exe`，保留 ZIP 的 UTF-8 文件名标志，去除 macOS 元数据。\n- **桌面书库文件夹抽屉。** Mac 和 Windows 默认只显示当前文件夹一行；点击展开抽屉，选中文件夹后自动收起，只列出该文件夹内的书籍。大量文件夹在抽屉内滚动，保留新建、改名、移除与移动书籍功能；切换时清除旧搜索条件。\n- **安卓签名以当前安装版为准。** 3.00 已使用当前安装版的同一私钥签名，打包时强制核对证书，避免使用早期不同证书生成无法覆盖安装的更新。\n\n## 从 2.4.2 升级\n\n1. 在各设备保存正在编辑的内容，并导出完整备份。确认希望用作初始基准的设备上资料正确、原书完整。\n2. 将所有参与同步的设备升级到 3.00。旧版本更新提示可能不能识别 `v3.00` 标签，可直接从 Releases 下载；Android 覆盖安装要求证书与当前安装版本一致。\n3. 在选定的设备打开“三端同步”，选择“以这台设备的书库为准…”，核对差异、输入“以本机为准”，点击“备份并发布本机基准”。空白新资料库可直接“以这台设备开始同步”。\n4. 在其他设备连接同一资料库并同步。新设备选择“以云端现有资料为准”；如确实需要同时保留两套初始资料，也可核对后合并。\n5. 等待笔记及原书传输结束，再检查书籍、笔记和进度。出现并发版本时，按内容选择，不需要反复更换基准。\n\n选择 3.00 的共享基准后，旧客户端会暂停该资料库的同步。三端升级完成后再切换基准，避免旧客户端无法继续同步。\n\n“资料库版本”保留的是手动切换基准前的云端状态，不是每次保存的整库备份。普通同步不自动删除书籍、旧完整备份或未知文件。“整理云端旧历史”在备份、生成并校验新快照后清理旧笔记批次，同时保留原书与可恢复的基准历史。实际书籍、OCR 缓存和保留的快照仍会占用云端空间。\n\n## 安装包与版本\n\n| 平台 | 文件名 | 安装方式 |\n| --- | --- | --- |\n| macOS Apple 芯片 | `Wenjian-3.00-macOS-arm64.zip` | 解压后移入“应用程序” |\n| Windows x64 | `Wenjian-3.00-Windows-x64.zip` | 完整解压后运行 `Wenjian.exe` |\n| Android 8.0+ | `Wenjian-3.00-Android.apk` | 使用与现有版本相同的签名覆盖安装 |\n\n公开版本为 **3.00**，发布标签为 `v3.00`，内部 Electron 包版本为 `3.0.0`，构建编号为 **300**。Android 包名保持 `com.wenjian.reader`，PDF 阅读需要 WebView 111 或更新版本。Mac 包未经过 Apple 公证，Windows 包没有商业代码签名。\n\nAndroid 要求证书 SHA-256：\n\n```text\n72a1a440fbcba6221846b2cc011b8dd32f4db7a9336f478f2e19d79f7693a531\n```\n\n该指纹与当前公开 2.4.2 APK 一致。3.00 APK 已通过同证书核验、v1/v2/v3 签名、文件对齐、包身份、离线资源和文件哈希检查。APK 为 52,960,453 字节，SHA-256 为 `9886fd5aadcde10dab9fb9fe47eec3bceca4790e48fa3845788b631fdfd2d915`。签名材料不随源码或安装包分发。实际手机覆盖安装尚未测试。\n\n## 验证范围与限制\n\n本次 103 项 Node 回归全部通过，TypeScript 检查与变更文件 ESLint 无错误。Windows ZIP UTF-8 与元数据检查、Android Java 传输测试通过；三端构建完成，Android 发布 lint 为 0 错误、19 警告。Mac 安装包使用独立空白目录实际启动，版本接口返回 3.00 / build 300。浏览器用虚构资料完成了基准差异预览、备份发布基准、历史恢复，以及 390×844 手机尺寸界面检查。\n\n重点回归包括：连续 20 次空闲检查无云端写入和本机同步保存，旧设备不复活过时记录，离线及重试队列保留，书籍主动下载与避免重复下载，上传期间的连接/原件变化保护，OCR 原文坐标与 rawQuote 保留，中文路径、emoji、UTF-8 BOM 与错误编码拒绝，63 个旧文件分 40+23 两批清理，503 暂停后沿用原清理队列续做。\n\n本次尚未在实体 Android、Windows 机器或真实坚果云 / OSS 账号上完成跨端验收。构建通过、模拟传输与浏览器预览不能代替这些测试；也未通过 Windows 坚果云日志确认用户看到的全部后台同步都来自问间。\n",
-      "draft": false,
+      ]
+    },
+    {
+      "tag_name": "v3.00",
       "html_url": "https://github.com/largetomatoes/wenjian-software/releases/tag/v3.00",
-      "prerelease": false,
+      "body": "# 问间 3.00\n\n本版提供 macOS Apple 芯片、Windows x64 与 Android 三端安装包。Android 使用与当前 2.4.2 相同的证书签名，版本号 3.00，构建编号 300。升级顺序、校验方式及实际验证范围见下文。\n\n## 本次修正\n\n- **先选设备基准，再继续多端合并。** 在 Mac、Windows 或 Android 中任选资料正确的一台，查看相对云端新增、替换和移除的数量，备份后发布为共享基准。其余设备接入这一版资料，之后任意设备的新书、笔记和阅读进度仍会参与同步。\n- **保留可恢复的切换前版本。** “资料库版本与恢复…”可查看基准切换前的云端记录，恢复时再次备份当前资料。旧设备未修改的过时记录不会重新出现；尚未上传的独有改动会保留或显示冲突供核对。\n- **减少没有操作时的持续同步。** 本机资料与云端状态没有变化时只做读取检查，不重复写同步租约、笔记库或书籍检查时间。传输失败后逐步延长重试间隔，凭据错误时暂停自动尝试。此修正针对问间自身的无变化写入，Windows 坚果云客户端的实际同步记录尚未取得。\n- **旧历史分批续做。** 每次最多清理 40 个旧记录，遇到 503 或其他失败即停止；再次整理会接续已保存的清理队列，不重复建立快照或完整备份。清理暂停与笔记同步状态分别提示。\n- **同步书目后主动取得原书。** 自动下载本机缺失的 PDF / EPUB，校验文件，并显示失败状态；已存在的完整书籍不重复下载。仍可在前台手动“立即同步”。\n- **PDF / OCR 摘录按段落排版。** 新摘录合并 PDF 版面造成的行内换行，随笔记窗口自然折行，保留可识别段落与英文词间空格。可切回“保留原文分行”；原始摘录、页码与选区坐标保留，已保存笔记不会自动改写。\n- **Windows UTF-8。** JSON 读取严格检查 UTF-8，支持 UTF-8 BOM，拒绝把错误编码读成乱码后保存。Windows 压缩包继续使用英文外层目录和 `Wenjian.exe`，保留 ZIP 的 UTF-8 文件名标志，去除 macOS 元数据。\n- **桌面书库文件夹抽屉。** Mac 和 Windows 默认只显示当前文件夹一行；点击展开抽屉，选中文件夹后自动收起，只列出该文件夹内的书籍。大量文件夹在抽屉内滚动，保留新建、改名、移除与移动书籍功能；切换时清除旧搜索条件。\n- **安卓签名以当前安装版为准。** 3.00 已使用当前安装版的同一私钥签名，打包时强制核对证书，避免使用早期不同证书生成无法覆盖安装的更新。\n\n## 从 2.4.2 升级\n\n1. 在各设备保存正在编辑的内容，并导出完整备份。确认希望用作初始基准的设备上资料正确、原书完整。\n2. 将所有参与同步的设备升级到 3.00。旧版本更新提示可能不能识别 `v3.00` 标签，可直接从 Releases 下载；Android 覆盖安装要求证书与当前安装版本一致。\n3. 在选定的设备打开“三端同步”，选择“以这台设备的书库为准…”，核对差异、输入“以本机为准”，点击“备份并发布本机基准”。空白新资料库可直接“以这台设备开始同步”。\n4. 在其他设备连接同一资料库并同步。新设备选择“以云端现有资料为准”；如确实需要同时保留两套初始资料，也可核对后合并。\n5. 等待笔记及原书传输结束，再检查书籍、笔记和进度。出现并发版本时，按内容选择，不需要反复更换基准。\n\n选择 3.00 的共享基准后，旧客户端会暂停该资料库的同步。三端升级完成后再切换基准，避免旧客户端无法继续同步。\n\n“资料库版本”保留的是手动切换基准前的云端状态，不是每次保存的整库备份。普通同步不自动删除书籍、旧完整备份或未知文件。“整理云端旧历史”在备份、生成并校验新快照后清理旧笔记批次，同时保留原书与可恢复的基准历史。实际书籍、OCR 缓存和保留的快照仍会占用云端空间。\n\n## 安装包与版本\n\n| 平台 | 文件名 | 安装方式 |\n| --- | --- | --- |\n| macOS Apple 芯片 | `Wenjian-3.00-macOS-arm64.zip` | 解压后移入“应用程序” |\n| Windows x64 | `Wenjian-3.00-Windows-x64.zip` | 完整解压后运行 `Wenjian.exe` |\n| Android 8.0+ | `Wenjian-3.00-Android.apk` | 使用与现有版本相同的签名覆盖安装 |\n\n公开版本为 **3.00**，发布标签为 `v3.00`，内部 Electron 包版本为 `3.0.0`，构建编号为 **300**。Android 包名保持 `com.wenjian.reader`，PDF 阅读需要 WebView 111 或更新版本。Mac 包未经过 Apple 公证，Windows 包没有商业代码签名。\n\nAndroid 要求证书 SHA-256：\n\n```text\n72a1a440fbcba6221846b2cc011b8dd32f4db7a9336f478f2e19d79f7693a531\n```\n\n该指纹与当前公开 2.4.2 APK 一致。3.00 APK 已通过同证书核验、v1/v2/v3 签名、文件对齐、包身份、离线资源和文件哈希检查。APK 为 52,960,453 字节，SHA-256 为 `9886fd5aadcde10dab9fb9fe47eec3bceca4790e48fa3845788b631fdfd2d915`。签名材料不随源码或安装包分发。实际手机覆盖安装尚未测试。\n\n## 验证范围与限制\n\n本次 103 项 Node 回归全部通过，TypeScript 检查与变更文件 ESLint 无错误。Windows ZIP UTF-8 与元数据检查、Android Java 传输测试通过；三端构建完成，Android 发布 lint 为 0 错误、19 警告。Mac 安装包使用独立空白目录实际启动，版本接口返回 3.00 / build 300。浏览器用虚构资料完成了基准差异预览、备份发布基准、历史恢复，以及 390×844 手机尺寸界面检查。\n\n重点回归包括：连续 20 次空闲检查无云端写入和本机同步保存，旧设备不复活过时记录，离线及重试队列保留，书籍主动下载与避免重复下载，上传期间的连接/原件变化保护，OCR 原文坐标与 rawQuote 保留，中文路径、emoji、UTF-8 BOM 与错误编码拒绝，63 个旧文件分 40+23 两批清理，503 暂停后沿用原清理队列续做。\n\n本次尚未在实体 Android、Windows 机器或真实坚果云 / OSS 账号上完成跨端验收。构建通过、模拟传输与浏览器预览不能代替这些测试；也未通过 Windows 坚果云日志确认用户看到的全部后台同步都来自问间。\n",
       "published_at": "2026-10-13T12:20:05Z",
-      "tag_name": "v3.00"
-    },
-    {
+      "draft": false,
+      "prerelease": false,
       "assets": [
         {
-          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v2.4.2/Android-package-check.json",
-          "name": "Android-package-check.json",
+          "name": "android-signature.txt",
+          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.00/android-signature.txt",
           "state": "uploaded"
         },
         {
-          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v2.4.2/build-check.json",
-          "name": "build-check.json",
+          "name": "package-audit.json",
+          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.00/package-audit.json",
           "state": "uploaded"
         },
         {
-          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v2.4.2/compare-reading-desktop.png",
-          "name": "compare-reading-desktop.png",
-          "state": "uploaded"
-        },
-        {
-          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v2.4.2/release-notes.md",
           "name": "release-notes.md",
+          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.00/release-notes.md",
           "state": "uploaded"
         },
         {
-          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v2.4.2/SHA256SUMS.txt",
           "name": "SHA256SUMS.txt",
+          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.00/SHA256SUMS.txt",
           "state": "uploaded"
         },
         {
-          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v2.4.2/Wenjian-2.4.2-Android.apk",
-          "name": "Wenjian-2.4.2-Android.apk",
+          "name": "verification-report.md",
+          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.00/verification-report.md",
           "state": "uploaded"
         },
         {
-          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v2.4.2/Wenjian-2.4.2-macOS-arm64.zip",
-          "name": "Wenjian-2.4.2-macOS-arm64.zip",
+          "name": "Wenjian-3.00-Android.apk",
+          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.00/Wenjian-3.00-Android.apk",
           "state": "uploaded"
         },
         {
-          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v2.4.2/Wenjian-2.4.2-Windows-x64.zip",
-          "name": "Wenjian-2.4.2-Windows-x64.zip",
+          "name": "Wenjian-3.00-macOS-arm64.zip",
+          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.00/Wenjian-3.00-macOS-arm64.zip",
+          "state": "uploaded"
+        },
+        {
+          "name": "Wenjian-3.00-Windows-x64.zip",
+          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.00/Wenjian-3.00-Windows-x64.zip",
           "state": "uploaded"
         }
-      ],
-      "body": "# 问间 2.4.2\n\nWindows 包按修正版方式重新打包：使用英文目录 `Wenjian-2.4.2-win64` 与 `Wenjian.exe`，避免解压后的名称乱码。标准 ZIP 工具会为非 ASCII 文件名写入 UTF-8 标记，排除 `__MACOSX`、`._*`、`.DS_Store` 等附属文件。网页与脚本的 UTF-8 声明继续保留。\n\n## 双书对照阅读（Mac / Windows / Android）\n\n在「书库 → 读书」打开一本书，点击「对照阅读」，再选择第二本。可以混合打开 PDF 与 EPUB，也可打开同一本书的不同位置。两侧分别翻页、搜索、缩放和记录；支持交换左右、调整两栏宽度、上下排布及单栏放大。\n\n可以分别写笔记，也可以把两侧材料放进「共同思考」。一条共同思考保留各自书名、章节、原文位置和选中摘录，在相关书籍的笔记本中均可找到，可关联问题。正文由使用者书写，不调用 AI 生成逻辑。该功能沿用 2.3 的实现，本次确认已随 Mac 与 Windows 新包一起发布。\n\n## 同时包含\n\n- 2.4 的新设备直接连接并查看云端资料、资料库身份校验与版本选择。冲突仍由使用者决定；云端旧历史整理需要先备份并确认。\n- 卡片可以按「想法 / 问题」、联系状态筛选，未连接的问题可移入问题图并保留原卡片。\n- 2.4.1 的卡片集整栏滚动修复：标题保持可见，长草稿和小窗口下也可访问后面的卡片。\n\n## 安装与升级\n\n- Windows x64：解压 `Wenjian-2.4.2-Windows-x64.zip`，打开 `Wenjian-2.4.2-win64/Wenjian.exe`。旧版先退出，新版沿用原问间资料；不要把旧目录的程序和新文件混在一起。\n- macOS Apple 芯片：解压后，用同名「问间.app」替换应用程序中的原版。先退出应用，升级前可导出完整备份。\n- Android 2.4.2：下载 `Wenjian-2.4.2-Android.apk`，覆盖安装。沿用原应用 ID 和证书，内部升级编号为 48。支持电脑整理后的新版云端资料库；旧 Android 2.2.0 仍需升级。\n\n三个安装包均为首次输入核心问题的空白版本，不包含个人笔记、电子书、云账号或应用密码。更新保留本机资料和草稿。\n\n验证：ZIP 文件名与元数据审计、包内空白资料检查、TypeScript、双书来源/章节/并行保存/同步回归，以及虚构 PDF + EPUB 的同屏阅读、独立翻页、分别记录与共同思考保存。没有 Windows 实机环境，未宣称通过 Windows 真机启动测试；应用尚无商业代码签名与 Apple 公证。\n\n## Android 2.4.2 补充更新\n\n安卓与 Mac、Windows 安装包统一放在本发布页。包含双书对照与共同思考、卡片分类及问题入图、问题修订和后续思考、新版资料库协议与备份迁移，以及居中设置和统一按钮布局。\n\n针对反馈的 ColorOS“解析失败、安装包没有签名文件”，重新打包签名并统一使用 `META-INF/CERT.SF`、`CERT.RSA`、`MANIFEST.MF`。v1、v2、v3 验证通过，证书与旧版相同。对外版本为 2.4.2，内部升级编号递增至 48，已安装误发 2.4.3 的设备也可覆盖更新。无需卸载旧版。\n\n本次复用已构建并验证的功能代码，只更新版本元数据、前端版本提示和签名；原生类、阅读及离线 OCR 资源逐项校验一致。APK 对齐及 Android API 26–36 签名检查通过。没有一加实体设备，实际 ColorOS 安装结果仍需手机验收。旧包本身也通过官方签名验证，不能仅据手机提示断定原文件缺少签名。\n\nAndroid source: https://github.com/largetomatoes/mac-/commit/52e881320c591e4c5dd393df6b8439a2977c60a7\n",
-      "draft": false,
+      ]
+    },
+    {
+      "tag_name": "v2.4.2",
       "html_url": "https://github.com/largetomatoes/wenjian-software/releases/tag/v2.4.2",
-      "prerelease": false,
+      "body": "# 问间 2.4.2\n\nWindows 包按修正版方式重新打包：使用英文目录 `Wenjian-2.4.2-win64` 与 `Wenjian.exe`，避免解压后的名称乱码。标准 ZIP 工具会为非 ASCII 文件名写入 UTF-8 标记，排除 `__MACOSX`、`._*`、`.DS_Store` 等附属文件。网页与脚本的 UTF-8 声明继续保留。\n\n## 双书对照阅读（Mac / Windows / Android）\n\n在「书库 → 读书」打开一本书，点击「对照阅读」，再选择第二本。可以混合打开 PDF 与 EPUB，也可打开同一本书的不同位置。两侧分别翻页、搜索、缩放和记录；支持交换左右、调整两栏宽度、上下排布及单栏放大。\n\n可以分别写笔记，也可以把两侧材料放进「共同思考」。一条共同思考保留各自书名、章节、原文位置和选中摘录，在相关书籍的笔记本中均可找到，可关联问题。正文由使用者书写，不调用 AI 生成逻辑。该功能沿用 2.3 的实现，本次确认已随 Mac 与 Windows 新包一起发布。\n\n## 同时包含\n\n- 2.4 的新设备直接连接并查看云端资料、资料库身份校验与版本选择。冲突仍由使用者决定；云端旧历史整理需要先备份并确认。\n- 卡片可以按「想法 / 问题」、联系状态筛选，未连接的问题可移入问题图并保留原卡片。\n- 2.4.1 的卡片集整栏滚动修复：标题保持可见，长草稿和小窗口下也可访问后面的卡片。\n\n## 安装与升级\n\n- Windows x64：解压 `Wenjian-2.4.2-Windows-x64.zip`，打开 `Wenjian-2.4.2-win64/Wenjian.exe`。旧版先退出，新版沿用原问间资料；不要把旧目录的程序和新文件混在一起。\n- macOS Apple 芯片：解压后，用同名「问间.app」替换应用程序中的原版。先退出应用，升级前可导出完整备份。\n- Android 2.4.2：下载 `Wenjian-2.4.2-Android.apk`，覆盖安装。沿用原应用 ID 和证书，内部升级编号为 48。支持电脑整理后的新版云端资料库；旧 Android 2.2.0 仍需升级。\n\n三个安装包均为首次输入核心问题的空白版本，不包含个人笔记、电子书、云账号或应用密码。更新保留本机资料和草稿。\n\n验证：ZIP 文件名与元数据审计、包内空白资料检查、TypeScript、双书来源/章节/并行保存/同步回归，以及虚构 PDF + EPUB 的同屏阅读、独立翻页、分别记录与共同思考保存。没有 Windows 实机环境，未宣称通过 Windows 真机启动测试；应用尚无商业代码签名与 Apple 公证。\n\n## Android 2.4.2 补充更新\n\n安卓与 Mac、Windows 安装包统一放在本发布页。包含双书对照与共同思考、卡片分类及问题入图、问题修订和后续思考、新版资料库协议与备份迁移，以及居中设置和统一按钮布局。\n\n针对反馈的 ColorOS“解析失败、安装包没有签名文件”，重新打包签名并统一使用 `META-INF/CERT.SF`、`CERT.RSA`、`MANIFEST.MF`。v1、v2、v3 验证通过，证书与旧版相同。对外版本为 2.4.2，内部升级编号递增至 48，已安装误发 2.4.3 的设备也可覆盖更新。无需卸载旧版。\n\n本次复用已构建并验证的功能代码，只更新版本元数据、前端版本提示和签名；原生类、阅读及离线 OCR 资源逐项校验一致。APK 对齐及 Android API 26–36 签名检查通过。没有一加实体设备，实际 ColorOS 安装结果仍需手机验收。旧包本身也通过官方签名验证，不能仅据手机提示断定原文件缺少签名。\n\nAndroid source: https://github.com/largetomatoes/mac-/commit/52e881320c591e4c5dd393df6b8439a2977c60a7\n",
       "published_at": "2026-10-11T17:02:56Z",
-      "tag_name": "v2.4.2"
-    },
-    {
+      "draft": false,
+      "prerelease": false,
       "assets": [
         {
-          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v2.4.0/build-check.json",
+          "name": "Android-package-check.json",
+          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v2.4.2/Android-package-check.json",
+          "state": "uploaded"
+        },
+        {
           "name": "build-check.json",
+          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v2.4.2/build-check.json",
           "state": "uploaded"
         },
         {
-          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v2.4.0/cards-desktop.png",
-          "name": "cards-desktop.png",
+          "name": "compare-reading-desktop.png",
+          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v2.4.2/compare-reading-desktop.png",
           "state": "uploaded"
         },
         {
-          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v2.4.0/release-notes.md",
           "name": "release-notes.md",
+          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v2.4.2/release-notes.md",
           "state": "uploaded"
         },
         {
-          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v2.4.0/SHA256SUMS.txt",
           "name": "SHA256SUMS.txt",
+          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v2.4.2/SHA256SUMS.txt",
           "state": "uploaded"
         },
         {
-          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v2.4.0/Wenjian-2.4.0-macOS-arm64.zip",
-          "name": "Wenjian-2.4.0-macOS-arm64.zip",
+          "name": "Wenjian-2.4.2-Android.apk",
+          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v2.4.2/Wenjian-2.4.2-Android.apk",
           "state": "uploaded"
         },
         {
-          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v2.4.0/Wenjian-2.4.0-Windows-x64.zip",
-          "name": "Wenjian-2.4.0-Windows-x64.zip",
+          "name": "Wenjian-2.4.2-macOS-arm64.zip",
+          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v2.4.2/Wenjian-2.4.2-macOS-arm64.zip",
+          "state": "uploaded"
+        },
+        {
+          "name": "Wenjian-2.4.2-Windows-x64.zip",
+          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v2.4.2/Wenjian-2.4.2-Windows-x64.zip",
           "state": "uploaded"
         }
-      ],
-      "body": "# 问间 2.4.0 · Mac / Windows 同步与卡片集\n\n电脑端维护同一套资料结构。本次未更新 Android 安装包。\n\n## 同步\n\n- 新设备首次打开可直接连接坚果云，核对云端核心问题、笔记和书籍后接入，无需先填写试用问题。\n- 云端与本机首次合并前需核对；替换本机资料前自动保留完整备份。\n- 冲突显示内容、设备与时间。选择保留版本后立即同步决定；其他版本退出正常内容。\n- 两端分别新增的后续思考可合并；真正冲突仍由使用者选择。\n- Zotero 开关留在各自设备，避免 Windows 设置覆盖 Mac。\n- 删除决定随笔记同步。书籍原文件按需下载。\n- 可手动「整理云端旧历史」：先完整备份、上传并核验最新快照，再清理旧笔记同步批次。书籍原文件保留，整理中断可重试。\n- 新版使用资料库标识和条件写入，降低串库及同时同步相互覆盖的风险。\n\n## 卡片集\n\n- 手动选择「想法」或「问题」，按类型、已连接/未连接筛选。\n- 问题卡片可选择所属问题或交叉板块，加入问题图并获得编号。\n- 原卡片保留原话与记录时间，点击后进入同一个问题；后续思考归入该问题，避免重复编辑两份。\n\n## 更新方式与兼容范围\n\nMac：退出旧版后，将压缩包里的「问间.app」替换原应用。个人资料仍使用原位置。本机已安装用户可直接打开原问间。\n\nWindows：退出旧版，解压到一个独立程序文件夹，运行「问间.exe」。这是便携程序包；不要把新旧运行文件混在同一个文件夹。资料仍使用原来的用户数据目录。\n\n**请先将 Mac、Windows 都更新至 2.4.0，再选择整理云端历史，并先同步其他设备未上传的修改。** 普通同步保留旧历史；只有主动整理才会切换到新快照。整理后，旧版电脑端和 Android 2.2.0 会暂停同步，以免把已舍弃内容重新带回；Android 需未来更新后再接入新快照。\n\n发布包为空白资料库，不含使用者笔记、书籍、草稿或凭据。\n\n## 验证\n\n已验证首次接入、冲突选择传播、独立思考合并、同步删除、并发写入校验、云端整理、离线重新接入和清理中断重试；Mac 本机安装及资料完整性通过校验。Windows x64 构建及空白包检查通过，未进行 Windows 真机运行验证。\n",
-      "draft": false,
+      ]
+    },
+    {
+      "tag_name": "v2.4.0",
       "html_url": "https://github.com/largetomatoes/wenjian-software/releases/tag/v2.4.0",
-      "prerelease": false,
+      "body": "# 问间 2.4.0 · Mac / Windows 同步与卡片集\n\n电脑端维护同一套资料结构。本次未更新 Android 安装包。\n\n## 同步\n\n- 新设备首次打开可直接连接坚果云，核对云端核心问题、笔记和书籍后接入，无需先填写试用问题。\n- 云端与本机首次合并前需核对；替换本机资料前自动保留完整备份。\n- 冲突显示内容、设备与时间。选择保留版本后立即同步决定；其他版本退出正常内容。\n- 两端分别新增的后续思考可合并；真正冲突仍由使用者选择。\n- Zotero 开关留在各自设备，避免 Windows 设置覆盖 Mac。\n- 删除决定随笔记同步。书籍原文件按需下载。\n- 可手动「整理云端旧历史」：先完整备份、上传并核验最新快照，再清理旧笔记同步批次。书籍原文件保留，整理中断可重试。\n- 新版使用资料库标识和条件写入，降低串库及同时同步相互覆盖的风险。\n\n## 卡片集\n\n- 手动选择「想法」或「问题」，按类型、已连接/未连接筛选。\n- 问题卡片可选择所属问题或交叉板块，加入问题图并获得编号。\n- 原卡片保留原话与记录时间，点击后进入同一个问题；后续思考归入该问题，避免重复编辑两份。\n\n## 更新方式与兼容范围\n\nMac：退出旧版后，将压缩包里的「问间.app」替换原应用。个人资料仍使用原位置。本机已安装用户可直接打开原问间。\n\nWindows：退出旧版，解压到一个独立程序文件夹，运行「问间.exe」。这是便携程序包；不要把新旧运行文件混在同一个文件夹。资料仍使用原来的用户数据目录。\n\n**请先将 Mac、Windows 都更新至 2.4.0，再选择整理云端历史，并先同步其他设备未上传的修改。** 普通同步保留旧历史；只有主动整理才会切换到新快照。整理后，旧版电脑端和 Android 2.2.0 会暂停同步，以免把已舍弃内容重新带回；Android 需未来更新后再接入新快照。\n\n发布包为空白资料库，不含使用者笔记、书籍、草稿或凭据。\n\n## 验证\n\n已验证首次接入、冲突选择传播、独立思考合并、同步删除、并发写入校验、云端整理、离线重新接入和清理中断重试；Mac 本机安装及资料完整性通过校验。Windows x64 构建及空白包检查通过，未进行 Windows 真机运行验证。\n",
       "published_at": "2026-10-11T09:46:37Z",
-      "tag_name": "v2.4.0"
-    },
-    {
+      "draft": false,
+      "prerelease": false,
       "assets": [
         {
-          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v2.3.0/build-check.json",
           "name": "build-check.json",
+          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v2.4.0/build-check.json",
           "state": "uploaded"
         },
         {
-          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v2.3.0/compare-reading-mac.jpg",
-          "name": "compare-reading-mac.jpg",
+          "name": "cards-desktop.png",
+          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v2.4.0/cards-desktop.png",
           "state": "uploaded"
         },
         {
-          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v2.3.0/release-notes.md",
           "name": "release-notes.md",
+          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v2.4.0/release-notes.md",
           "state": "uploaded"
         },
         {
-          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v2.3.0/SHA256SUMS.txt",
           "name": "SHA256SUMS.txt",
+          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v2.4.0/SHA256SUMS.txt",
           "state": "uploaded"
         },
         {
-          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v2.3.0/Wenjian-2.3.0-macOS-arm64.zip",
-          "name": "Wenjian-2.3.0-macOS-arm64.zip",
+          "name": "Wenjian-2.4.0-macOS-arm64.zip",
+          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v2.4.0/Wenjian-2.4.0-macOS-arm64.zip",
           "state": "uploaded"
         },
         {
-          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v2.3.0/Wenjian-2.3.0-Windows-x64.zip",
-          "name": "Wenjian-2.3.0-Windows-x64.zip",
+          "name": "Wenjian-2.4.0-Windows-x64.zip",
+          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v2.4.0/Wenjian-2.4.0-Windows-x64.zip",
           "state": "uploaded"
         }
-      ],
-      "body": "# 问间 2.3.0 · 电脑端对照阅读\n\n在读书页点击「对照阅读」，选择第二本书。PDF 和 EPUB 可以混合打开，也可以对照同一本书的不同页。两栏各自翻页、搜索、缩放；点击所在栏后，方向键只翻该栏。拖动中间分隔条可调整宽度，也可交换位置、上下排布、临时放大或只读其中一本。\n\n选中原文后点击「加入共同思考」，来源会收进底部写作区；在另一栏选中文字后，可以继续加入同一条思考。也可以直接点顶部「共同思考」，写不依附摘录的双书思考。原话、书名、章节与原文位置保留，思考由使用者自己写。既有过程笔记和读书笔记也可以引用到共同思考，原记录继续保留。\n\n共同思考只存一条记录，在相关书籍的章节里都能找到，并可关联问题、搜索或收进文稿素材。从任一本书修改都会更新同一条记录；修改前的思考、来源和原因保留在修改记录中。底部草稿可折叠，关闭后与两栏位置一起保存在本机；打开另一条思考前未完成的草稿保留在「其他草稿」中。\n\n扫描页仅在当前操作的阅读栏自动识别，避免同时启动两项 OCR。\n\n下载：Apple 芯片 Mac 使用 `Wenjian-2.3.0-macOS-arm64.zip`，Windows x64 使用 `Wenjian-2.3.0-Windows-x64.zip`。安装包是空白版本，不含个人笔记、书籍、草稿、云连接或密码。Mac 升级替换同名应用后沿用本机资料。Windows 解压后运行「问间.exe」。\n\n这一版仅更新电脑端；Android 沿用 2.2.0。正式保存的共同思考沿用现有同步资料结构；未提交草稿仅在本机保存。此次未使用真实云端账号进行新的跨设备联网测试。\n\n验证：类型检查、同步回归与共享记录测试；在隔离的虚构资料库实际测试 PDF / EPUB 划选、关联、保存、从两本书查找、修订历史、草稿恢复、同书不同页、键盘翻页、分栏调整、较小窗口和自动 OCR。Windows 包完成文件与版本核验，未在 Windows 实机运行。本机构建的 Mac 包未经过 Apple 公证，Windows 包没有商业代码签名。\n",
-      "draft": false,
+      ]
+    },
+    {
+      "tag_name": "v2.3.0",
       "html_url": "https://github.com/largetomatoes/wenjian-software/releases/tag/v2.3.0",
-      "prerelease": false,
+      "body": "# 问间 2.3.0 · 电脑端对照阅读\n\n在读书页点击「对照阅读」，选择第二本书。PDF 和 EPUB 可以混合打开，也可以对照同一本书的不同页。两栏各自翻页、搜索、缩放；点击所在栏后，方向键只翻该栏。拖动中间分隔条可调整宽度，也可交换位置、上下排布、临时放大或只读其中一本。\n\n选中原文后点击「加入共同思考」，来源会收进底部写作区；在另一栏选中文字后，可以继续加入同一条思考。也可以直接点顶部「共同思考」，写不依附摘录的双书思考。原话、书名、章节与原文位置保留，思考由使用者自己写。既有过程笔记和读书笔记也可以引用到共同思考，原记录继续保留。\n\n共同思考只存一条记录，在相关书籍的章节里都能找到，并可关联问题、搜索或收进文稿素材。从任一本书修改都会更新同一条记录；修改前的思考、来源和原因保留在修改记录中。底部草稿可折叠，关闭后与两栏位置一起保存在本机；打开另一条思考前未完成的草稿保留在「其他草稿」中。\n\n扫描页仅在当前操作的阅读栏自动识别，避免同时启动两项 OCR。\n\n下载：Apple 芯片 Mac 使用 `Wenjian-2.3.0-macOS-arm64.zip`，Windows x64 使用 `Wenjian-2.3.0-Windows-x64.zip`。安装包是空白版本，不含个人笔记、书籍、草稿、云连接或密码。Mac 升级替换同名应用后沿用本机资料。Windows 解压后运行「问间.exe」。\n\n这一版仅更新电脑端；Android 沿用 2.2.0。正式保存的共同思考沿用现有同步资料结构；未提交草稿仅在本机保存。此次未使用真实云端账号进行新的跨设备联网测试。\n\n验证：类型检查、同步回归与共享记录测试；在隔离的虚构资料库实际测试 PDF / EPUB 划选、关联、保存、从两本书查找、修订历史、草稿恢复、同书不同页、键盘翻页、分栏调整、较小窗口和自动 OCR。Windows 包完成文件与版本核验，未在 Windows 实机运行。本机构建的 Mac 包未经过 Apple 公证，Windows 包没有商业代码签名。\n",
       "published_at": "2026-10-11T06:50:03Z",
-      "tag_name": "v2.3.0"
-    },
-    {
+      "draft": false,
+      "prerelease": false,
       "assets": [
         {
-          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v2.2.0/apk-verification.txt",
-          "name": "apk-verification.txt",
-          "state": "uploaded"
-        },
-        {
-          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v2.2.0/build-check.json",
           "name": "build-check.json",
+          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v2.3.0/build-check.json",
           "state": "uploaded"
         },
         {
-          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v2.2.0/chapter-notes-mac.jpg",
-          "name": "chapter-notes-mac.jpg",
+          "name": "compare-reading-mac.jpg",
+          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v2.3.0/compare-reading-mac.jpg",
           "state": "uploaded"
         },
         {
-          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v2.2.0/chapter-notes-mobile.jpg",
-          "name": "chapter-notes-mobile.jpg",
-          "state": "uploaded"
-        },
-        {
-          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v2.2.0/release-notes.md",
           "name": "release-notes.md",
+          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v2.3.0/release-notes.md",
           "state": "uploaded"
         },
         {
-          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v2.2.0/SHA256SUMS.txt",
           "name": "SHA256SUMS.txt",
+          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v2.3.0/SHA256SUMS.txt",
           "state": "uploaded"
         },
         {
-          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v2.2.0/Wenjian-2.2.0-Android.apk",
-          "name": "Wenjian-2.2.0-Android.apk",
+          "name": "Wenjian-2.3.0-macOS-arm64.zip",
+          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v2.3.0/Wenjian-2.3.0-macOS-arm64.zip",
           "state": "uploaded"
         },
         {
-          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v2.2.0/Wenjian-2.2.0-macOS-arm64.zip",
-          "name": "Wenjian-2.2.0-macOS-arm64.zip",
-          "state": "uploaded"
-        },
-        {
-          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v2.2.0/Wenjian-2.2.0-Windows-x64.zip",
-          "name": "Wenjian-2.2.0-Windows-x64.zip",
+          "name": "Wenjian-2.3.0-Windows-x64.zip",
+          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v2.3.0/Wenjian-2.3.0-Windows-x64.zip",
           "state": "uploaded"
         }
-      ],
-      "body": "# 问间 2.2.0\n\nMac 已覆盖升级原来的 `/Applications/问间.app`，版本 2.2.0，构建 42。原资料目录、核心问题、阅读位置与同步配置继续保留，旧应用放在废纸篓中供回退。\n\n安卓安装 `Wenjian-2.2.0-Android.apk`，直接覆盖现有问间，不要先卸载。应用 ID 和签名沿用原版本。尚未在实体安卓手机上验收。\n\nWindows 解压 `Wenjian-2.2.0-Windows-x64.zip`，进入 `问间-win32-x64` 目录运行「问间.exe」，版本 2.2.0，构建 42。功能与 Mac 2.2.0 对齐（章节笔记、版本与更新、三端同步），并保留「云端导入备份」向导。应用图标为 7 尺寸高清版本（16/24/32/48/64/128/256），任务栏与资源管理器显示更清晰。尚未在实体 Windows 机器上验收。\n\n## 章节笔记\n\n安卓主页「笔记」先按书籍、再按章节查看，默认收起。可筛选过程笔记、读书笔记，也可搜索书名、章节、原文、想法与后续思考。搜索结果会自动展开。\n\nMac 在书籍的「读书笔记」窗口按章节查看。两种笔记保留原文、时间、关联问题、后续思考与修改原因。已有 PDF 章节按起始页顺序排列；EPUB 按记录的章节归类。旧笔记不重新推断章节，未标章节与全书思考单独保留。\n\n点击「在本章写思考」可添加不依附原文的章节思考，章节名称与输入内容随本书草稿保存。保存后自动展开对应章节。笔记仍使用原数据结构，可继续通过坚果云同步到其他设备。\n\n## 更新\n\n主页的版本与更新入口显示本机版本，支持手动检查。启动或返回前台时每天最多自动检查一次；连接失败后一小时内不会自动反复尝试。仅读取 GitHub 的正式 Releases，不上传笔记，不强制下载安装。Mac 将检查缓存保存在独立文件，Android 使用固定应用来源下的缓存。\n\n正式安装包名称应为：\n- `Wenjian-版本号-Android.apk`\n- `Wenjian-版本号-macOS-arm64.zip`\n- `Wenjian-版本号-Windows-x64.zip`\n\n本次 2.2.0 已发布到 GitHub 的 Releases（标签 v2.2.0），三端安装包、校验文件与本说明都在该页面。应用内的「版本与更新」只读取 GitHub 正式发布信息，升级时按平台自动匹配对应的安装包。\n\n## 云端导入备份（Windows）\n\nWindows 版保留 2.1.2+cloudimport 引入的「导入已有备份」向导，可选择三种来源：本机 `.wenjian-backup` 文件、坚果云（邮箱 + 第三方应用密码，列出「问间资料库」目录中的备份）、阿里云 OSS（列出云端快照并恢复，带进度显示）。选中云端备份后需输入「恢复」二字确认；导入前自动保留「恢复前」备用副本，失败不影响原有资料。云端凭证仅用于当次连接，不写入磁盘。Mac 与安卓 2.2.0 仍使用原有的本机备份文件导入。\n\n## 验证\n\n- 类型检查、章节/书籍归类、更新版本与平台匹配、同步回归通过。\n- Mac 实际安装包通过虚构资料的章节保存测试；安装后的版本与发布信息接口通过检查。\n- 安卓发布构建与 lint 通过：0 错误，20 个既有警告；同一签名，45 项应用资源匹配，包含离线 PDF 和 OCR 资源。\n- Windows 发布构建完成，包内版本 2.2.0（构建 42）与 Mac、安卓一致；章节笔记、版本与更新、云端导入向导及同步接口均已包含，与旧 Windows 2.1.2 功能对比逐项对齐。尚未在实体 Windows 机器上验收。\n- 安装前后的全部笔记记录、13 本原书文件、草稿、同步配置核对一致。\n- 可分发的包不含个人书籍、笔记或云端密码，新使用者需先填写自己的核心问题。\n",
-      "draft": false,
+      ]
+    },
+    {
+      "tag_name": "v2.2.0",
       "html_url": "https://github.com/largetomatoes/wenjian-software/releases/tag/v2.2.0",
-      "prerelease": false,
+      "body": "# 问间 2.2.0\n\nMac 已覆盖升级原来的 `/Applications/问间.app`，版本 2.2.0，构建 42。原资料目录、核心问题、阅读位置与同步配置继续保留，旧应用放在废纸篓中供回退。\n\n安卓安装 `Wenjian-2.2.0-Android.apk`，直接覆盖现有问间，不要先卸载。应用 ID 和签名沿用原版本。尚未在实体安卓手机上验收。\n\nWindows 解压 `Wenjian-2.2.0-Windows-x64.zip`，进入 `问间-win32-x64` 目录运行「问间.exe」，版本 2.2.0，构建 42。功能与 Mac 2.2.0 对齐（章节笔记、版本与更新、三端同步），并保留「云端导入备份」向导。应用图标为 7 尺寸高清版本（16/24/32/48/64/128/256），任务栏与资源管理器显示更清晰。尚未在实体 Windows 机器上验收。\n\n## 章节笔记\n\n安卓主页「笔记」先按书籍、再按章节查看，默认收起。可筛选过程笔记、读书笔记，也可搜索书名、章节、原文、想法与后续思考。搜索结果会自动展开。\n\nMac 在书籍的「读书笔记」窗口按章节查看。两种笔记保留原文、时间、关联问题、后续思考与修改原因。已有 PDF 章节按起始页顺序排列；EPUB 按记录的章节归类。旧笔记不重新推断章节，未标章节与全书思考单独保留。\n\n点击「在本章写思考」可添加不依附原文的章节思考，章节名称与输入内容随本书草稿保存。保存后自动展开对应章节。笔记仍使用原数据结构，可继续通过坚果云同步到其他设备。\n\n## 更新\n\n主页的版本与更新入口显示本机版本，支持手动检查。启动或返回前台时每天最多自动检查一次；连接失败后一小时内不会自动反复尝试。仅读取 GitHub 的正式 Releases，不上传笔记，不强制下载安装。Mac 将检查缓存保存在独立文件，Android 使用固定应用来源下的缓存。\n\n正式安装包名称应为：\n- `Wenjian-版本号-Android.apk`\n- `Wenjian-版本号-macOS-arm64.zip`\n- `Wenjian-版本号-Windows-x64.zip`\n\n本次 2.2.0 已发布到 GitHub 的 Releases（标签 v2.2.0），三端安装包、校验文件与本说明都在该页面。应用内的「版本与更新」只读取 GitHub 正式发布信息，升级时按平台自动匹配对应的安装包。\n\n## 云端导入备份（Windows）\n\nWindows 版保留 2.1.2+cloudimport 引入的「导入已有备份」向导，可选择三种来源：本机 `.wenjian-backup` 文件、坚果云（邮箱 + 第三方应用密码，列出「问间资料库」目录中的备份）、阿里云 OSS（列出云端快照并恢复，带进度显示）。选中云端备份后需输入「恢复」二字确认；导入前自动保留「恢复前」备用副本，失败不影响原有资料。云端凭证仅用于当次连接，不写入磁盘。Mac 与安卓 2.2.0 仍使用原有的本机备份文件导入。\n\n## 验证\n\n- 类型检查、章节/书籍归类、更新版本与平台匹配、同步回归通过。\n- Mac 实际安装包通过虚构资料的章节保存测试；安装后的版本与发布信息接口通过检查。\n- 安卓发布构建与 lint 通过：0 错误，20 个既有警告；同一签名，45 项应用资源匹配，包含离线 PDF 和 OCR 资源。\n- Windows 发布构建完成，包内版本 2.2.0（构建 42）与 Mac、安卓一致；章节笔记、版本与更新、云端导入向导及同步接口均已包含，与旧 Windows 2.1.2 功能对比逐项对齐。尚未在实体 Windows 机器上验收。\n- 安装前后的全部笔记记录、13 本原书文件、草稿、同步配置核对一致。\n- 可分发的包不含个人书籍、笔记或云端密码，新使用者需先填写自己的核心问题。\n",
       "published_at": "2026-10-10T02:35:56Z",
-      "tag_name": "v2.2.0"
-    },
-    {
+      "draft": false,
+      "prerelease": false,
       "assets": [
         {
-          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v2.1.0/default.md",
-          "name": "default.md",
+          "name": "apk-verification.txt",
+          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v2.2.0/apk-verification.txt",
           "state": "uploaded"
         },
         {
-          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v2.1.0/SHA256SUMS.txt",
+          "name": "build-check.json",
+          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v2.2.0/build-check.json",
+          "state": "uploaded"
+        },
+        {
+          "name": "chapter-notes-mac.jpg",
+          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v2.2.0/chapter-notes-mac.jpg",
+          "state": "uploaded"
+        },
+        {
+          "name": "chapter-notes-mobile.jpg",
+          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v2.2.0/chapter-notes-mobile.jpg",
+          "state": "uploaded"
+        },
+        {
+          "name": "release-notes.md",
+          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v2.2.0/release-notes.md",
+          "state": "uploaded"
+        },
+        {
           "name": "SHA256SUMS.txt",
+          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v2.2.0/SHA256SUMS.txt",
           "state": "uploaded"
         },
         {
-          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v2.1.0/Wenjian-2.1.0-Android.apk",
-          "name": "Wenjian-2.1.0-Android.apk",
+          "name": "Wenjian-2.2.0-Android.apk",
+          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v2.2.0/Wenjian-2.2.0-Android.apk",
           "state": "uploaded"
         },
         {
-          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v2.1.0/Wenjian-2.1.0-macOS-arm64.zip",
-          "name": "Wenjian-2.1.0-macOS-arm64.zip",
+          "name": "Wenjian-2.2.0-macOS-arm64.zip",
+          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v2.2.0/Wenjian-2.2.0-macOS-arm64.zip",
           "state": "uploaded"
         },
         {
-          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v2.1.0/Wenjian-2.1.0-Windows-x64.zip",
-          "name": "Wenjian-2.1.0-Windows-x64.zip",
+          "name": "Wenjian-2.2.0-Windows-x64.zip",
+          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v2.2.0/Wenjian-2.2.0-Windows-x64.zip",
           "state": "uploaded"
         }
-      ],
-      "body": "## 问间 2.1.0 三端测试包\n\n本版本包含独立签名的 Android APK、Mac Apple 芯片版和 Windows x64 便携包，三端都带有坚果云 / OSS 同步入口。\n\n### 下载与安装\n\n- **Android 8.0+**：下载 `Wenjian-2.1.0-Android.apk` 安装。右上角「同步」中选择坚果云或 OSS。PDF 需要 Android System WebView 111+。\n- **Mac Apple 芯片**：解压 `Wenjian-2.1.0-macOS-arm64.zip`，把「问间」拖入「应用程序」。包已通过本地签名校验，未做 Apple 开发者公证。\n- **Windows x64**：完整解压 `Wenjian-2.1.0-Windows-x64.zip`，进入目录运行「问间.exe」。尚未进行 Windows 实机测试。\n\n### 主要更新\n\n- 三端坚果云 / OSS 同步（含冲突版本管理）\n- Zotero 本机联动（个人资料库批注、书目）\n- OCR 缓存与文字选区改进\n- 书库文件夹分类与全文搜索\n- 文稿组装与素材选择\n- 阅读器恢复与过程笔记改进\n- Android 原生构建支持\n\n### 校验\n\n下载后请核对 `SHA256SUMS.txt` 中的哈希值。\n\n### 注意\n\n安装文件为空白通用版本，不含个人书籍、笔记、账号或密钥。当前构建没有 Apple 公证或 Windows 商业代码签名，系统首次启动时可能要求手动允许。",
-      "draft": false,
+      ]
+    },
+    {
+      "tag_name": "v2.1.0",
       "html_url": "https://github.com/largetomatoes/wenjian-software/releases/tag/v2.1.0",
-      "prerelease": false,
+      "body": "## 问间 2.1.0 三端测试包\n\n本版本包含独立签名的 Android APK、Mac Apple 芯片版和 Windows x64 便携包，三端都带有坚果云 / OSS 同步入口。\n\n### 下载与安装\n\n- **Android 8.0+**：下载 `Wenjian-2.1.0-Android.apk` 安装。右上角「同步」中选择坚果云或 OSS。PDF 需要 Android System WebView 111+。\n- **Mac Apple 芯片**：解压 `Wenjian-2.1.0-macOS-arm64.zip`，把「问间」拖入「应用程序」。包已通过本地签名校验，未做 Apple 开发者公证。\n- **Windows x64**：完整解压 `Wenjian-2.1.0-Windows-x64.zip`，进入目录运行「问间.exe」。尚未进行 Windows 实机测试。\n\n### 主要更新\n\n- 三端坚果云 / OSS 同步（含冲突版本管理）\n- Zotero 本机联动（个人资料库批注、书目）\n- OCR 缓存与文字选区改进\n- 书库文件夹分类与全文搜索\n- 文稿组装与素材选择\n- 阅读器恢复与过程笔记改进\n- Android 原生构建支持\n\n### 校验\n\n下载后请核对 `SHA256SUMS.txt` 中的哈希值。\n\n### 注意\n\n安装文件为空白通用版本，不含个人书籍、笔记、账号或密钥。当前构建没有 Apple 公证或 Windows 商业代码签名，系统首次启动时可能要求手动允许。",
       "published_at": "2026-10-08T16:13:36Z",
-      "tag_name": "v2.1.0"
-    },
-    {
+      "draft": false,
+      "prerelease": false,
       "assets": [
         {
-          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v2.0.0/SHA256SUMS.txt",
+          "name": "default.md",
+          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v2.1.0/default.md",
+          "state": "uploaded"
+        },
+        {
           "name": "SHA256SUMS.txt",
+          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v2.1.0/SHA256SUMS.txt",
           "state": "uploaded"
         },
         {
-          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v2.0.0/Wenjian-2.0.0-macOS-arm64.zip",
-          "name": "Wenjian-2.0.0-macOS-arm64.zip",
+          "name": "Wenjian-2.1.0-Android.apk",
+          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v2.1.0/Wenjian-2.1.0-Android.apk",
           "state": "uploaded"
         },
         {
-          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v2.0.0/Wenjian-2.0.0-source.zip",
-          "name": "Wenjian-2.0.0-source.zip",
+          "name": "Wenjian-2.1.0-macOS-arm64.zip",
+          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v2.1.0/Wenjian-2.1.0-macOS-arm64.zip",
           "state": "uploaded"
         },
         {
-          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v2.0.0/Wenjian-2.0.0-Windows-x64.zip",
-          "name": "Wenjian-2.0.0-Windows-x64.zip",
+          "name": "Wenjian-2.1.0-Windows-x64.zip",
+          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v2.1.0/Wenjian-2.1.0-Windows-x64.zip",
           "state": "uploaded"
         }
-      ],
-      "body": "围绕自己的核心问题，阅读、记录、关联与写作。问间 2.0 提供空白的本地资料库，首次打开时输入自己的核心问题，也可以导入已有的完整备份。\r\n\r\n### 下载\r\n- **Mac（Apple Silicon，M 系列）**：下载 `Wenjian-2.0.0-macOS-arm64.zip`，解压后将问间.app 放入应用程序。\r\n- **Windows x64**：下载 `Wenjian-2.0.0-Windows-x64.zip`，完整解压文件夹，打开其中的 `问间.exe`。请保留同目录的 resources 等文件。\r\n- **本版本源码**：下载 `Wenjian-2.0.0-source.zip`。这是本次安装包对应的完整源码快照；仓库主分支及 GitHub 自动生成的 Source code 附件尚未同步为此快照，请以这个单独附件为准。\r\n- `SHA256SUMS.txt` 提供三个压缩包的校验值。\r\n\r\n### 这一版\r\n- 首次使用自行设置核心问题，保留问题结构、交叉思考、卡片、文稿与阅读功能。\r\n- PDF / EPUB 阅读、过程笔记和关联问题；改进 OCR 文字选择的连贯性及缓存保存恢复。\r\n- 完整备份可用于迁移笔记及书籍；云存储需使用者自行配置。\r\n\r\n### 空白包检查与验证\r\n- 安装包不包含个人笔记、书籍、批注、OCR 缓存或账号密钥。Mac 与 Windows 使用相同的空白初始数据和界面代码。\r\n- 已实际验证 Mac 独立资料目录的首次启动及核心问题创建；核心问题、书库位置、完整备份相关检查通过。\r\n- Windows x64 包已构建并检查运行文件、图标及资源，尚未在 Windows 真机测试。\r\n- 应用尚未进行 Apple 公证或 Windows 商业证书签名，系统可能显示来源提示。\r\n\r\n已有用户升级前建议导出完整备份。空白包不会主动清空本机已有的问间资料；同一台电脑打开时仍会读取自己的资料。",
-      "draft": false,
+      ]
+    },
+    {
+      "tag_name": "v2.0.0",
       "html_url": "https://github.com/largetomatoes/wenjian-software/releases/tag/v2.0.0",
-      "prerelease": false,
+      "body": "围绕自己的核心问题，阅读、记录、关联与写作。问间 2.0 提供空白的本地资料库，首次打开时输入自己的核心问题，也可以导入已有的完整备份。\r\n\r\n### 下载\r\n- **Mac（Apple Silicon，M 系列）**：下载 `Wenjian-2.0.0-macOS-arm64.zip`，解压后将问间.app 放入应用程序。\r\n- **Windows x64**：下载 `Wenjian-2.0.0-Windows-x64.zip`，完整解压文件夹，打开其中的 `问间.exe`。请保留同目录的 resources 等文件。\r\n- **本版本源码**：下载 `Wenjian-2.0.0-source.zip`。这是本次安装包对应的完整源码快照；仓库主分支及 GitHub 自动生成的 Source code 附件尚未同步为此快照，请以这个单独附件为准。\r\n- `SHA256SUMS.txt` 提供三个压缩包的校验值。\r\n\r\n### 这一版\r\n- 首次使用自行设置核心问题，保留问题结构、交叉思考、卡片、文稿与阅读功能。\r\n- PDF / EPUB 阅读、过程笔记和关联问题；改进 OCR 文字选择的连贯性及缓存保存恢复。\r\n- 完整备份可用于迁移笔记及书籍；云存储需使用者自行配置。\r\n\r\n### 空白包检查与验证\r\n- 安装包不包含个人笔记、书籍、批注、OCR 缓存或账号密钥。Mac 与 Windows 使用相同的空白初始数据和界面代码。\r\n- 已实际验证 Mac 独立资料目录的首次启动及核心问题创建；核心问题、书库位置、完整备份相关检查通过。\r\n- Windows x64 包已构建并检查运行文件、图标及资源，尚未在 Windows 真机测试。\r\n- 应用尚未进行 Apple 公证或 Windows 商业证书签名，系统可能显示来源提示。\r\n\r\n已有用户升级前建议导出完整备份。空白包不会主动清空本机已有的问间资料；同一台电脑打开时仍会读取自己的资料。",
       "published_at": "2026-10-07T11:40:34Z",
-      "tag_name": "v2.0.0"
-    },
-    {
+      "draft": false,
+      "prerelease": false,
       "assets": [
         {
-          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v1.12.0/Wenjian-1.12.0-macOS-arm64.zip",
-          "name": "Wenjian-1.12.0-macOS-arm64.zip",
+          "name": "SHA256SUMS.txt",
+          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v2.0.0/SHA256SUMS.txt",
           "state": "uploaded"
         },
         {
-          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v1.12.0/Wenjian-1.12.0-Windows-x64.zip",
-          "name": "Wenjian-1.12.0-Windows-x64.zip",
+          "name": "Wenjian-2.0.0-macOS-arm64.zip",
+          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v2.0.0/Wenjian-2.0.0-macOS-arm64.zip",
+          "state": "uploaded"
+        },
+        {
+          "name": "Wenjian-2.0.0-source.zip",
+          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v2.0.0/Wenjian-2.0.0-source.zip",
+          "state": "uploaded"
+        },
+        {
+          "name": "Wenjian-2.0.0-Windows-x64.zip",
+          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v2.0.0/Wenjian-2.0.0-Windows-x64.zip",
           "state": "uploaded"
         }
-      ],
-      "body": "问间 1.12 加入按大意查找思考、草稿恢复、包含笔记与原书的完整备份，以及可选的阿里云 OSS 私有快照。旧书复制到应用本地书库并保留旧文件。\r\n\r\nMac：下载 macOS-arm64.zip，解压后把“问间”放入应用程序。Windows：下载 Windows-x64.zip，解压后运行 问间.exe。安装包不含个人笔记和电子书。\r\n\r\n云备份需自行配置私有 Bucket 与专用 RAM 密钥；目前是手动备份与跨电脑恢复，不是实时同步。暂无 Android 版。Mac 版未经过 Apple 公证，Windows 版未进行商业代码签名。",
-      "draft": false,
+      ]
+    },
+    {
+      "tag_name": "v1.12.0",
       "html_url": "https://github.com/largetomatoes/wenjian-software/releases/tag/v1.12.0",
-      "prerelease": false,
+      "body": "问间 1.12 加入按大意查找思考、草稿恢复、包含笔记与原书的完整备份，以及可选的阿里云 OSS 私有快照。旧书复制到应用本地书库并保留旧文件。\r\n\r\nMac：下载 macOS-arm64.zip，解压后把“问间”放入应用程序。Windows：下载 Windows-x64.zip，解压后运行 问间.exe。安装包不含个人笔记和电子书。\r\n\r\n云备份需自行配置私有 Bucket 与专用 RAM 密钥；目前是手动备份与跨电脑恢复，不是实时同步。暂无 Android 版。Mac 版未经过 Apple 公证，Windows 版未进行商业代码签名。",
       "published_at": "2026-09-26T03:35:57Z",
-      "tag_name": "v1.12.0"
-    },
-    {
+      "draft": false,
+      "prerelease": false,
       "assets": [
         {
-          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v1.8.7/Wenjian-1.8.7-macOS.zip",
-          "name": "Wenjian-1.8.7-macOS.zip",
+          "name": "Wenjian-1.12.0-macOS-arm64.zip",
+          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v1.12.0/Wenjian-1.12.0-macOS-arm64.zip",
+          "state": "uploaded"
+        },
+        {
+          "name": "Wenjian-1.12.0-Windows-x64.zip",
+          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v1.12.0/Wenjian-1.12.0-Windows-x64.zip",
           "state": "uploaded"
         }
-      ],
-      "body": "扫描版 PDF 现在会在翻页后自动识别文字。\r\n\r\n- 有原生文字层的页面不会重复识别\r\n- 已识别页面直接使用本地缓存\r\n- OCR 失败时显示“重新识别”\r\n- 包含书籍删除、每本书思考区、PDF 划词笔记与阅读体验改进\r\n\r\n数据仍保存在本地，安装包不包含个人笔记或书籍。",
-      "draft": false,
+      ]
+    },
+    {
+      "tag_name": "v1.8.7",
       "html_url": "https://github.com/largetomatoes/wenjian-software/releases/tag/v1.8.7",
-      "prerelease": false,
+      "body": "扫描版 PDF 现在会在翻页后自动识别文字。\r\n\r\n- 有原生文字层的页面不会重复识别\r\n- 已识别页面直接使用本地缓存\r\n- OCR 失败时显示“重新识别”\r\n- 包含书籍删除、每本书思考区、PDF 划词笔记与阅读体验改进\r\n\r\n数据仍保存在本地，安装包不包含个人笔记或书籍。",
       "published_at": "2026-09-19T06:31:12Z",
-      "tag_name": "v1.8.7"
-    },
-    {
+      "draft": false,
+      "prerelease": false,
       "assets": [
         {
-          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v1.8.2/Wenjian-1.8.2-macOS.zip",
-          "name": "Wenjian-1.8.2-macOS.zip",
+          "name": "Wenjian-1.8.7-macOS.zip",
+          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v1.8.7/Wenjian-1.8.7-macOS.zip",
           "state": "uploaded"
         }
-      ],
-      "body": "本版本是问间的本地 macOS 笔记系统。\r\n\r\n主要功能：\r\n- 问题树、交叉思考与关系图\r\n- 阅读 PDF 与 EPUB，支持扫描版 OCR\r\n- 原文、来源和个人理解分开记录\r\n- 文稿写作与句子级问题链接\r\n- 修改记录总览、本地备份与分享只读副本\r\n\r\n数据默认保存在本机；发布包内使用空白示例数据，不包含个人笔记。\r\n\r\n安装：下载并解压 `Wenjian-1.8.2-macOS.zip`，将“问间.app”拖入“应用程序”。首次运行若被 macOS 拦截，请右键应用并选择“打开”。\r\n\r\nSHA-256：`a760709433eb82bf48308cbfc4562fe4ab6b2380fb027ac863f05718bdae8b83`",
-      "draft": false,
+      ]
+    },
+    {
+      "tag_name": "v1.8.2",
       "html_url": "https://github.com/largetomatoes/wenjian-software/releases/tag/v1.8.2",
-      "prerelease": false,
+      "body": "本版本是问间的本地 macOS 笔记系统。\r\n\r\n主要功能：\r\n- 问题树、交叉思考与关系图\r\n- 阅读 PDF 与 EPUB，支持扫描版 OCR\r\n- 原文、来源和个人理解分开记录\r\n- 文稿写作与句子级问题链接\r\n- 修改记录总览、本地备份与分享只读副本\r\n\r\n数据默认保存在本机；发布包内使用空白示例数据，不包含个人笔记。\r\n\r\n安装：下载并解压 `Wenjian-1.8.2-macOS.zip`，将“问间.app”拖入“应用程序”。首次运行若被 macOS 拦截，请右键应用并选择“打开”。\r\n\r\nSHA-256：`a760709433eb82bf48308cbfc4562fe4ab6b2380fb027ac863f05718bdae8b83`",
       "published_at": "2026-09-18T08:37:00Z",
-      "tag_name": "v1.8.2"
+      "draft": false,
+      "prerelease": false,
+      "assets": [
+        {
+          "name": "Wenjian-1.8.2-macOS.zip",
+          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v1.8.2/Wenjian-1.8.2-macOS.zip",
+          "state": "uploaded"
+        }
+      ]
     }
   ]
 }
