@@ -1,7 +1,47 @@
 {
   "schema": 1,
-  "generatedAt": "2026-10-28T06:53:11Z",
+  "generatedAt": "2026-10-28T07:46:13Z",
   "releases": [
+    {
+      "tag_name": "v3.141-build342",
+      "html_url": "https://github.com/largetomatoes/wenjian-software/releases/tag/v3.141-build342",
+      "body": "# 问间 3.141（342）· 更新安全修复\n\n- Windows：修复安装覆盖与更新回滚，保留旧程序恢复副本；安装前保护草稿，保留选择安装位置。\n- Android 和 iPhone／iPad Web App：完善更新前保存检查，保留现有笔记与书籍。\n- Mac 继续使用 341。\n\n**Windows 首次升级请手动安装**：保存内容并从托盘完全退出问间，再下载安装版并选择原安装目录。旧 Windows 的内置更新器不参与本次替换；安装后的新版包含更新保护。Android 可用原签名覆盖安装，安装前请保存未提交的内容；iPhone／iPad 继续从原有 Web App 地址使用。\n\n<!-- wenjian-build:342 -->\n<!-- wenjian-display-build:342 -->\n<!-- wenjian-platforms:android -->\n",
+      "published_at": "2026-10-28T07:46:13Z",
+      "draft": false,
+      "prerelease": false,
+      "assets": [
+        {
+          "name": "SHA256SUMS.txt",
+          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.141-build342/SHA256SUMS.txt",
+          "state": "uploaded"
+        },
+        {
+          "name": "update-manifest-342.json",
+          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.141-build342/update-manifest-342.json",
+          "state": "uploaded"
+        },
+        {
+          "name": "Wenjian-3.141-build342-Android.apk",
+          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.141-build342/Wenjian-3.141-build342-Android.apk",
+          "state": "uploaded"
+        },
+        {
+          "name": "Wenjian-3.141-build342-Source.zip",
+          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.141-build342/Wenjian-3.141-build342-Source.zip",
+          "state": "uploaded"
+        },
+        {
+          "name": "Wenjian-3.141-build342-Windows-x64-Manual.zip",
+          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.141-build342/Wenjian-3.141-build342-Windows-x64-Manual.zip",
+          "state": "uploaded"
+        },
+        {
+          "name": "Wenjian-3.141-build342-Windows-x64-Setup.exe",
+          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.141-build342/Wenjian-3.141-build342-Windows-x64-Setup.exe",
+          "state": "uploaded"
+        }
+      ]
+    },
     {
       "tag_name": "v3.141-build341",
       "html_url": "https://github.com/largetomatoes/wenjian-software/releases/tag/v3.141-build341",
