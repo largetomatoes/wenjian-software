@@ -1,7 +1,52 @@
 {
   "schema": 1,
-  "generatedAt": "2026-10-21T10:58:49Z",
+  "generatedAt": "2026-10-28T02:01:59Z",
   "releases": [
+    {
+      "tag_name": "v3.141-build339",
+      "html_url": "https://github.com/largetomatoes/wenjian-software/releases/tag/v3.141-build339",
+      "body": "# 问间 3.141（339）\n\n- PDF 支持单页和连续滑动阅读，记住阅读位置及缩放。\n- 扫描页按需识别；跨页选文、原文高亮和过程笔记保留每页的位置。\n- 连续阅读支持 Windows、Android 和 iPhone／iPad Web App，同时保留原有 Mac 阅读体验。\n\n覆盖安装可保留已有资料。iPhone／iPad 请用 Safari 打开 [Web App](https://reader.wenjian-app.workers.dev/read/)，通过分享菜单添加到主屏幕；部分网络可能需要代理。\n\n<!-- wenjian-build:339 -->\n<!-- wenjian-display-build:339 -->\n<!-- wenjian-platforms:darwin,win32,android -->\n",
+      "published_at": "2026-10-28T02:01:59Z",
+      "draft": false,
+      "prerelease": false,
+      "assets": [
+        {
+          "name": "SHA256SUMS.txt",
+          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.141-build339/SHA256SUMS.txt",
+          "state": "uploaded"
+        },
+        {
+          "name": "update-manifest-339.json",
+          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.141-build339/update-manifest-339.json",
+          "state": "uploaded"
+        },
+        {
+          "name": "Wenjian-3.141-build339-Android.apk",
+          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.141-build339/Wenjian-3.141-build339-Android.apk",
+          "state": "uploaded"
+        },
+        {
+          "name": "Wenjian-3.141-build339-macOS-arm64.zip",
+          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.141-build339/Wenjian-3.141-build339-macOS-arm64.zip",
+          "state": "uploaded"
+        },
+        {
+          "name": "Wenjian-3.141-build339-Source.zip",
+          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.141-build339/Wenjian-3.141-build339-Source.zip",
+          "state": "uploaded"
+        },
+        {
+          "name": "Wenjian-3.141-build339-Windows-x64-Setup.exe",
+          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.141-build339/Wenjian-3.141-build339-Windows-x64-Setup.exe",
+          "state": "uploaded"
+        },
+        {
+          "name": "Wenjian-3.141-build339-Windows-x64.zip",
+          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.141-build339/Wenjian-3.141-build339-Windows-x64.zip",
+          "state": "uploaded"
+        }
+      ]
+    },
     {
       "tag_name": "v3.141-build338",
       "html_url": "https://github.com/largetomatoes/wenjian-software/releases/tag/v3.141-build338",
