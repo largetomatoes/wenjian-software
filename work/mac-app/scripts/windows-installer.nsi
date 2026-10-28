@@ -109,10 +109,17 @@ Function CheckInstallDirectory
  Abort
 FunctionEnd
 Function CheckClosed
+ StrCpy $4 0
  retry:
  IfFileExists "$INSTDIR\Wenjian.exe" 0 done
  System::Call 'kernel32::CreateFileW(w "$INSTDIR\Wenjian.exe", i 0x80000000, i 0, p 0, i 3, i 0, p 0) p.r0'
  ${If} $0 == -1
+  IntOp $4 $4 + 1
+  ${If} $4 < 40
+   Sleep 250
+   Goto retry
+  ${EndIf}
+  StrCpy $4 0
   MessageBox MB_RETRYCANCEL|MB_ICONEXCLAMATION "问间仍在运行。若已收起到托盘，请先从托盘菜单退出，再点击重试。" /SD IDCANCEL IDRETRY retry
   Abort
  ${EndIf}
@@ -135,13 +142,31 @@ Section "问间" SEC_MAIN
  IfErrors install_failed
  ; Windows locks the current working directory; release it before renaming stage.
  SetOutPath "$TEMP"
- ClearErrors
  IfFileExists "$INSTDIR\*" 0 new_install
+ StrCpy $4 0
+ retry_previous:
+ ClearErrors
  Rename "$INSTDIR" "$Previous"
- IfErrors install_failed
+ IfErrors 0 new_install
+ IntOp $4 $4 + 1
+ ${If} $4 < 40
+  Sleep 250
+  Goto retry_previous
+ ${EndIf}
+ Goto install_failed
  new_install:
+ StrCpy $4 0
+ retry_publish:
+ ClearErrors
  Rename "$Stage" "$INSTDIR"
- IfErrors restore_previous
+ IfErrors 0 install_published
+ IntOp $4 $4 + 1
+ ${If} $4 < 40
+  Sleep 250
+  Goto retry_publish
+ ${EndIf}
+ Goto restore_previous
+ install_published:
  WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\Wenjian" "DisplayName" "问间"
  WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\Wenjian" "DisplayVersion" "${APP_VERSION}（${APP_DISPLAY_BUILD}）"
  WriteRegDWORD HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\Wenjian" "Build" ${APP_BUILD}
@@ -153,10 +178,19 @@ Section "问间" SEC_MAIN
  CreateDirectory "$SMPROGRAMS\问间"
  CreateShortcut "$SMPROGRAMS\问间\问间.lnk" "$INSTDIR\Wenjian.exe"
  CreateShortcut "$DESKTOP\问间.lnk" "$INSTDIR\Wenjian.exe"
- RMDir /r "$Previous"
+ ; Keep the previous installed program for recovery.
  Goto finished
  restore_previous:
+ StrCpy $4 0
+ retry_restore:
+ ClearErrors
  Rename "$Previous" "$INSTDIR"
+ IfErrors 0 install_failed
+ IntOp $4 $4 + 1
+ ${If} $4 < 40
+  Sleep 250
+  Goto retry_restore
+ ${EndIf}
  install_failed:
  SetErrorLevel 1
  MessageBox MB_ICONSTOP "安装未完成，原程序和资料已保留。请关闭问间后重试。" /SD IDOK

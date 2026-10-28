@@ -51,6 +51,20 @@ jobs:
       - name: Install, replace existing installation, launch and preserve data through uninstall
         shell: pwsh
         run: ./scripts/test-windows-install.ps1 -ArtifactDirectory package-test -InstallDirectory (Join-Path $env:RUNNER_TEMP 'Wenjian Custom Install')
+      - name: Test interrupted update recovery
+        shell: pwsh
+        run: ./scripts/test-windows-updater-recovery.ps1 -ArtifactDirectory package-test
+      - name: Download existing Windows 339 installer
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          New-Item -ItemType Directory -Force package-old | Out-Null
+          gh release download v3.141-build339 --repo $env:GITHUB_REPOSITORY --pattern '*Windows-x64-Setup.exe' --dir package-old
+          if ($LASTEXITCODE -ne 0) { throw 'Existing installer download failed' }
+      - name: Verify old installation upgrades without losing data
+        shell: pwsh
+        run: ./scripts/test-windows-upgrade-339.ps1 -OldDirectory package-old -NewDirectory package-test
       - uses: actions/upload-artifact@v4
         if: always()
         with:

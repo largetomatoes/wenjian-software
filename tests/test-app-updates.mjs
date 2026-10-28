@@ -100,3 +100,10 @@ const guarded339={...android339,body:'<!-- wenjian-build:339 -->\n<!-- wenjian-p
 assert.equal(selectUpdate([manual341,guarded339],{platform:'darwin',arch:'arm64',version:'3.141',build:'339'}).state,'empty');
 assert.equal(selectUpdate([manual341,guarded339],{platform:'android',arch:'universal',version:'3.141',build:'339'}).state,'current');
 console.log('PASS: manual Mac 341 is not offered to the older auto-updater; Android stays on 339');
+
+// Windows 339 cannot safely run its old self-updater for this release.
+const release342={tag_name:'v3.141-build342',html_url:releaseRoot+'/tag/v3.141-build342',body:'<!-- wenjian-build:342 -->\n<!-- wenjian-platforms:android -->',assets:[{name:'Wenjian-3.141-build342-Android.apk',state:'uploaded',browser_download_url:releaseRoot+'/download/v3.141-build342/Wenjian-3.141-build342-Android.apk'},{name:'Wenjian-3.141-build342-Windows-x64-Manual.zip',state:'uploaded',browser_download_url:releaseRoot+'/download/v3.141-build342/Wenjian-3.141-build342-Windows-x64-Manual.zip'}]};
+assert.equal(selectUpdate([release342,guarded339],{platform:'android',arch:'universal',version:'3.141',build:'339'}).build,342);
+assert.equal(selectUpdate([release342,guarded339],{platform:'win32',arch:'x64',version:'3.141',build:'339'}).state,'current');
+assert.equal(selectUpdate([release342,manual341,guarded339],{platform:'darwin',arch:'arm64',version:'3.141',build:'341'}).state,'empty');
+console.log('PASS: Android may update to 342; Windows uses manual installer; Mac stays at 341');

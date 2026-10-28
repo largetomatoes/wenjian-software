@@ -795,7 +795,7 @@ function appUpdater(){
   directory:path.join(app.getPath('userData'),'update-cache'),version:RELEASE_VERSION,build:Number(require('./package.json').buildVersion||0),
   platform:process.platform,arch:process.arch,exePath:process.execPath,bundleId:'site.chatgpt.liyibo2432023353.question-atlas-notes',
   releases:()=>cachedPublicReleases(path.join(app.getPath('userData'),'update-check-cache.json'),true),
-  protect:async()=>{await new Promise(resolve=>setTimeout(resolve,700));await notebookQueue;await draftQueue;restoringBackup=true;
+  protect:async()=>{if(mainWindow&&!mainWindow.isDestroyed()){const ready=await mainWindow.webContents.executeJavaScript('window.__wenjianPrepareClose ? window.__wenjianPrepareClose() : Promise.resolve(true)');if(ready===false)throw Error('草稿尚未保存，请完成保存后再更新。');}await notebookQueue;await draftQueue;restoringBackup=true;
    await checkpointLocalData();const current=await readStore();if(!validNotebookData(current.data))throw Error('资料未能核验，未开始安装。');
    const folder=path.join(app.getPath('userData'),'update-cache','safeguard-'+Date.now());await fsp.mkdir(folder,{recursive:true,mode:0o700});
    await fsp.copyFile(dataPath,path.join(folder,'notebook.json'));const before=await fsp.readFile(dataPath),copied=await fsp.readFile(path.join(folder,'notebook.json'));if(!before.equals(copied))throw Error('资料正在变化，请稍后安装。');

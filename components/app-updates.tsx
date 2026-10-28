@@ -6,6 +6,7 @@ import {Button} from './ui/button';
 import {SettingsRow} from './settings-row';
 import {RELEASES_PAGE,selectUpdate,type AppInfo,type Release,type UpdateResult} from '@/lib/app-updates';
 import {failedUpdateCheck,reusableUpdateCheck,type UpdateCheck} from '@/lib/update-check-cache';
+import {prepareNativeUpdate} from '@/lib/update-preparation';
 import './app-updates.css';
 
 type InstallStatus={state:string;version?:string;completed?:number;total?:number;error?:string};
@@ -20,7 +21,7 @@ export function AppUpdates({compact=false,settingsEntry=false}:{compact?:boolean
  function accept(value:Check,current:AppInfo){setLast(value);if(value.releases)setResult(selectUpdate(value.releases,current));}
  useEffect(()=>{let cancelled=false;let current:AppInfo|null=null;const run=async()=>{if(document.hidden||!current)return;const value=await check(current,false);if(!cancelled)accept(value,current);};void api<AppInfo>('/api/app/info').then(value=>{if(cancelled)return;current=value;setInfo(value);void run();}).catch(()=>{});document.addEventListener('visibilitychange',run);return()=>{cancelled=true;document.removeEventListener('visibilitychange',run);};},[]);
  useEffect(()=>{if(!open)return;let cancelled=false;const poll=()=>void api<InstallStatus>('/api/app/update').then(value=>{if(!cancelled)setInstall(value);}).catch(()=>{});poll();const timer=window.setInterval(poll,1000);return()=>{cancelled=true;window.clearInterval(timer);};},[open]);
- async function update(action:'download'|'cancel'|'install'){setOpeningError('');try{if(action==='install')await new Promise(resolve=>setTimeout(resolve,750));setInstall(await api<InstallStatus>('/api/app/update',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action,version:result?.version,build:result?.build})}));}catch(error){setOpeningError((error as Error).message);}}
+ async function update(action:'download'|'cancel'|'install'){setOpeningError('');try{if(action==='install')await prepareNativeUpdate();setInstall(await api<InstallStatus>('/api/app/update',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action,version:result?.version,build:result?.build})}));}catch(error){setOpeningError((error as Error).message);}}
  async function manual(){if(!info||busy)return;setBusy(true);setOpeningError('');try{accept(await check(info,true),info);}finally{setBusy(false);}}
  async function visit(url:string){setOpeningError('');try{await api('/api/app/open',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url})});}catch(error){setOpeningError((error as Error).message);}}
  if(!info)return null;

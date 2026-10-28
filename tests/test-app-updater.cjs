@@ -45,7 +45,7 @@ test('boot confirmation waits for the installer to complete verification',async 
  const updater=createUpdater({directory:dir,build:341,version:'3.141',platform:'darwin',arch:'arm64'});
  await updater.confirmBoot();assert.equal(updater.status().state,'verifying');assert.equal(JSON.parse(await fs.readFile(path.join(dir,'status.json'))).state,'installing','app startup must not declare updater success');
  assert.deepEqual(JSON.parse(await fs.readFile(confirmation)),{build:341,nonce:'fixture'});
- await fs.writeFile(path.join(dir,'status.json'),JSON.stringify({state:'succeeded',version:'3.141'}));
+ await fs.writeFile(path.join(dir,'status.json'),'\ufeff'+JSON.stringify({state:'succeeded',version:'3.141'}));
  for(let i=0;i<30&&updater.status().state!=='succeeded';i++)await new Promise(resolve=>setTimeout(resolve,50));
  assert.equal(updater.status().state,'succeeded');
 });

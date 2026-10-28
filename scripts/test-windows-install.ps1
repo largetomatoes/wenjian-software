@@ -14,7 +14,7 @@ $data=Join-Path $env:APPDATA '问间'
 if((Test-Path $installed) -or (Test-Path $data)){throw 'This test requires an empty disposable Windows runner'}
 $report=[ordered]@{platform='Windows';installer=$setup[0].Name;checks=@()}
 function Check($condition,$label){if(-not $condition){throw $label};$script:report.checks+=@($label);Write-Output ('PASS: '+$label);$script:report|ConvertTo-Json -Depth 20|Set-Content (Join-Path $artifacts 'windows-install-report.json') -Encoding UTF8}
-function InstallSetup { Write-Host 'Starting silent setup';$process=Start-Process -FilePath $setup[0].FullName -ArgumentList @('/S',('/D='+$installed)) -PassThru;if(-not $process.WaitForExit(180000)){Get-Process|Select-Object Id,ProcessName,MainWindowTitle|ConvertTo-Json|Set-Content (Join-Path $artifacts 'windows-process-report.json');Stop-Process -Id $process.Id -Force;throw 'Setup timed out after 180 seconds'};return $process }
+function InstallSetup { Write-Host 'Starting silent setup';$process=Start-Process -FilePath $setup[0].FullName -ArgumentList @('/S',('/D='+$installed)) -PassThru;if(-not $process.WaitForExit(180000)){Get-Process|Select-Object Id,ProcessName,MainWindowTitle|ConvertTo-Json|Set-Content (Join-Path $artifacts 'windows-process-report.json');Stop-Process -Id $process.Id -Force;throw 'Setup timed out after 180 seconds'};Write-Host ('Setup exit code: '+$process.ExitCode);if($process.ExitCode -ne 0){Get-CimInstance Win32_Process | Where-Object {$_.Name -eq 'Wenjian.exe'} | Select-Object ProcessId,ParentProcessId,ExecutablePath,CommandLine | ConvertTo-Json | Set-Content (Join-Path $artifacts 'windows-install-failure-processes.json')};return $process }
 function Launch($exe){
  $app=Start-Process -FilePath $exe -ArgumentList '--remote-debugging-port=0' -PassThru
  Write-Host ('Launching application PID '+$app.Id)
@@ -71,6 +71,8 @@ try{
  CloseApp $run.app
  $install=InstallSetup
  Check ($install.ExitCode -eq 0) 'Reinstall replaces existing installation successfully'
+ $previous=@(Get-ChildItem (Split-Path $installed -Parent) -Directory | Where-Object {$_.FullName.StartsWith($installed+'.previous-')})
+ Check ($previous.Count -ge 1 -and (Test-Path (Join-Path $previous[0].FullName 'resources/app.asar'))) 'Installer preserves previous program for recovery'
  $run=Launch (Join-Path $installed 'Wenjian.exe')
  $book=Invoke-RestMethod ($run.origin+'/api/notebook')
  Check ($book.data.cards.id -contains 'installation-fixture') 'Existing content survives covering installation'
@@ -90,6 +92,7 @@ try{
  & powershell.exe -NoProfile -ExecutionPolicy Bypass -File 'work/mac-app/asar-src/update-installer.ps1' -Config $config
  $result=Get-Content (Join-Path $cache 'status.json') -Raw -Encoding UTF8|ConvertFrom-Json
  Check ($result.state -eq 'succeeded') 'Production ZIP update helper replaces installed app and confirms startup'
+ Check (Test-Path (Join-Path ($installed+'.wenjian-previous-'+$nonce) 'resources/app.asar')) 'ZIP updater preserves previous program for recovery'
  Check ((Get-FileHash (Join-Path $installed 'Uninstall.exe')).Hash -eq $uninstallHash) 'ZIP update preserves installed uninstaller'
  $running=Get-Process Wenjian | Where-Object {$_.Path -eq (Join-Path $installed 'Wenjian.exe') -and $_.MainWindowHandle -ne 0} | Select-Object -First 1
  if(-not $running){$running=Get-Process Wenjian | Where-Object {$_.Path -eq (Join-Path $installed 'Wenjian.exe')} | Select-Object -First 1}
