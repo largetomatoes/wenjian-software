@@ -38,3 +38,14 @@ test('independent build tags bind manifest and asset URL to the exact signed bui
  assert.throws(()=>verifyManifest(signed('v3.14-build322'),'win32','x64',320,'3.14',keys.publicKey),/标签/);
  const updater=createUpdater({directory:dir,build:320,platform:'win32',arch:'x64',verificationKey:keys.publicKey,releases:async()=>[{tag_name:'v3.14-build321',assets:[{name:'update-manifest-321.json',state:'uploaded',browser_download_url:base+'update-manifest-321.json'}]}],getJson:async()=>signed(),responseFor:async()=>[bytes]});updater.start('3.14',321);assert.equal((await wait(updater)).state,'ready');
 });
+test('boot confirmation waits for the installer to complete verification',async t=>{
+ const dir=await fs.mkdtemp(path.join(os.tmpdir(),'wenjian-confirm-'));t.after(()=>fs.rm(dir,{recursive:true,force:true}));
+ const confirmation=path.join(dir,'boot.json'),pending={build:341,nonce:'fixture',confirmation};
+ await fs.writeFile(path.join(dir,'pending-install.json'),JSON.stringify(pending));await fs.writeFile(path.join(dir,'status.json'),JSON.stringify({state:'installing'}));
+ const updater=createUpdater({directory:dir,build:341,version:'3.141',platform:'darwin',arch:'arm64'});
+ await updater.confirmBoot();assert.equal(updater.status().state,'verifying');assert.equal(JSON.parse(await fs.readFile(path.join(dir,'status.json'))).state,'installing','app startup must not declare updater success');
+ assert.deepEqual(JSON.parse(await fs.readFile(confirmation)),{build:341,nonce:'fixture'});
+ await fs.writeFile(path.join(dir,'status.json'),JSON.stringify({state:'succeeded',version:'3.141'}));
+ for(let i=0;i<30&&updater.status().state!=='succeeded';i++)await new Promise(resolve=>setTimeout(resolve,50));
+ assert.equal(updater.status().state,'succeeded');
+});

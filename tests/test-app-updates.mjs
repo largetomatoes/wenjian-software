@@ -92,3 +92,11 @@ const android339={tag_name:'v3.141-build339',html_url:releaseRoot+'/tag/v3.141-b
 for(const [platform,arch] of [['darwin','arm64'],['win32','x64']])assert.equal(selectUpdate([desktop340,android339],{platform,arch,version:'3.141',build:'339'}).release.tag_name,'v3.141-build340');
 assert.equal(selectUpdate([desktop340,android339],{platform:'android',arch:'universal',version:'3.141',build:'339'}).state,'current');
 console.log('PASS: desktop-only 340 updates Mac and Windows while Android remains on 339');
+
+// 341 is distributed by manual Mac installation only, so old clients cannot
+// invoke their unsafe in-place updater for it; 339 stays available on Android.
+const manual341={tag_name:'v3.141-build341',html_url:releaseRoot+'/tag/v3.141-build341',body:'<!-- wenjian-build:341 -->\n<!-- wenjian-platforms:manual -->',assets:[{name:'Wenjian-3.141-build341-macOS-arm64-Manual.zip',state:'uploaded',browser_download_url:releaseRoot+'/download/v3.141-build341/Wenjian-3.141-build341-macOS-arm64-Manual.zip'}]};
+const guarded339={...android339,body:'<!-- wenjian-build:339 -->\n<!-- wenjian-platforms:win32,android -->'};
+assert.equal(selectUpdate([manual341,guarded339],{platform:'darwin',arch:'arm64',version:'3.141',build:'339'}).state,'empty');
+assert.equal(selectUpdate([manual341,guarded339],{platform:'android',arch:'universal',version:'3.141',build:'339'}).state,'current');
+console.log('PASS: manual Mac 341 is not offered to the older auto-updater; Android stays on 339');

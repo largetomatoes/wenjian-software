@@ -73,6 +73,8 @@ app.commandLine.appendSwitch('proxy-bypass-list', 'localhost;127.0.0.1;[::1]');
 app.commandLine.appendSwitch('host-resolver-rules', 'MAP * 0.0.0.0, EXCLUDE localhost, EXCLUDE 127.0.0.1, EXCLUDE [::1]');
 app.setName('问间');
 if (process.env.WENJIAN_TEST_DATA_DIR) app.setPath('userData', process.env.WENJIAN_TEST_DATA_DIR);
+const headlessFixture=process.platform==='darwin'&&!!process.env.WENJIAN_TEST_DATA_DIR&&process.env.WENJIAN_TEST_HEADLESS==='1';
+if(headlessFixture)app.setActivationPolicy('accessory');
 const windowsPerformance=process.platform==='win32'?require('./windows-performance-settings.cjs').createPerformanceSettings({directory:app.getPath('userData'),app}):null;
 app.setAboutPanelOptions({ applicationName: '问间', applicationVersion: RELEASE_VERSION+(require('./package.json').displayBuild?'（'+require('./package.json').displayBuild+'）':''), version: RELEASE_VERSION, copyright: '围绕核心问题的本地笔记应用' });
 
@@ -991,7 +993,7 @@ function createWindow() {
   mainWindow = new BrowserWindow({ width: 1440, height: 920, minWidth: 820, minHeight: 620, title: '问间', ...(process.platform === 'darwin' ? { titleBarStyle: 'hiddenInset' } : {}), backgroundColor: '#f7f8fb', show: false, webPreferences: { contextIsolation: true, nodeIntegration: false, sandbox: true, spellcheck: process.platform!=='win32', backgroundThrottling:true } });
   mainWindow.webContents.on('will-prevent-unload',async event=>{if(installingUpdate||process.platform==='darwin'&&nativeQuitReady){event.preventDefault();return;}if(process.platform==='win32'&&windowsTray?.isQuitting()){windowsTray.cancelQuit();windowsTray.show();await dialog.showMessageBox(mainWindow,{type:'warning',title:'内容尚未提交',message:'当前编辑器仍有未提交内容，问间已取消退出。',detail:'请先保存或关闭正在编辑的内容，再从托盘菜单退出。收起到托盘不需要关闭这些内容。',buttons:['返回编辑']});}});
   if(process.platform==='win32'){if(!windowsTray)windowsTray=require('./windows-tray.cjs').createWindowsTray({app,...require('electron'),getWindow:()=>mainWindow,isUpdating:()=>installingUpdate,prepareQuit:async()=>{if(cloudBusy)throw Error('云端备份尚未结束，请稍后退出。');if(mainWindow&&!mainWindow.isDestroyed()){let timeout;try{await Promise.race([mainWindow.webContents.executeJavaScript('window.__wenjianPrepareClose ? window.__wenjianPrepareClose() : Promise.resolve(true)'),new Promise((_,reject)=>{timeout=setTimeout(()=>reject(Error('Saving timeout')),8000);})]);}finally{clearTimeout(timeout);}}await draftQueue;await notebookQueue;await checkpointLocalData();}});windowsTray.attach(mainWindow);}
-  mainWindow.once('ready-to-show', () => mainWindow.show());
+  mainWindow.once('ready-to-show', () => {if(!headlessFixture)mainWindow.show();});
   mainWindow.on('closed',()=>{mainWindow=null;pluginsRuntime?.stopAll();});
   mainWindow.loadURL(`http://127.0.0.1:${localPort}/`).catch((error) => { console.error(error); dialog.showErrorBox('问间无法打开', '本地页面载入失败，请重新打开问间。'); });
 }
