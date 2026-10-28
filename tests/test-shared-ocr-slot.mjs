@@ -1,0 +1,11 @@
+import assert from 'node:assert/strict';
+import {readFile} from 'node:fs/promises';
+import vm from 'node:vm';
+import ts from 'typescript';
+const source=await readFile('lib/ocr-task.ts','utf8'),module={exports:{}};
+vm.runInNewContext(ts.transpileModule(source,{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText,{module,exports:module.exports,DOMException,AbortController});
+const {SharedOcrSlot}=module.exports,slot=new SharedOcrSlot(),a=new AbortController(),b=new AbortController(),c=new AbortController();
+const releaseA=await slot.acquire(a.signal);let started=false;const waitingB=slot.acquire(b.signal);const waitingC=slot.acquire(c.signal).then(release=>{started=true;return release;});
+b.abort();await assert.rejects(waitingB,{name:'AbortError'});assert.equal(started,false,'A second reader must wait while OCR is active');
+releaseA();const releaseC=await waitingC;assert.equal(started,true);releaseA();let fourth=false;const waitingD=slot.acquire(new AbortController().signal).then(release=>{fourth=true;return release;});await Promise.resolve();assert.equal(fourth,false,'Duplicate release must not unlock another active task');releaseC();(await waitingD)();
+console.log('PASS: compare readers share one OCR slot; cancelled waiters and duplicate releases cannot interrupt another task');

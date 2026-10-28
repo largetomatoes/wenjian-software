@@ -50,7 +50,7 @@ export function chapterNotes(entries:BookNote[], book?:LibraryBook):ChapterNotes
 export function bookThoughtLocation(note:BookThought){return [note.chapter,note.locator].filter(Boolean).join(' · ')||(note.scope==='book'?'全书思考':'未标章节');}
 
 export function thoughtSources(note:BookThought):BookThoughtSource[]{
- return note.sources?.length?note.sources:[{id:'legacy:'+note.id,libraryBookId:note.libraryBookId,bookTitle:note.bookTitle,chapter:note.chapter,locator:note.locator,sourceLocation:note.sourceLocation,quote:note.quote}];
+ return note.sources?.length?note.sources:[{id:'legacy:'+note.id,libraryBookId:note.libraryBookId,bookTitle:note.bookTitle,chapter:note.chapter,locator:note.locator,sourceLocation:note.sourceLocation,quote:note.quote,rawQuote:note.rawQuote,pdfSegments:note.pdfSegments}];
 }
 export function thoughtEntries(note:BookThought):BookNote[]{return thoughtSources(note).map(source=>({kind:'reading' as const,note,source}));}
 export function thoughtBookEntries(note:BookThought,bookId:string):BookNote[]{return thoughtEntries(note).filter(entry=>entry.kind==='reading'&&entry.source?.libraryBookId===bookId);}

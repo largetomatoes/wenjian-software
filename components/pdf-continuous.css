@@ -1,0 +1,10 @@
+.pdf-stage.pdf-continuous{display:flex;flex-direction:column;align-items:flex-start;gap:22px;padding-top:20px;padding-bottom:32px;overflow-anchor:none}
+.pdf-continuous .pdf-page{flex:none;margin:0 auto;overflow:visible}
+.pdf-continuous .pdf-page canvas{display:block;max-width:none}
+.pdf-continuous .pdf-page[data-page] .textLayer,.pdf-continuous .pdf-page[data-page] .ocr-text-layer{touch-action:pan-x pan-y}
+.pdf-reading-mode{display:flex;align-items:center;border:1px solid #dce4df;border-radius:7px;overflow:hidden;flex-shrink:0;margin-left:6px}
+.pdf-reading-mode button{padding:4px 9px;font-size:11px;color:#71837f;background:#fff;cursor:pointer;white-space:nowrap}
+.pdf-reading-mode button[aria-pressed=true]{background:#e6eee7;color:#34564b;font-weight:600}
+.pdf-reading-mode button+button{border-left:1px solid #dce4df}
+
+.mobile-pdf-mode{margin:8px 0;justify-content:center}.mobile-pdf-mode button{min-height:44px;flex:1;font-size:14px}.pdf-continuous-text{-webkit-user-select:text;user-select:text}
