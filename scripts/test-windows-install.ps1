@@ -69,10 +69,13 @@ try{
  $css=Invoke-WebRequest ($run.origin+'/fonts/windows-fonts.css')
  Check ($css.Content -match 'Wenjian Serif') 'Typography CSS is packaged'
  CloseApp $run.app
+ [IO.File]::WriteAllText((Join-Path $installed 'recovery-fixture-marker.txt'),'original program')
  $install=InstallSetup
  Check ($install.ExitCode -eq 0) 'Reinstall replaces existing installation successfully'
  $previous=@(Get-ChildItem (Split-Path $installed -Parent) -Directory | Where-Object {$_.FullName.StartsWith($installed+'.previous-')})
- Check ($previous.Count -ge 1 -and (Test-Path (Join-Path $previous[0].FullName 'resources/app.asar'))) 'Installer preserves previous program for recovery'
+ Write-Output ('Recovery directories: '+(($previous | ForEach-Object { $_.Name + ' archive=' + (Test-Path (Join-Path $_.FullName 'resources/app.asar')) + ' marker=' + (Test-Path (Join-Path $_.FullName 'recovery-fixture-marker.txt')) }) -join '; '))
+ $preserved=@($previous | Where-Object {(Test-Path (Join-Path $_.FullName 'resources/app.asar')) -and (Test-Path (Join-Path $_.FullName 'recovery-fixture-marker.txt'))})
+ Check ($preserved.Count -ge 1) 'Installer preserves previous program for recovery'
  $run=Launch (Join-Path $installed 'Wenjian.exe')
  $book=Invoke-RestMethod ($run.origin+'/api/notebook')
  Check ($book.data.cards.id -contains 'installation-fixture') 'Existing content survives covering installation'
