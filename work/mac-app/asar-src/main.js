@@ -277,7 +277,7 @@ async function handleApi(request, response) {
     const input = await requestBody(request);
     if(windowsData&&request.method==='PATCH'&&input.delta===true){
       if(input.kind==='progress'){
-        if(!Array.isArray(input.items)||input.items.length>100||!input.items.every(item=>item&&typeof item.id==='string'&&item.progress&&typeof item.progress==='object'&&!Array.isArray(item.progress)&&Object.entries(item.progress).every(([key,value])=>key==='cfi'?typeof value==='string'&&value.length<20000:key==='rotation'?[0,90,180,270].includes(value):key==='percentage'?typeof value==='number'&&Number.isFinite(value)&&value>=0&&value<=1:['page','totalPages'].includes(key)&&Number.isSafeInteger(value)&&value>0)))return jsonReply(response,400,{error:'阅读进度格式不正确。'});
+        if(!require('./reader-progress.cjs').validReaderProgress(input.items))return jsonReply(response,400,{error:'阅读进度格式不正确。'});
       }else if(!validOcrEntry(input.entry))return jsonReply(response,400,{error:'本页识别结果格式不正确。'});
       const result=await windowsData.call(input.kind==='progress'?'progress':'ocr',input);
       return jsonReply(response,result.conflict?409:result.missing?404:200,result);

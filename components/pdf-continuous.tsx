@@ -1,6 +1,6 @@
 'use client';
 import {memo,useCallback,useEffect,useLayoutEffect,useMemo,useRef,useState,type ReactNode} from 'react';
-import {isOptimizedReader} from '@/lib/reader-performance';
+import {isOptimizedReader,isDesktopReader} from '@/lib/reader-performance';
 import {windowsCanvasRatio} from '@/lib/windows-reader-performance';
 import {continueReaderRender} from '@/lib/reader-work';
 import {OcrTextRuns} from './ocr-text-runs';
@@ -58,7 +58,7 @@ function pageHighlights(highlights:LibraryHighlight[],page:number){return highli
 const Page=memo(function Page({number,pdf,book,metric,scale,rotation,near,selecting,cache,highlights,notes,annotations,paneKey,searchHit,stage,onMeasured,onStatus,onOpenZotero,onLink,onSource,onOpenQuestion,questionLabel,renderEditor,onDelete}:{number:number;pdf:any;book:LibraryBook;metric:Metrics;scale:number;rotation:number;near:boolean;selecting:boolean;cache:OcrCacheEntry|undefined;highlights:LibraryHighlight[];notes:ReadingNote[];annotations:ZoteroAnnotation[];paneKey:string;searchHit:BookSearchHit|null;stage:HTMLElement|null;onMeasured:(page:number,metric:Metrics)=>void;onStatus:(page:number,status:'native'|'needs-ocr'|'cached'|'failed')=>void;onOpenZotero:(key:string)=>void;onLink:Props['onLink'];onSource:Props['onSource'];onOpenQuestion:Props['onOpenQuestion'];questionLabel:Props['questionLabel'];renderEditor:Props['renderEditor'];onDelete:Props['onDelete']}){
  const canvas=useRef<HTMLCanvasElement>(null),text=useRef<HTMLDivElement>(null),ocrRoot=useRef<HTMLDivElement>(null),ranges=useRef<Array<{id:string;range:Range}>>([]);
  const [viewport,setViewport]=useState<any>(null),[native,setNative]=useState(false),[ready,setReady]=useState(false);
- const pageH=useMemo(()=>near?pageHighlights(highlights,number):[],[near,highlights,number]),pageN=useMemo(()=>near?pageNotes(notes,number):[],[near,notes,number]);
+ const calculatedH=useMemo(()=>near?pageHighlights(highlights,number):[],[near,highlights,number]),pageHRef=useRef(calculatedH);if(calculatedH.length!==pageHRef.current.length||calculatedH.some((h,i)=>h.id!==pageHRef.current[i].id||h.quote!==pageHRef.current[i].quote))pageHRef.current=calculatedH;const pageH=pageHRef.current,pageN=useMemo(()=>near?pageNotes(notes,number):[],[near,notes,number]);
  const stableCache=useRef(cache);if(!selecting)stableCache.current=cache;const selectedCache=stableCache.current&&(stableCache.current.rotation||0)===rotation?stableCache.current:undefined;
  const useOcr=!!selectedCache?.lines?.length&&(!native||selectedCache.preferOcr);
  useEffect(()=>{
@@ -74,7 +74,8 @@ const Page=memo(function Page({number,pdf,book,metric,scale,rotation,near,select
    if(cancelled)return;layer.replaceChildren(...Array.from(target.childNodes));setNative(usable);setViewport(view);setReady(true);onStatus(number,usable?'native':selectedCache?.lines?.length&&selectedCache.version===OCR_VERSION?'cached':'needs-ocr');
   }catch(error){if(!cancelled&&(error as Error).name!=='RenderingCancelledException'){console.error('PDF page render failed',error);onStatus(number,'failed');}}})();
   return()=>{cancelled=true;controller.abort();renderTask?.cancel?.();textTask?.cancel?.();const releasePage=()=>{try{pdfPage?.cleanup?.();}catch{/* PDF.js will clean remaining active tasks when the document closes. */}};if(renderTask?.promise)void renderTask.promise.catch(()=>{}).finally(releasePage);else releasePage();};
- },[near,pdf,number,scale,rotation,selectedCache?.at,selectedCache?.preferOcr]);
+ },[near,pdf,number,scale,rotation,isDesktopReader()?undefined:selectedCache?.at,!!selectedCache?.preferOcr]);
+ useEffect(()=>{if(near&&ready)onStatus(number,native?'native':selectedCache?.lines?.length&&selectedCache.version===OCR_VERSION?'cached':'needs-ocr');},[near,ready,native,number,selectedCache?.at,selectedCache?.version]);
  useEffect(()=>{if(!near||!ready||selecting)return;const root=useOcr?ocrRoot.current:text.current;if(!root)return;
   const name=`wenjian-pdf-${paneKey.replace(/[^a-zA-Z0-9_-]/g,'-')}-page-${number}`,registry=(CSS as any).highlights,Ctor=(window as any).Highlight;
   ranges.current=makeRanges(root,pageH);if(registry&&Ctor){if(!document.getElementById(name+'-style')){const style=document.createElement('style');style.id=name+'-style';style.textContent=`::highlight(${name}){background:rgba(246,214,105,.28)}`;document.head.appendChild(style);}registry.delete(name);if(ranges.current.length)registry.set(name,new Ctor(...ranges.current.map(x=>x.range)));}

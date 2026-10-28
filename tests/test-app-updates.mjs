@@ -85,3 +85,10 @@ console.log('PASS: actual public 330 finds Mac 337, Windows/Android 336 with pla
 const all338={...mac337,tag_name:'v3.141-build338',html_url:releaseRoot+'/tag/v3.141-build338',body:'<!-- wenjian-build:338 -->\n<!-- wenjian-platforms:darwin,win32,android -->',assets:['macOS-arm64.zip','Windows-x64.zip','Android.apk'].map(suffix=>({name:'Wenjian-3.141-build338-'+suffix,state:'uploaded',browser_download_url:releaseRoot+'/download/v3.141-build338/Wenjian-3.141-build338-'+suffix}))};
 for(const [platform,arch]of [['darwin','arm64'],['win32','x64'],['android','universal']]){const result=legacy330.exports.selectUpdate([all338,mac337,...publicReleases],{platform,arch,version:'3.141',build:'336'});assert.equal(result.state,'available');assert.equal(result.build,338);}
 console.log('PASS: one full 338 release is discoverable on all native platforms');
+
+// Desktop-only 340 must not make Android treat an unavailable package as an update.
+const desktop340={tag_name:'v3.141-build340',html_url:releaseRoot+'/tag/v3.141-build340',body:'<!-- wenjian-build:340 -->\n<!-- wenjian-platforms:darwin,win32 -->',assets:['macOS-arm64.zip','Windows-x64.zip'].map(name=>({name:'Wenjian-3.141-build340-'+name,state:'uploaded',browser_download_url:releaseRoot+'/download/v3.141-build340/Wenjian-3.141-build340-'+name}))};
+const android339={tag_name:'v3.141-build339',html_url:releaseRoot+'/tag/v3.141-build339',body:'<!-- wenjian-build:339 -->\n<!-- wenjian-platforms:darwin,win32,android -->',assets:[{name:'Wenjian-3.141-build339-Android.apk',state:'uploaded',browser_download_url:releaseRoot+'/download/v3.141-build339/Wenjian-3.141-build339-Android.apk'}]};
+for(const [platform,arch] of [['darwin','arm64'],['win32','x64']])assert.equal(selectUpdate([desktop340,android339],{platform,arch,version:'3.141',build:'339'}).release.tag_name,'v3.141-build340');
+assert.equal(selectUpdate([desktop340,android339],{platform:'android',arch:'universal',version:'3.141',build:'339'}).state,'current');
+console.log('PASS: desktop-only 340 updates Mac and Windows while Android remains on 339');

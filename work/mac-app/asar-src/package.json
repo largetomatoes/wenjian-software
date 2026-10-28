@@ -7,7 +7,7 @@
   "dependencies": {
     "pdf-lib": "1.17.1"
   },
-  "buildVersion": "339",
+  "buildVersion": "340",
   "organizationTrial": false,
-  "displayBuild": "339"
+  "displayBuild": "340"
 }
