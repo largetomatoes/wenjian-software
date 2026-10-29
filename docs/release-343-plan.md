@@ -9,9 +9,9 @@
 |3|Android 手机入口、触控引用、笔记板、同步与演示|已完成|
 |4|iPhone/iPad Web App、横竖屏、离线更新保护|已完成|
 |5|跨端保留笔记、原文位置、联系与完整历史；虚构资料回归|已通过|
-|6|构建 Mac/Windows/Android/PWA；安装与空白资料验证|安装包已完成，发布收尾中|
-|7|源码、签名清单与独立 GitHub Release|草稿已准备，待正式发布|
-|8|官网和原 Web App 域名更新、本机 Mac 原位更新|安装包已完成，发布收尾中|
+|6|构建 Mac/Windows/Android/PWA；安装与空白资料验证|已通过，冻结代码 688a233|
+|7|源码、签名清单与独立 GitHub Release|已正式发布，9 个文件校验一致|
+|8|官网、原 Web App 及本机更新时机|官网和 Web App 已更新；按使用者要求保留当前阅读，不替换本机|
 
 旧桌面版的更新器不能靠服务端元数据修好；首次升级沿用手动覆盖安装保护，安装前正常保存退出。不得重新开放有风险的旧更新路径。新版本保留已修复的更新器。Android 继续沿用原签名。
 
@@ -19,8 +19,8 @@
 
 ## 验证回执
 
-- Android 原生 release 编译及单元任务：[40802805756](https://github.com/largetomatoes/wenjian-software/actions/runs/40802805756)，通过。只在 CI 生成对齐未签名包，再在本机使用原证书签署，v1/v2/v3 签名与证书指纹一致。
-- Windows 实际安装、覆盖、失败回滚、旧 339 升级及数据保留：[40804025662](https://github.com/largetomatoes/wenjian-software/actions/runs/40804025662)，全部通过。
+- Android 原生 release 编译及单元任务：[40824142843](https://github.com/largetomatoes/wenjian-software/actions/runs/40824142843)，通过。只在 CI 生成对齐未签名包，再在本机使用原证书签署，v1/v2/v3 签名与证书指纹一致。
+- Windows 实际安装、覆盖、失败回滚、旧 339 升级及数据保留：[40824912425](https://github.com/largetomatoes/wenjian-software/actions/runs/40824912425)，全部通过。
 - Mac 最终包的 12 项阅读流程和 7 项操作/同步/演示流程通过。
 - Chromium 手机尺寸、持久化 WebKit iPhone/iPad 的笔记板与横竖屏流程通过；旧 Web App 342 从原界面更新到 343 后，卡片、未提交草稿及离线重开通过。
 - 完整备份与恢复 18 项、移动存储适配 12 项、Windows 资源与 GPU/OCR 策略 6 项及跨设备同步回归通过。
@@ -37,3 +37,11 @@
 手机全屏笔记板的“回到原文”先完成保存，再收起遮挡书页的侧栏；平板并排及桌面继续保留笔记板。修正导航沿用旧 paperMode 状态导致侧栏重新打开的问题。最终 Chromium Android 尺寸、WebKit iPhone/iPad 的 15 项 PDF/EPUB 流程全部通过。此后只进行构建、签名、安装核验与发布，不继续增加功能。
 
 使用者选择先发布并保留当前 Mac 阅读窗口，本次不退出或替换本机应用；新版 Mac 安装包仍统一提供。
+
+## 正式发布回执（2026-10-29）
+
+- 冻结代码、源码 ZIP 与发布标签：688a23370fa668a8f1d3d1a3c2ab6cac53dc486a。此后的提交仅补充回执和公开更新索引，不改变安装包或标签。
+- [GitHub 正式发布](https://github.com/largetomatoes/wenjian-software/releases/tag/v3.141-build343) 共 9 个文件，所有远端摘要与本机一致。
+- [官网](https://largetomatoes.github.io/wenjian-web/) 已更新下载、演示及更新索引；部署任务 [40825918835](https://github.com/largetomatoes/wenjian-web/actions/runs/40825918835) 通过，线上页面与本地一致。
+- [原 Web App](https://reader.wenjian-app.workers.dev/read/) 已更新，线上 JS、Service Worker、manifest 与 343 构建逐字一致。Cloudflare 版本 1863c941-3192-4eb9-a3a1-4fb58a963b71，保持原网址和资料位置。
+- 按使用者要求，本次没有退出、替换或改动本机应用及当前阅读窗口。
