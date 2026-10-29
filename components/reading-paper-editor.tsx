@@ -6,12 +6,13 @@ import {getReadingSource,isReadingSourceDrag,readingDropPoint,READING_SOURCE_MIM
 import {ReadingCitationDisplay} from './reading-citation-display';
 import './reading-paper-editor.css';
 
-type Props={composition:ReadingComposition;sources:BookThoughtSource[];catalog:BookThoughtSource[];pendingSource?:BookThoughtSource|null;onChange:(c:ReadingComposition,sources?:BookThoughtSource[])=>void;onInsert:(s:BookThoughtSource,offset:number)=>{caret:number;citationId:string};onCaret:(offset:number)=>void;onNavigate:(s:BookThoughtSource)=>void};
-export function ReadingPaperEditor({composition:c,sources,catalog,pendingSource,onChange,onInsert,onCaret,onNavigate}:Props){
+type Props={initialCaret?:number;composition:ReadingComposition;sources:BookThoughtSource[];catalog:BookThoughtSource[];pendingSource?:BookThoughtSource|null;onChange:(c:ReadingComposition,sources?:BookThoughtSource[])=>void;onInsert:(s:BookThoughtSource,offset:number)=>{caret:number;citationId:string};onCaret:(offset:number)=>void;onNavigate:(s:BookThoughtSource)=>void};
+export function ReadingPaperEditor({composition:c,sources,catalog,pendingSource,onChange,onInsert,onCaret,onNavigate,initialCaret}:Props){
  const paper=paperOf(c,sources),order=numbers(paper);
- const input=useRef<HTMLTextAreaElement>(null),mirror=useRef<HTMLDivElement>(null),documentRef=useRef<HTMLDivElement>(null),writing=useRef<HTMLDivElement>(null),caret=useRef(0),wanted=useRef<number|null>(null),composing=useRef(false);
+ const input=useRef<HTMLTextAreaElement>(null),mirror=useRef<HTMLDivElement>(null),documentRef=useRef<HTMLDivElement>(null),writing=useRef<HTMLDivElement>(null),caret=useRef(initialCaret||0),wanted=useRef<number|null>(null),composing=useRef(false);
  const [active,setActive]=useState<string|null>(null),[activeRelation,setActiveRelation]=useState<string|null>(null),[linking,setLinking]=useState(false),[selected,setSelected]=useState<string[]>([]),[label,setLabel]=useState(''),[explanation,setExplanation]=useState(''),[editing,setEditing]=useState<string|undefined>(),[picker,setPicker]=useState(false),[query,setQuery]=useState(''),[limit,setLimit]=useState(60),[error,setError]=useState('');
  const [drop,setDrop]=useState<ReturnType<typeof readingDropPoint>|null>(null),[panel,setPanel]=useState({top:0,above:false,height:360});
+ useLayoutEffect(()=>{if(initialCaret!==undefined)caret.current=Math.max(0,Math.min(paper.body.length,initialCaret));},[initialCaret]);
  function sizeInput(){if(input.current&&mirror.current){const height=Math.max(340,mirror.current.scrollHeight+16)+'px';if(input.current.style.height!==height)input.current.style.height=height;}}
  useLayoutEffect(()=>{sizeInput();if(wanted.current!==null&&input.current&&!composing.current){const p=Math.min(paper.body.length,wanted.current);input.current.focus({preventScroll:true});input.current.setSelectionRange(p,p);caret.current=p;onCaret(p);wanted.current=null;}},[paper.body]);
  useLayoutEffect(()=>{if(!mirror.current)return;const observer=new ResizeObserver(sizeInput);observer.observe(mirror.current);return()=>observer.disconnect();},[]);
@@ -42,7 +43,7 @@ export function ReadingPaperEditor({composition:c,sources,catalog,pendingSource,
  fragments.push(<span aria-hidden="true" key="tail">{paper.body.slice(cursor)}{paper.body.endsWith('\n')?'\u200b':''}</span>);
  const panelStyle={top:panel.top,transform:panel.above?'translateY(-100%)':undefined,maxHeight:panel.height};
  return <div className="reading-paper-editor" onKeyDown={e=>{if(e.key==='Escape'&&(active||activeRelation)){e.stopPropagation();closePanel();}}}>
-  <div className="paper-toolbar" role="toolbar" aria-label="笔记板工具"><button type="button" disabled={!pendingSource} title={pendingSource?.quote||'先在原文中选择文字'} onPointerDown={e=>e.preventDefault()} onClick={()=>pendingSource&&insert(pendingSource)}>引用选文</button><button type="button" onClick={()=>{setPicker(v=>!v);setLimit(60);}}>已有摘录</button><button type="button" aria-pressed={linking} onClick={()=>{if(linking)cancelRelation();else{setLinking(true);closePanel();}}}>{linking?'取消梳理':'梳理联系'}</button>{pendingSource&&<span className="paper-selection-status">选文可拖入正文</span>}</div>
+  <div className="paper-toolbar" role="toolbar" aria-label="笔记板工具"><button type="button" disabled={!pendingSource} title={pendingSource?.quote||'先在原文中选择文字'} onPointerDown={e=>{if(e.pointerType==='mouse')e.preventDefault();}} onClick={()=>pendingSource&&insert(pendingSource)}>引用选文</button><button type="button" onClick={()=>{setPicker(v=>!v);setLimit(60);}}>已有摘录</button><button type="button" aria-pressed={linking} onClick={()=>{if(linking)cancelRelation();else{setLinking(true);closePanel();}}}>{linking?'取消梳理':'梳理联系'}</button>{pendingSource&&<span className="paper-selection-status">选文可拖入正文</span>}</div>
   {error&&<p role="alert" className="composition-error">{error}</p>}
   <div className="paper-writing-scroll" ref={writing}>
    <input className="paper-title" aria-label="笔记板标题" placeholder="标题（选填）" value={c.title} onChange={e=>onChange(projectPaper({...c,title:e.target.value},paper,sources))}/>

@@ -3,13 +3,13 @@ import { ArrowLeft, BookOpen, Highlighter, MoreHorizontal, NotebookPen, Pencil }
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from './ui/dialog';
 import { Button } from './ui/button';
 
-export function MobileReaderToolbar({ title, count, onBack, onNotes, onHighlights, search, navigation, tools, onCompare, onBoard }: {
+export function MobileReaderToolbar({ title, count, onBack, onNotes, onHighlights, search, navigation, tools, onCompare, onBoard, onCaptureSelection }: {
   title: string; count: number; onBack: () => void; onNotes: () => void; onHighlights: () => void;
-  search: ReactNode; navigation: ReactNode; tools: ReactNode; onBoard:()=>void; onCompare?:()=>void;
+  search: ReactNode; navigation: ReactNode; tools: ReactNode; onBoard:()=>void; onCaptureSelection:()=>void; onCompare?:()=>void;
 }) {
   const [more, setMore] = useState(false);
   return <>
-    <header className="mobile-reading-header"><button type="button" aria-label="返回书库" onClick={onBack}><ArrowLeft size={22}/></button><strong title={title}>{title}</strong>{search}<button type="button" className="mobile-board-entry" aria-label="笔记板" onClick={onBoard}><Pencil size={20}/><span>笔记板</span></button><button type="button" aria-label={`本书笔记，${count} 条`} onClick={onNotes}><NotebookPen size={21}/></button><button type="button" aria-label="更多阅读操作" onClick={() => setMore(true)}><MoreHorizontal size={23}/></button></header>
+    <header className="mobile-reading-header"><button type="button" aria-label="返回书库" onClick={onBack}><ArrowLeft size={22}/></button><strong title={title}>{title}</strong>{search}<button type="button" className="mobile-board-entry" aria-label="笔记板" onPointerDown={onCaptureSelection} onClick={onBoard}><Pencil size={20}/><span>笔记板</span></button><button type="button" aria-label={`本书笔记，${count} 条`} onClick={onNotes}><NotebookPen size={21}/></button><button type="button" aria-label="更多阅读操作" onClick={() => setMore(true)}><MoreHorizontal size={23}/></button></header>
     <footer className="mobile-reading-footer" aria-label="阅读翻页">{navigation}</footer>
     <Dialog open={more} onOpenChange={setMore}><DialogContent className="mobile-reader-options"><DialogTitle>阅读操作</DialogTitle><DialogDescription>{title}</DialogDescription><Button variant="outline" onClick={() => { setMore(false); onHighlights(); }}><Highlighter/>查看高亮</Button>{onCompare&&<Button variant="outline" onClick={()=>{setMore(false);onCompare();}}><BookOpen/>对照阅读</Button>}{tools}</DialogContent></Dialog>
   </>;

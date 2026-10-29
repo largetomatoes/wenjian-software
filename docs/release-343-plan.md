@@ -27,3 +27,7 @@
 - 桌面归档为空白资料，未包含私人笔记、原书、草稿或签名密钥；Windows UTF-8 与 Finder 元数据清理检查通过。
 
 平台实际验收范围：Windows 云端测试机；Mac 本机独立虚构资料；手机和平板为浏览器尺寸及 WebKit 引擎验证。未宣称真实 Android/iPhone/iPad 硬件验收。
+
+## EPUB 触控补充验收
+
+补充检查发现 Safari 触控会让选区失焦，鼠标专用的 preventDefault 也会吞掉“引用选文”点击。已在顶部按钮 pointerdown 时捕获原文，区分触摸与鼠标事件，补充 EPUB 触摸结束处理，并将草稿中的插入位置同步到重新打开的正文编辑器。Chromium Android 尺寸、WebKit iPhone、WebKit iPad 的 PDF 与 EPUB 全流程均通过，包含原文全文、章节、CFI、横竖屏与保存后的重开。发布草稿中的旧试验包将由重新构建的最终包替换，再做安装核验。
