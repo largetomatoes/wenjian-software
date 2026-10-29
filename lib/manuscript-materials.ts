@@ -1,13 +1,13 @@
 import {processSources} from './process-note-sources';
 import {thoughtSources,thoughtPrimary,sourceLabel} from './book-notebook';
-import {type Notebook,type ManuscriptLink,type Thought,displayBook,pagesOf,pageView,numberOf,recordNumber,crossNumber,crossSignature} from './notebook';
+import {type Notebook,type ManuscriptLink,type Thought,type BookThoughtSource,type ReadingPaper,displayBook,pagesOf,pageView,numberOf,recordNumber,crossNumber,crossSignature} from './notebook';
 
 export type MaterialKind='heading'|'original'|'quote'|'understanding'|'thought'|'reply';
 export type ManuscriptSourceSnapshot={
  key:string; kind:MaterialKind; text:string; label:string; citation:string; at:string;
  targetKind:'note'|'cross'|'card'|'reading'|'bookThought'; targetId:string;
  thoughtId?:string; replyId?:string; libraryBookId?:string; sourceLocation?:string;
- origin?:string; reason?:string;
+ origin?:string; reason?:string;readingParagraph?:{id:string;sources:BookThoughtSource[]};readingPaper?:ReadingPaper;
 };
 export type ManuscriptBlock={id:string;kind:'paragraph'|'heading'|'quote';text:string;source?:ManuscriptSourceSnapshot;links?:ManuscriptLink[]};
 export type MaterialScope={id:string;kind:'question'|'cross'|'card'|'book'|'chapter';label:string;parentId?:string};
@@ -79,7 +79,7 @@ export function buildManuscriptMaterials(data:Notebook):MaterialCatalog{
   appendThoughts(reading.thoughts,context,scopeIds);
  }
  for(const entry of data.bookThoughts){
-  const sources=thoughtSources(entry),primary=thoughtPrimary(entry,data.libraryBooks)||sources[0];
+  const sources=thoughtSources(entry),primary=thoughtPrimary(entry,data.libraryBooks)||sources[0]||{libraryBookId:entry.libraryBookId,sourceLocation:entry.sourceLocation};
   const scopeIds=[...entry.questionIds.flatMap(scopeAncestors),...sources.flatMap(source=>[bookScope(source.libraryBookId,source.bookTitle),chapterScope(source.libraryBookId,source.bookTitle,source.chapter||'')])];
   const citation=sources.map(sourceLabel).join(' ↔ ');
   const context={label:`${entry.sources?.length?'共同思考':'本书思考'} · ${sources.map(source=>source.bookTitle).join(' ↔ ')}`,citation,targetKind:'bookThought' as const,targetId:entry.id,libraryBookId:primary.libraryBookId,sourceLocation:primary.sourceLocation};
@@ -87,7 +87,7 @@ export function buildManuscriptMaterials(data:Notebook):MaterialCatalog{
    if(source.quote)add({...context,key:entry.sources?.length?`bookThought:${entry.id}:quote:${source.id}`:`bookThought:${entry.id}:quote`,citation:sourceLabel(source),kind:'quote',text:source.quote,at:entry.at,origin:'引用原文'},scopeIds);
    if(source.noteText)add({...context,key:`bookThought:${entry.id}:reference:${source.id}`,citation:sourceLabel(source),kind:'understanding',text:source.noteText,at:entry.at,origin:'既有笔记'},scopeIds);
   }
-  add({...context,key:`bookThought:${entry.id}:text`,kind:'understanding',text:entry.text,at:entry.at,origin:'自己的思考'},scopeIds);
+  if(entry.composition){for(const paragraph of entry.composition.paragraphs){const refs=sources.filter(s=>paragraph.sourceIds.includes(s.id));add({...context,key:`bookThought:${entry.id}:paragraph:${paragraph.id}`,kind:'understanding',text:entry.composition.paper?entry.text:paragraph.text,...(entry.composition.paper?{readingPaper:structuredClone(entry.composition.paper)}:{}),citation:refs.map(sourceLabel).join(' ↔ '),readingParagraph:{id:paragraph.id,sources:structuredClone(refs)},at:entry.modifiedAt||entry.at,origin:'自己的思考'},scopeIds);}}else add({...context,key:`bookThought:${entry.id}:text`,kind:'understanding',text:entry.text,at:entry.at,origin:'自己的思考'},scopeIds);
   appendThoughts(entry.thoughts,context,scopeIds);
  }
  // Collection pages use their saved positions, never legacy member lists or canonical parents.
@@ -117,7 +117,7 @@ export function materialSnapshot(material:Material):ManuscriptSourceSnapshot{
 export function sourceStatus(source:ManuscriptSourceSnapshot,catalog:MaterialCatalog):'current'|'changed'|'missing'{
  const current=catalog.materials.find(item=>item.key===source.key);
  if(!current)return 'missing';
- return current.text===source.text&&current.citation===source.citation&&current.label===source.label&&current.reason===source.reason?'current':'changed';
+ return current.text===source.text&&current.citation===source.citation&&current.label===source.label&&current.reason===source.reason&&JSON.stringify(current.readingParagraph)===JSON.stringify(source.readingParagraph)&&JSON.stringify(current.readingPaper)===JSON.stringify(source.readingPaper)?'current':'changed';
 }
 export function createManuscriptBlocks(materials:Material[],makeId:()=>string=()=>crypto.randomUUID()):ManuscriptBlock[]{
  return materials.map(material=>({id:makeId(),kind:material.kind==='heading'?'heading':material.kind==='quote'?'quote':'paragraph',text:material.text,source:materialSnapshot(material),links:[]}));

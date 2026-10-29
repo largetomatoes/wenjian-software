@@ -1,3 +1,4 @@
+import {validateComposition} from '../reading-composition.cjs';
 import type {Notebook} from '../notebook';
 export type SyncValue = unknown;
 export type Operation = {id:string;key:string;parents:string[];value:SyncValue;at:string;device:string;deviceName?:string};
@@ -32,6 +33,7 @@ export function validateOperation(value:unknown):value is Operation {
  if(op.value===null)return true;
  if(typeof op.value!=='object'||Array.isArray(op.value))return false;
  const record=op.value as Record<string,unknown>;
+ if(collection==='bookThoughts'&&record.composition&&validateComposition(record as unknown as import('../notebook').BookThought))throw Error('同步中有旧端修改过的段落笔记，云端原版本已保留，请先核对。');
  try{return decodeURIComponent(id)===(collection==='ocrCache'?JSON.stringify([record.libraryBookId,record.page]):collection==='zoteroCollections'?JSON.stringify([record.serverId,record.key]):record.id);}catch{return false;}
 }
 export function unionOperations(...sets:Operation[][]):Operation[]{const map=new Map<string,Operation>();for(const op of sets.flat()){if(!validateOperation(op))throw Error('云端同步记录格式不正确，未修改本机资料。');const old=map.get(op.id);if(old&&stable(old)!==stable(op))throw Error('同步记录编号发生冲突，已停止合并。');map.set(op.id,op);}return [...map.values()].sort((a,b)=>a.id.localeCompare(b.id));}
@@ -58,6 +60,7 @@ function mergeRecord(base:unknown,a:unknown,b:unknown):{ok:boolean;value:unknown
  if(stable(a)===stable(b))return {ok:true,value:a};if(stable(a)===stable(base))return {ok:true,value:b};if(stable(b)===stable(base))return {ok:true,value:a};
  if(!base||!a||!b||typeof base!=='object'||typeof a!=='object'||typeof b!=='object'||Array.isArray(a)||Array.isArray(b))return {ok:false,value:null};
  const before=base as Record<string,unknown>,left=a as Record<string,unknown>,right=b as Record<string,unknown>,out:Record<string,unknown>={};
+ if(before.composition||left.composition||right.composition)return {ok:false,value:null};
  for(const field of new Set([...Object.keys(before),...Object.keys(left),...Object.keys(right)])){
   let merged: {ok:boolean;value:unknown};
   if(['thoughts','revisions','anchorRevisions'].includes(field)&&Array.isArray(left[field])&&Array.isArray(right[field])){
@@ -135,4 +138,4 @@ export function rebaseOffline(state:SyncState,data:Notebook,remote:Operation[],r
  return created;
 }
 
-export function validateGraph(operations:Operation[]){const byId=new Map(operations.map(op=>[op.id,op]));const visiting=new Set<string>(),visited=new Set<string>();function visit(op:Operation){if(visiting.has(op.id))throw Error('同步记录依赖出现循环。');if(visited.has(op.id))return;visiting.add(op.id);for(const parent of op.parents){const previous=byId.get(parent);if(!previous||previous.key!==op.key)throw Error('同步记录的前一版本缺失，请重新同步。');visit(previous);}visiting.delete(op.id);visited.add(op.id);}for(const op of operations)visit(op);}
+export function validateGraph(operations:Operation[]){const byId=new Map(operations.map(op=>[op.id,op]));const visiting=new Set<string>(),visited=new Set<string>();function visit(op:Operation){if(visiting.has(op.id))throw Error('同步记录依赖出现循环。');if(visited.has(op.id))return;visiting.add(op.id);for(const parent of op.parents){const previous=byId.get(parent);if(!previous||previous.key!==op.key)throw Error('同步记录的前一版本缺失，请重新同步。');if(op.key.startsWith('bookThoughts/')&&op.value&&previous.value&&typeof previous.value==='object'&&'composition' in previous.value&&!(typeof op.value==='object'&&'composition' in op.value))throw Error('旧设备移除了读书笔记的段落引用，已停止应用该版本，云端历史与本机内容保留。');if(op.value&&(previous.value as {composition?:{paper?:unknown}})?.composition?.paper&&!(op.value as {composition?:{paper?:unknown}})?.composition?.paper)throw Error('旧设备移除了笔记纸的脚注与联系，已停止应用该版本。');visit(previous);}visiting.delete(op.id);visited.add(op.id);}for(const op of operations)visit(op);}

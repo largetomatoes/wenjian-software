@@ -5,6 +5,8 @@ import {SettingsRow} from './settings-row';
 import {ReaderShortcutSettings} from './reader-shortcut-settings';
 import {UsageGuide} from './usage-guide';
 import {AuthorLetterButton} from './author-letter';
+import {SyncIntervalSettings} from './sync-interval-settings';
+import {UpdateHighlightsButton} from './update-highlights';
 import {AppUpdates} from './app-updates';
 import {WindowsPerformanceSettings} from './windows-performance-settings';
 import './app-settings.css';
@@ -18,8 +20,8 @@ export function AppSettings({open,onOpenChange,onSync,onBackup,onMaintenance}:Pr
  if(open&&pluginsOpen)return <Suspense fallback={<Dialog open><DialogContent><DialogTitle>插件</DialogTitle><p>正在打开…</p></DialogContent></Dialog>}><PluginHub open onOpenChange={value=>{if(!value)setPluginsOpen(false);}}/></Suspense>;
 
  return <Dialog open={open} onOpenChange={onOpenChange}><DialogContent className="app-settings-dialog settings-redesigned"><header className="settings-heading"><span>问间</span><DialogTitle>设置</DialogTitle><DialogDescription className="sr-only">同步、备份、使用说明与资料维护。</DialogDescription></header><div className="settings-content">
-  <section className="settings-section" aria-labelledby="settings-data"><h3 id="settings-data">资料与连接</h3><div className="settings-card"><SettingsRow title="同步与连接" description="管理坚果云、OSS 与连接状态" icon={<Cloud size={19}/>} onClick={onSync}/><SettingsRow title="完整云备份" description="保留笔记、书籍原件与草稿" icon={<HardDrive size={19}/>} onClick={onBackup}/></div></section>
-  <section className="settings-section" aria-labelledby="settings-help"><h3 id="settings-help">使用与帮助</h3><div className="settings-card"><WindowsPerformanceSettings/><ReaderShortcutSettings/>{typeof document!=='undefined'&&document.documentElement.dataset.wenjianPlatform==='mac'&&<SettingsRow title="插件" description="安装、运行与管理插件" icon={<Puzzle size={19}/>} onClick={()=>setPluginsOpen(true)}/>}<UsageGuide settingsEntry/><AuthorLetterButton settingsEntry/><AppUpdates settingsEntry/></div></section>
+  <section className="settings-section" aria-labelledby="settings-data"><h3 id="settings-data">资料与连接</h3><div className="settings-card"><SettingsRow title="同步与连接" description="管理坚果云、OSS 与连接状态" icon={<Cloud size={19}/>} onClick={onSync}/><SyncIntervalSettings/><SettingsRow title="完整云备份" description="保留笔记、书籍原件与草稿" icon={<HardDrive size={19}/>} onClick={onBackup}/></div></section>
+  <section className="settings-section" aria-labelledby="settings-help"><h3 id="settings-help">使用与帮助</h3><div className="settings-card"><WindowsPerformanceSettings/><ReaderShortcutSettings/>{typeof document!=='undefined'&&['mac','windows'].includes(document.documentElement.dataset.wenjianPlatform||'')&&<SettingsRow title="插件" description="安装、运行与管理插件" icon={<Puzzle size={19}/>} onClick={()=>setPluginsOpen(true)}/>}<UpdateHighlightsButton/><UsageGuide settingsEntry/><AuthorLetterButton settingsEntry/><AppUpdates settingsEntry/></div></section>
   <details className="settings-advanced"><summary>资料维护<span>归档与恢复</span></summary><div className="settings-card"><SettingsRow title="整理笔记与标注" description="核对所选记录，再归档、隐藏或恢复" icon={<ArchiveRestore size={19}/>} onClick={onMaintenance}/></div><p>粗糙或暂时不用的想法，也可能是有价值的思考过程。归档后仍可找回原文与联系。</p></details>
  </div></DialogContent></Dialog>;
 }

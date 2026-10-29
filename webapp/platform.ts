@@ -53,7 +53,7 @@ async function commitSync(payload:Record<string,any>){const current=await peekSt
 const originalFetch=window.fetch.bind(window);
 const json=(body:unknown,status=200)=>new Response(JSON.stringify(body),{status,headers:{'Content-Type':'application/json'}});
 export async function exportMobileDiagnostics(){if(!isNative)return exportWebNotes();if(!chunked)throw Error('请在安卓修复版导出诊断记录');return native.exportDiagnostics();}
-const portablePlugins=createPortablePlugins({platform:'web',build:342,read:peekStore,write:writeStore,serial,prepare:preparePluginChange,notify:notifyPluginChange,choose:choosePluginText,fetch:originalFetch,confirm:message=>window.confirm(message),copy:async text=>{if(!navigator.clipboard?.writeText)throw Error('当前浏览器无法复制文本，请在系统浏览器打开。');await navigator.clipboard.writeText(text);},open:async url=>{if(isNative)await native.openExternalTool({url});else window.open(url,'_blank','noopener,noreferrer');},backup:async store=>{if(isNative)await native.backupLocal();else await dbPut('plugin-backup/'+new Date().toISOString()+'-'+crypto.randomUUID(),JSON.stringify({format:'wenjian-plugin-recovery',schema:1,store}));}});
+const portablePlugins=createPortablePlugins({platform:'web',build:343,read:peekStore,write:writeStore,serial,prepare:preparePluginChange,notify:notifyPluginChange,choose:choosePluginText,fetch:originalFetch,confirm:message=>window.confirm(message),copy:async text=>{if(!navigator.clipboard?.writeText)throw Error('当前浏览器无法复制文本，请在系统浏览器打开。');await navigator.clipboard.writeText(text);},open:async url=>{if(isNative)await native.openExternalTool({url});else window.open(url,'_blank','noopener,noreferrer');},backup:async store=>{if(isNative)await native.backupLocal();else await dbPut('plugin-backup/'+new Date().toISOString()+'-'+crypto.randomUUID(),JSON.stringify({format:'wenjian-plugin-recovery',schema:1,store}));}});
 export function installMobileApi(){
  document.documentElement.dataset.wenjianPlugins='true';
  if(!isNative)setLeaseRecovery({begin:beginWebLease,end:endWebLease});
@@ -76,7 +76,7 @@ export function installMobileApi(){
  const url=typeof input==='string'?input:input instanceof URL?input.toString():input.url;const route=new URL(url,location.origin).pathname;if(!route.startsWith('/api/')||route==='/api/webdav')return originalFetch(input,init);
  try{const payload=typeof init?.body==='string'?JSON.parse(init.body):{},method=init?.method||'GET';
   if(route==='/api/plugins'||route==='/api/plugins/invoke')return json(await portablePlugins.handle(payload,new URL(url,location.origin).searchParams,method,route.endsWith('/invoke')));
-  if(route==='/api/app/info')return json(isNative?{...await App.getInfo(),platform:'android',arch:'universal'}:{version:PREVIEW_VERSION,build:'342',displayBuild:'342',platform:'web',arch:'universal'});
+  if(route==='/api/app/info')return json(isNative?{...await App.getInfo(),platform:'android',arch:'universal'}:{version:PREVIEW_VERSION,build:'343',displayBuild:'343',platform:'web',arch:'universal'});
   if(route==='/api/app/releases'){if(!isNative)return json([]);if(isNative)return json((await native.appReleases({manual:new URL(url,location.origin).searchParams.get('manual')==='1'})).releases);const response=await originalFetch('/api/app/releases');return response;}
   if(route==='/api/app/update'){
    if(!isNative)return json({state:'idle'});

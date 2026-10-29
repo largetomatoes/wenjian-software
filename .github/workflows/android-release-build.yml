@@ -1,0 +1,45 @@
+name: Android unsigned release build
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  android:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - run: npm ci --no-audit --no-fund
+      - run: npm run build:mobile
+      - run: npx cap sync android
+      - name: Build against the runner's existing Android SDK
+        shell: bash
+        run: |
+          test -d "$ANDROID_HOME/platforms/android-36"
+          test -x "$ANDROID_HOME/build-tools/36.0.0/zipalign"
+          cd android
+          chmod +x gradlew
+          ./gradlew --no-daemon assembleRelease testReleaseUnitTest
+      - name: Align and inspect the unsigned package
+        shell: bash
+        run: |
+          mkdir -p unsigned-release
+          "$ANDROID_HOME/build-tools/36.0.0/zipalign" -f -P 16 4 android/app/build/outputs/apk/release/app-release-unsigned.apk unsigned-release/aligned-unsigned.apk
+          "$ANDROID_HOME/build-tools/36.0.0/zipalign" -c -P 16 4 unsigned-release/aligned-unsigned.apk
+          "$ANDROID_HOME/build-tools/36.0.0/aapt" dump badging unsigned-release/aligned-unsigned.apk > unsigned-release/badging.txt
+          cp android/app/build/outputs/apk/release/output-metadata.json unsigned-release/
+          cp "$ANDROID_HOME/build-tools/36.0.0/lib/apksigner.jar" unsigned-release/
+          sha256sum unsigned-release/aligned-unsigned.apk > unsigned-release/unsigned-sha256.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: android-unsigned-release
+          path: unsigned-release/
+          retention-days: 7

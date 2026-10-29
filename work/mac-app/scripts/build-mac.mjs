@@ -61,6 +61,9 @@ async function prepare() {
   await cp(path.join(projectRoot,'lib/maintenance.cjs'),path.join(stage,'maintenance.cjs'));
   await cp(path.join(projectRoot,'lib/universal-delete.cjs'),path.join(stage,'universal-delete.cjs'));
   await cp(path.join(projectRoot, 'lib/notebook-settings.cjs'), path.join(stage, 'notebook-settings.cjs'));
+  await cp(path.join(projectRoot, 'lib/reading-composition.cjs'), path.join(stage, 'reading-composition.cjs'));
+  await cp(path.join(projectRoot, 'lib/reading-paper.cjs'), path.join(stage, 'reading-paper.cjs'));
+  await cp(path.join(projectRoot, 'lib/reading-keywords.cjs'), path.join(stage, 'reading-keywords.cjs'));
   await cp(path.join(projectRoot, 'lib/ocr-cache.cjs'), path.join(stage, 'ocr-cache.cjs')); 
   await cp(spaDist, path.join(resourceStage, 'static'), { recursive: true });
   const dependencies = ['pdf-lib', 'pako', 'tslib', '@pdf-lib/standard-fonts', '@pdf-lib/upng'];

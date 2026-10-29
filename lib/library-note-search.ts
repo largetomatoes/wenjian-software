@@ -2,7 +2,7 @@ import {processEntries,processSources} from './process-note-sources';
 import {displayBook,visibleZoteroAnnotations,type Notebook,type LibraryBook,type ZoteroAnnotation} from './notebook';
 import {noteBook,thoughtEntries,type BookNote} from './book-notebook';
 
-export type LibraryNoteHit={key:string;kind:'process'|'reading'|'zotero';id:string;bookId:string;bookTitle:string;chapter:string;chapterKey:string;locator:string;sourceLocation?:string;content:string;preview:string};
+export type LibraryNoteHit={paragraphId?:string;key:string;kind:'process'|'reading'|'zotero';id:string;bookId:string;bookTitle:string;chapter:string;chapterKey:string;locator:string;sourceLocation?:string;content:string;preview:string};
 const tidy=(text:string|undefined)=>(text||'').trim().replace(/\s+/g,' ');
 const normalize=(text:string)=>text.normalize('NFKC').toLocaleLowerCase();
 export function matchesNoteText(content:string,query:string){return normalize(tidy(query)).split(/\s+/).filter(Boolean).every(word=>normalize(content).includes(word));}
@@ -26,7 +26,7 @@ export function libraryNoteIndex(data:Notebook):LibraryNoteHit[]{
   hits.push({key:JSON.stringify([book.id,entry.kind,entry.note.id,chapterKey]),kind:entry.kind,id:entry.note.id,bookId:book.id,bookTitle:shown.title,chapter:chapter|| (whole?'全书思考':'未标章节'),chapterKey,locator:source?.locator||entry.note.locator,sourceLocation:source?.sourceLocation||entry.note.sourceLocation,content,preview:tidy(preview)});
  };
  for(const note of data.readingNotes.flatMap(processEntries))add({kind:'process',note});
- for(const note of data.bookThoughts)for(const entry of thoughtEntries(note))add(entry);
+ for(const note of data.bookThoughts){if(note.composition){for(const paragraph of note.composition.paragraphs){const source=note.sources?.find(s=>paragraph.sourceIds.includes(s.id));const book=data.libraryBooks.find(b=>b.id===note.composition!.homeBookId);if(book)hits.push({key:'paragraph:'+note.id+':'+paragraph.id,kind:'reading',id:note.id,paragraphId:paragraph.id,bookId:book.id,bookTitle:book.title,chapter:source?.chapter||'全书思考',chapterKey:source?.chapter?'chapter:'+source.chapter:'whole',locator:source?.locator||'',sourceLocation:source?.sourceLocation,content:[note.composition.paper?note.text:paragraph.text,...(note.sources||[]).filter(s=>paragraph.sourceIds.includes(s.id)).flatMap(s=>[s.quote,s.noteText,s.chapter])].join('\n'),preview:paragraph.text});}}else for(const entry of thoughtEntries(note))add(entry);}
  for(const book of data.libraryBooks)for(const annotation of visibleZoteroAnnotations(book)){
   const chapter=zoteroAnnotationChapter(book,annotation);
   hits.push({key:JSON.stringify([book.id,'zotero',annotation.attachmentKey,annotation.key]),kind:'zotero',id:annotation.key,bookId:book.id,bookTitle:displayBook(book).title,chapter:chapter||'未标章节',chapterKey:chapter?'chapter:'+chapter:'unfiled',locator:annotation.pageLabel?'第 '+annotation.pageLabel+' 页':annotation.page?'第 '+annotation.page+' 页':'',content:[annotation.text,annotation.comment,chapter].join('\n'),preview:tidy(annotation.comment||annotation.text)});

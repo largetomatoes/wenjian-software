@@ -1,0 +1,12 @@
+import type {BookThought,BookThoughtSource,ReadingComposition,BookThoughtRevision,LibraryHighlight} from './notebook';
+export function sourceIdentity(source:BookThoughtSource):string;
+export function legacySources(note:BookThought):BookThoughtSource[];
+export function compositionOf(note:BookThought):ReadingComposition;
+export function sourceNumbers(c:ReadingComposition):Map<string,number>;
+export function flattenComposition(c:ReadingComposition):string;
+export function validateComposition(n:BookThought):string;
+export function snapshot(n:BookThought,at:string,reason?:string):BookThoughtRevision;
+export function withComposition(n:BookThought,c:ReadingComposition,sources:BookThoughtSource[],at?:string,reason?:string):BookThought;
+export function attachSource(n:BookThought,s:BookThoughtSource,paragraphId?:string|null):BookThought;
+export function compositionReferences(notes:BookThought[],s:BookThoughtSource):{noteId:string;paragraphId:string;text:string;title:string}[];
+export function compositionMarks(notes:BookThought[],bookId:string,existingHighlights?:LibraryHighlight[],existingNotes?:{id:string}[],existingZotero?:{key:string;attachmentKey:string}[]):LibraryHighlight[];

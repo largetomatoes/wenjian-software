@@ -147,3 +147,31 @@ html[data-wenjian-mobile=true] .universal-delete-notice button{min-height:32px;m
 .mobile-book-row>.universal-delete-button{position:absolute;right:0;top:70px;width:32px;height:34px;min-height:34px}
 .mobile-folder-item>button.universal-delete-button{width:32px;height:36px;padding:0;border-radius:7px;color:#9a655b}
 @media(min-width:768px){html[data-wenjian-web=true] .mobile-book-row>.universal-delete-button{right:9px;top:62px}}
+
+/* 343: permanent touch entry, full-screen phone board and tablet inline workspace. */
+.mobile-reading-header>.mobile-board-entry{display:flex;gap:4px;align-items:center;font-size:12px;white-space:nowrap;padding:5px;min-width:40px}.mobile-reading-header>.mobile-board-entry span{display:none}
+.reader-notes-mobile-close{position:absolute;right:16px;top:calc(env(safe-area-inset-top) + 14px);z-index:3;border:1px solid #dce3d5;border-radius:7px;padding:8px 10px;background:#eef2e9;color:#526648;font-size:12px;min-height:40px}
+html[data-wenjian-mobile=true] .book-thoughts-sheet>header{padding-right:120px!important}
+html[data-wenjian-mobile=true] .reading-composition-workspace{padding:0 16px 12px;min-height:0;overflow:hidden}
+html[data-wenjian-mobile=true] .composition-writing{overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
+html[data-wenjian-mobile=true] .paper-inline-panel{max-width:100%;overflow-wrap:anywhere}
+html[data-wenjian-mobile=true] .paper-inline-panel header{align-items:flex-start}
+html[data-wenjian-mobile=true] .paper-inline-panel header>button{min-height:36px}
+html[data-wenjian-mobile=true] .composition-footer>details>.question-link-picker .question-picker-tree{max-height:160px;touch-action:pan-y}
+html[data-wenjian-mobile=true] .sync-interval-setting{width:100%;border:1px solid #dce3d6;border-radius:8px;background:#fafbf7}
+html[data-wenjian-mobile=true] .sync-interval-setting select{min-height:44px}
+html[data-wenjian-mobile=true] .mobile-settings-actions .settings-row{width:100%;min-height:54px}
+html[data-wenjian-mobile=true] .update-highlights{inset:auto!important;top:50%!important;left:50%!important;transform:translate(-50%,-50%)!important;translate:none!important;width:calc(100vw - 24px)!important;max-height:calc(var(--mobile-viewport-height,100dvh) - 36px - env(safe-area-inset-top) - env(safe-area-inset-bottom));padding:18px!important;gap:12px}
+html[data-wenjian-mobile=true] .update-highlights h2{font-size:19px}
+html[data-wenjian-mobile=true] .update-highlights [data-slot=dialog-description]{font-size:13px}
+html[data-wenjian-mobile=true] .update-highlights button{min-height:44px}
+html[data-wenjian-mobile=true] .update-highlights figure{flex:1;min-height:90px}
+html[data-wenjian-mobile=true] .update-highlights img{max-height:42dvh}
+@media(min-width:1000px) and (min-height:540px){
+ html[data-wenjian-mobile=true] .library-dialog.is-mobile-reader:has(>.reader-notes-panel:not([hidden])){display:grid!important;grid-template-columns:minmax(0,1fr) var(--reading-notes-width,40%)!important;grid-template-rows:minmax(0,1fr)}
+ html[data-wenjian-mobile=true] .library-dialog.is-mobile-reader>.reader-workspace{grid-column:1;grid-row:1;min-width:0;min-height:0}
+ html[data-wenjian-mobile=true] .library-dialog.is-mobile-reader>.reader-notes-panel.book-thoughts-sheet:not([hidden]){position:relative!important;inset:auto!important;width:auto!important;max-width:none!important;height:100%!important;max-height:100%!important;transform:none!important;translate:none!important;padding:0!important;grid-column:2;grid-row:1;display:flex!important;flex-direction:column;border-left:1px solid #dce2d7!important;overflow:hidden!important}
+ html[data-wenjian-mobile=true] .reader-notes-panel>.reader-notes-close{position:absolute;top:12px;right:12px;width:auto;height:40px;display:flex;align-items:center;gap:5px;padding:6px 9px;font-size:12px;z-index:3;background:#eef2e9;border:1px solid #dce3d5;border-radius:7px}
+ html[data-wenjian-mobile=true] .mobile-reading-header>.mobile-board-entry span{display:inline}
+}
+html[data-wenjian-mobile=true] .reader-notes-panel[hidden]{display:none!important}

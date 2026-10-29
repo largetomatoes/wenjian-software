@@ -42,7 +42,7 @@ jobs:
               if ((Get-FileHash $destination -Algorithm SHA256).Hash.ToLowerInvariant() -ne $item.sha256) { throw 'Package checksum mismatch' }
             }
           } else {
-            gh release download $env:RELEASE_TAG --repo $env:GITHUB_REPOSITORY --pattern '*Windows-x64-Setup.exe' --pattern '*Windows-x64.zip' --dir package-test
+            gh release download $env:RELEASE_TAG --repo $env:GITHUB_REPOSITORY --pattern '*Windows-x64-Setup.exe' --pattern '*Windows-x64*.zip' --dir package-test
             if ($LASTEXITCODE -ne 0) { throw 'Release download failed' }
           }
       - name: Preserve Windows graphics defaults and preferences

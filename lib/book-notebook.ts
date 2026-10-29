@@ -50,13 +50,14 @@ export function chapterNotes(entries:BookNote[], book?:LibraryBook):ChapterNotes
 export function bookThoughtLocation(note:BookThought){return [note.chapter,note.locator].filter(Boolean).join(' · ')||(note.scope==='book'?'全书思考':'未标章节');}
 
 export function thoughtSources(note:BookThought):BookThoughtSource[]{
- return note.sources?.length?note.sources:[{id:'legacy:'+note.id,libraryBookId:note.libraryBookId,bookTitle:note.bookTitle,chapter:note.chapter,locator:note.locator,sourceLocation:note.sourceLocation,quote:note.quote,rawQuote:note.rawQuote,pdfSegments:note.pdfSegments}];
+ return note.composition?(note.sources||[]).filter(s=>note.composition!.paragraphs.some(p=>p.sourceIds.includes(s.id))):note.sources?.length?note.sources:[{id:'legacy:'+note.id,libraryBookId:note.libraryBookId,bookTitle:note.bookTitle,chapter:note.chapter,locator:note.locator,sourceLocation:note.sourceLocation,quote:note.quote,rawQuote:note.rawQuote,pdfSegments:note.pdfSegments}];
 }
-export function thoughtEntries(note:BookThought):BookNote[]{return thoughtSources(note).map(source=>({kind:'reading' as const,note,source}));}
-export function thoughtBookEntries(note:BookThought,bookId:string):BookNote[]{return thoughtEntries(note).filter(entry=>entry.kind==='reading'&&entry.source?.libraryBookId===bookId);}
+export function thoughtEntries(note:BookThought):BookNote[]{const sources=thoughtSources(note);const entries:BookNote[]=sources.map(source=>({kind:'reading' as const,note,source}));if(note.composition&&!sources.some(s=>s.libraryBookId===note.composition!.homeBookId))entries.unshift({kind:'reading',note});return entries;}
+export function thoughtBookEntries(note:BookThought,bookId:string):BookNote[]{return thoughtEntries(note).filter(entry=>entry.kind==='reading'&&(entry.source?.libraryBookId===bookId||!entry.source&&entry.note.libraryBookId===bookId));}
 export function sourceLabel(source:BookThoughtSource){return [source.bookTitle?`《${source.bookTitle}》`:'',source.chapter,source.locator].filter(Boolean).join(' · ');}
-export function thoughtPrimary(note:BookThought,books:LibraryBook[]){return thoughtSources(note).find(source=>books.some(book=>book.id===source.libraryBookId));}
+export function thoughtPrimary(note:BookThought,books:LibraryBook[]){if(note.composition&&books.some(b=>b.id===note.composition!.homeBookId))return {id:'home:'+note.id,libraryBookId:note.composition.homeBookId,bookTitle:note.bookTitle,locator:note.locator,sourceLocation:note.sourceLocation};return thoughtSources(note).find(source=>books.some(book=>book.id===source.libraryBookId));}
 export function withThoughtSources(note:BookThought,sources:BookThoughtSource[]):BookThought{
+ if(note.composition)throw Error('请在阅读侧栏修改这条笔记的段落引用。');
  const first=sources[0];if(!first)throw Error('思考至少需要保留一个来源。');
  return {...note,sources,libraryBookId:first.libraryBookId,bookTitle:first.bookTitle,chapter:first.chapter,locator:first.locator,sourceLocation:first.sourceLocation,quote:first.quote};
 }

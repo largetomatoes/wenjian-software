@@ -73,6 +73,7 @@ export function GlobalSearch({open,onOpenChange,data,onOpenItem,onOpenReading,on
   }
   for(const entry of data.bookThoughts){
    const sources=thoughtSources(entry),primary=thoughtPrimary(entry,data.libraryBooks);
+   if(entry.composition&&primary?.libraryBookId){for(const p of entry.composition.paragraphs){const refs=sources.filter(s=>p.sourceIds.includes(s.id));add({id:`bookThought:${entry.id}:paragraph:${p.id}`,kind:'bookThought',label:place('阅读笔记',entry.bookTitle),title:entry.composition.title||entry.bookTitle,fields:[field(entry.composition!.paper?entry.text:p.text,1.15),...refs.flatMap(s=>[field(s.quote||''),field(s.noteText||'')])],open:()=>onOpenBook(primary.libraryBookId!,undefined,entry.id+'::paragraph::'+p.id)});}continue;}
    const title=sources.map(source=>`《${source.bookTitle}》`).filter((label,index,all)=>all.indexOf(label)===index).join(' ↔ ');
    const label=place(entry.sources?.length?'共同思考':primary?'读书笔记':'已移除书籍的读书笔记',sources.map(sourceLabel).join(' ↔ '));
    const openEntry=()=>primary?.libraryBookId?onOpenBook(primary.libraryBookId,primary.sourceLocation,entry.id):onOpenDetachedBookThought(entry.id);

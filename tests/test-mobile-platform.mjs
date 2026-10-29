@@ -1,3 +1,4 @@
+import readingComposition from '../lib/reading-composition.cjs';
 import portableModel from '../lib/plugin-model.cjs';
 import universalDelete from '../lib/universal-delete.cjs';
 import pluginContract from '../lib/plugin-contract.cjs';
@@ -23,7 +24,7 @@ function load(file,imports={},globals={}){
 }
 const folders=load('lib/library-folders.ts');
 const notebook=load('lib/notebook.ts',{'./library-folders':folders,'./page-organization.cjs':organization});
-const core=load('lib/sync/core.ts');const equality=load('lib/value-equal.ts');const storeChunks=load('mobile/native-store.ts');
+const core=load('lib/sync/core.ts',{'../reading-composition.cjs':readingComposition});const equality=load('lib/value-equal.ts');const storeChunks=load('mobile/native-store.ts');
 const calculations=load('lib/sync/compute-tasks.ts',{'./core':core,'../value-equal':equality});const compute={compute:async(task,input)=>calculations.calculate(task,input)};
 const updates=load('lib/app-updates.ts');
 const portable=load('lib/portable-plugins.ts',{'./universal-delete.cjs':universalDelete,'./plugin-model.cjs':portableModel,'./notebook-settings.cjs':settings,'./plugin-contract.cjs':pluginContract},{URLSearchParams,AbortSignal});

@@ -1,7 +1,7 @@
 param([Parameter(Mandatory=$true)][string]$ArtifactDirectory)
 $ErrorActionPreference='Stop'
 $artifacts=(Resolve-Path $ArtifactDirectory).Path
-$zip=@(Get-ChildItem $artifacts -Filter '*Windows-x64.zip')
+$zip=@(Get-ChildItem $artifacts -Filter '*Windows-x64*.zip')
 if($zip.Count -ne 1){throw 'Expected a single Windows update archive'}
 $portable=Get-ChildItem (Join-Path $artifacts 'portable') -Filter Wenjian.exe -Recurse | Select-Object -First 1
 if(-not $portable){throw 'Portable test fixture missing'}

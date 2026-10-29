@@ -10,6 +10,7 @@ export function rebaseReading(base:Notebook,edited:Notebook,current:Notebook):No
   if(same(before,after))return latest;
   if(same(after,latest))return latest;
   if(same(before,latest))return after;
+  if(path.startsWith('notebook.bookThoughts.')&&[before,after,latest].some(value=>object(value)&&value.composition))throw Error('这条读书笔记刚在另一处修改，完整草稿已保留，请核对版本。');
   if(Array.isArray(before)&&Array.isArray(after)&&Array.isArray(latest)&&[...before,...after,...latest].every(value=>key(value)!==undefined)){
    const old=new Map(before.map(value=>[key(value),value])),changed=new Map(after.map(value=>[key(value),value])),now=new Map(latest.map(value=>[key(value),value]));
    const result:unknown[]=[];

@@ -38,8 +38,8 @@ assert.equal(selectUpdate([valid],{...info,platform:'darwin',arch:'arm64'}).stat
 valid.assets[0].browser_download_url='https://example.org/malicious.apk';
 assert.equal(selectUpdate([valid],info).state,'missing');
 for(const url of ['http://github.com/largetomatoes/mac-/releases','https://github.com.evil.test/largetomatoes/mac-/releases','https://github.com/another/repo/releases','https://secret@github.com/largetomatoes/mac-/releases','https://github.com/largetomatoes/mac-/releases?token=secret'])assert.equal(validReleaseUrl(url),false);
-const native=await import('../work/mac-app/asar-src/app-updates.cjs');
+const native=(await import('../work/mac-app/asar-src/app-updates.cjs')).default;
 assert.equal(native.allowedReleaseUrl(base),true);assert.equal(native.allowedReleaseUrl('https://example.org'),false);
 const cacheDir=fs.mkdtempSync(path.join(os.tmpdir(),'wenjian-update-test-'));const cacheFile=path.join(cacheDir,'cache.json');
-try{fs.writeFileSync(cacheFile,JSON.stringify({at:Date.now(),releases:[release('2.2.0')]}));assert.equal((await native.cachedPublicReleases(cacheFile))[0].tag_name,'v2.2.0','desktop cache survives random localhost ports and app restarts');fs.writeFileSync(cacheFile,JSON.stringify({at:Date.now(),error:'offline fixture'}));await assert.rejects(native.cachedPublicReleases(cacheFile),/offline fixture/);}finally{fs.rmSync(cacheDir,{recursive:true,force:true});}
+try{fs.writeFileSync(cacheFile,JSON.stringify({at:Date.now(),releases:[release('2.2.0')]}));assert.equal((await native.cachedPublicReleases(cacheFile))[0].tag_name,'v2.2.0','desktop cache survives random localhost ports and app restarts');fs.writeFileSync(cacheFile,JSON.stringify({at:Date.now(),error:'offline fixture'}));await assert.rejects(native.createReleaseClient({get:async()=>{throw Error('offline fixture');}}).cachedPublicReleases(cacheFile),/offline fixture/);}finally{fs.rmSync(cacheDir,{recursive:true,force:true});}
 console.log('Book identity, chapter grouping, orphan preservation, stable versions and platform-specific trusted updates passed');

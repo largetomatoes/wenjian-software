@@ -269,3 +269,16 @@ test('only an explicit reference with an empty storedFile skips original validat
   }
   await assert.rejects(fs.access(fixture.archivePath), /ENOENT/);
 });
+
+
+test('paragraph reading notes and source-aware drafts survive complete backup and filename collision',async(t)=>{
+ const fixture=await setup();t.after(()=>fs.rm(fixture.root,{recursive:true,force:true}));const model=require('../lib/reading-composition.cjs');
+ const store=notebook(),source={id:'source-A',libraryBookId:'book',bookTitle:'书',quote:'原文 A',rawQuote:'原 文 A',sourceLocation:'pdf:1',locator:'第 1 页',rects:[{x:.1,y:.2,width:.4,height:.03}]};
+ const c={schema:1,homeBookId:'book',title:'我的思考',paragraphs:[{id:'P1',text:'理解一',sourceIds:['source-A']},{id:'P2',text:'后来修正',sourceIds:['source-A']}]};
+ const n={id:'reading-note',libraryBookId:'book',bookTitle:'书',scope:'book',locator:'',composition:c,sources:[source],text:model.flattenComposition(c),questionIds:[],at:'2026-10-28T12:00:00Z',thoughts:[]};
+ const updated=model.withComposition(n,{...c,paragraphs:[...c.paragraphs,{id:'P3',text:'继续追问',sourceIds:[]}]},[source]);store.data.bookThoughts=[updated];
+ const draft={note:updated,base:n,paragraphId:'P3',dirty:true,version:2};await fs.writeFile(fixture.notebookPath,JSON.stringify(store));await fs.writeFile(fixture.draftsPath,JSON.stringify({composition:draft}));
+ await exportCompleteBackup({...fixture,destination:fixture.archivePath,validateNotebook:valid});await fs.writeFile(path.join(fixture.libraryDir,'book.pdf'),'different local original');
+ await restoreCompleteBackup({...fixture,validateNotebook:valid,writeNotebook:value=>fs.writeFile(fixture.notebookPath,JSON.stringify(value)),writeDrafts:value=>fs.writeFile(fixture.draftsPath,JSON.stringify(value))});
+ const restored=JSON.parse(await fs.readFile(fixture.notebookPath,'utf8'));assert.deepEqual(restored.data.bookThoughts[0],JSON.parse(JSON.stringify(updated)));assert.equal(model.validateComposition(restored.data.bookThoughts[0]),'');assert.notEqual(restored.data.libraryBooks[0].storedFile,'book.pdf');assert.equal(restored.data.bookThoughts[0].composition.homeBookId,'book');assert.deepEqual(JSON.parse(await fs.readFile(fixture.draftsPath,'utf8')).composition,JSON.parse(JSON.stringify(draft)));
+});

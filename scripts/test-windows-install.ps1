@@ -4,7 +4,7 @@ $ErrorActionPreference='Stop'
 if($LASTEXITCODE -ne 0){throw 'Native plugin program checks failed'}
 $artifacts=(Resolve-Path $ArtifactDirectory).Path
 $setup=@(Get-ChildItem $artifacts -Filter '*Windows-x64-Setup.exe')
-$zip=@(Get-ChildItem $artifacts -Filter '*Windows-x64.zip')
+$zip=@(Get-ChildItem $artifacts -Filter '*Windows-x64*.zip')
 if($setup.Count -ne 1 -or $zip.Count -ne 1){throw 'Exactly one installer and update zip required'}
 $expectedVersion=[regex]::Match($setup[0].Name,'^Wenjian-([0-9.]+)-build').Groups[1].Value
 $expectedBuild=[int]([regex]::Match($setup[0].Name,'-build([0-9]+)-').Groups[1].Value)

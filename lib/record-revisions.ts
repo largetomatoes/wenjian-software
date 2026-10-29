@@ -10,6 +10,6 @@ export function reviseProcessNote(data:Notebook,id:string,text:string,reason='',
  return {...data,readingNotes:data.readingNotes.map(n=>n.id===id?{...n,interpretation:text.trim(),modifiedAt:at,revisions:[...(n.revisions||[]),{id:crypto.randomUUID(),text:n.interpretation,at,reason}]}:n)};
 }
 export function reviseBookThought(data:Notebook,id:string,text:string,reason='',at=new Date().toISOString()):Notebook {
- const note=data.bookThoughts.find(n=>n.id===id);if(!note||!text.trim())throw Error('请保留思考内容。');if(note.text===text.trim())return data;
+ const note=data.bookThoughts.find(n=>n.id===id);if(note?.composition)throw Error('这条笔记包含段落引用，请在阅读侧栏继续编辑。');if(!note||!text.trim())throw Error('请保留思考内容。');if(note.text===text.trim())return data;
  return {...data,bookThoughts:data.bookThoughts.map(n=>n.id===id?{...n,text:text.trim(),modifiedAt:at,revisions:[...(n.revisions||[]),{id:crypto.randomUUID(),text:n.text,sources:n.sources||[],questionIds:n.questionIds,at,reason}]}:n)};
 }

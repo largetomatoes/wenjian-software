@@ -4,7 +4,7 @@ const RELEASE_ROOTS=['/largetomatoes/wenjian-software/releases','/largetomatoes/
 export const PREVIEW_VERSION='3.141';
 export type AppInfo={version:string;build:string;displayBuild?:string;platform:'android'|'darwin'|'win32';arch:string};
 export type Release={tag_name:string;html_url:string;body?:string;published_at?:string;draft?:boolean;prerelease?:boolean;assets?:{name:string;browser_download_url:string;state?:string}[]};
-export type UpdateResult={state:'available'|'current'|'ahead'|'missing'|'empty';version?:string;build?:number;displayBuild?:string;release?:Release;download?:string};
+export type UpdateResult={state:'available'|'current'|'ahead'|'missing'|'empty';version?:string;build?:number;displayBuild?:string;release?:Release;download?:string;manual?:boolean};
 export const PI_RELEASE_DIGITS='14159265358979323846264338327950288419716939937510';
 export function versionParts(value:string){
  const text=value.trim().replace(/^v/,'');
@@ -24,8 +24,12 @@ export function selectUpdate(releases:Release[],info:AppInfo):UpdateResult {
  const version=releaseIdentity(latest)!.version,build=releaseBuild(latest),baseComparison=compareVersions(version,info.version),comparison=baseComparison|| (build?Math.sign(build-(Number(info.build)||0)):0);
  const suffix=info.platform==='android'?'Android.apk':info.platform==='darwin'?`macOS-${info.arch}.zip`:`Windows-${info.arch}.zip`;
  const name=build?`Wenjian-${version}-build${build}-${suffix}`:`Wenjian-${version}-${suffix}`;
- const asset=latest.assets?.find(item=>item.name===name&&item.state==='uploaded'&&releaseAssetUrl(item.browser_download_url,latest.tag_name));
- return {state:comparison<0?'ahead':comparison===0?'current':asset?'available':'missing',version,build:build||undefined,displayBuild:releaseDisplayBuild(latest),release:latest,download:asset?.browser_download_url};
+ const standard=latest.assets?.find(item=>item.name===name&&item.state==='uploaded'&&releaseAssetUrl(item.browser_download_url,latest.tag_name));
+ // Legacy desktop clients only recognize the standard ZIP name. Keep the first safe upgrade manual for them.
+ const safeName=name.replace(/\.zip$/,'-Manual.zip');
+ const guarded=info.platform!=='android'?latest.assets?.find(item=>item.name===safeName&&item.state==='uploaded'&&releaseAssetUrl(item.browser_download_url,latest.tag_name)):undefined;
+ const asset=standard||guarded,manual=!!guarded&&!standard&&(Number(info.build)||0)<343;
+ return {state:comparison<0?'ahead':comparison===0?'current':asset?'available':'missing',version,build:build||undefined,displayBuild:releaseDisplayBuild(latest),release:latest,download:asset?.browser_download_url,...manual?{manual:true}:{}};
 }
 // Discovery metadata is public; the native updater separately verifies the
 // signed manifest, build number, package identity and file hash before install.

@@ -11,7 +11,7 @@ const readKey='author-letter:2026-10';
 export function AuthorLetter(){
  const [open,setOpen]=useState(false),[saving,setSaving]=useState(false),[error,setError]=useState('');
  useEffect(()=>{let cancelled=false;void readDraft<{readAt:string}|null>(readKey,null).then(value=>{if(!cancelled&&!value?.readAt)setOpen(true);}).catch(()=>{if(!cancelled)setOpen(true);});const show=()=>{setError('');setOpen(true);};window.addEventListener('wenjian:author-letter',show);return()=>{cancelled=true;window.removeEventListener('wenjian:author-letter',show);};},[]);
- async function close(){if(saving)return;setSaving(true);setError('');try{await writeDraft(readKey,{readAt:new Date().toISOString()});setOpen(false);}catch{setError('阅读状态暂未保存，可以稍后再试。');}finally{setSaving(false);}}
+ async function close(){if(saving)return;setSaving(true);setError('');try{await writeDraft(readKey,{readAt:new Date().toISOString()});setOpen(false);window.dispatchEvent(new Event('wenjian:author-letter-read'));}catch{setError('阅读状态暂未保存，可以稍后再试。');}finally{setSaving(false);}}
  return <Dialog open={open} onOpenChange={value=>{if(!value)void close();}}><DialogContent className="author-letter" showCloseButton={false} onOpenAutoFocus={event=>{event.preventDefault();}}>
   <header><span className="author-letter-eyebrow">问间 · 圆周率版</span><DialogTitle>一封给使用者的信</DialogTitle><DialogDescription>西林（sirens）</DialogDescription></header>
   <article className="author-letter-body" tabIndex={0} aria-label="给使用者的信正文">

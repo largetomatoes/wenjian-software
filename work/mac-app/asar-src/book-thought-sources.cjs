@@ -1,6 +1,7 @@
 'use strict';
 
 function detachThoughtBook(entry,bookId,replacementId,remainingIds){
+ if(entry.composition)return entry; // Stable missing IDs retain the home book and all source snapshots.
  if(!entry.sources?.length){
   if(entry.libraryBookId!==bookId)return entry;
   if(replacementId)return {...entry,libraryBookId:replacementId};
