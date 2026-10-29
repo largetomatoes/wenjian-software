@@ -196,6 +196,6 @@ Web App 执行 `npm run build:pwa`，独立静态资源及受限 WebDAV 中转�
 
 桌面清单、native-Info.plist、windows-release.json、Android versionCode、Web App 与便携插件宿主构建号均为 343。Mac 与 Windows 串行运行各自构建脚本；Android 可用 `.github/workflows/android-release-build.yml` 在已有 SDK 的 CI 生成对齐未签名包，再用 `scripts/sign-ci-android.mjs` 和本机原密钥签署。私钥不进入源码或 CI。iPhone/iPad 沿用 Web App。
 
-桌面 ZIP 发行文件使用 `-Manual.zip` 后缀，使有风险的旧版更新器不会自动替换程序。343 及以后能识别此归档并使用已修复的签名更新器；较旧版本请先正常退出，再手动覆盖安装。原应用身份、资料路径和 Android 签名保持不变。
+桌面 ZIP 发行文件恢复标准名称 `Wenjian-3.141-build343-macOS-arm64.zip` 和 `Wenjian-3.141-build343-Windows-x64.zip`，签名清单内使用相同真实地址。Mac 341 的真实安装器在独立副本中升级至 343 已通过；旧版发现器可识别标准名称。原应用身份、资料路径和 Android 签名保持不变。很早的故障更新器仍建议用安装包覆盖升级。
 
 先运行 TypeScript、同步、完整备份和阅读笔记模型检查；`tests/test-reading-portable-ui.cjs` 使用 Chromium 与持久化 WebKit 隔离资料测试手机和平板，`tests/test-reading-keywords-ui.cjs` 与 `tests/test-reading-usability-ui.cjs` 验证最终 Mac 包，Windows 安装/覆盖/回滚交给 `windows-release-smoke.yml`。图示全部来自虚构资料。

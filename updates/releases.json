@@ -5,7 +5,7 @@
     {
       "tag_name": "v3.141-build343",
       "html_url": "https://github.com/largetomatoes/wenjian-software/releases/tag/v3.141-build343",
-      "body": "# 问间 3.141（343）\n\n- 阅读旁新增笔记板：自由写作，把选中的原文引用到自己的句子中。\n- 摘录可显示自己选定的关键词，多处摘录可连接起来，写下联系并保留修改历史。\n- Mac、Windows、Android 与 iPhone／iPad Web App 功能对齐；手机支持选文后引用，宽屏平板支持并排阅读与写作。\n- 新增同步间隔设置，减少后台整库检查；修复关联问题滚动，区分收起笔记与退出阅读。\n- 更新后提供带图功能演示，可在设置中重看。\n\n**桌面旧版首次升级请手动覆盖安装**：保存内容、正常退出问间，再替换 Mac 应用，或运行 Windows 安装版并选择原安装目录。请勿先卸载或删除资料目录。此次保留对旧更新器的保护，343 及以后继续使用已修复的签名更新流程。\n\nAndroid 沿用原签名覆盖安装。iPhone／iPad 继续使用 [Web App](https://reader.wenjian-app.workers.dev/read/)，在 Safari 分享菜单中选择“添加到主屏幕”；部分网络可能需要代理。\n\n<!-- wenjian-build:343 -->\n<!-- wenjian-display-build:343 -->\n<!-- wenjian-platforms:darwin,win32,android -->\n",
+      "body": "# 问间 3.141（343）\n\n- 阅读旁新增笔记板：自由写作，把选中的原文引用到自己的句子中。\n- 摘录可显示自己选定的关键词，多处摘录可连接起来，写下联系并保留修改历史。\n- Mac、Windows、Android 与 iPhone／iPad Web App 功能对齐；手机支持选文后引用，宽屏平板支持并排阅读与写作。\n- 新增同步间隔设置，减少后台整库检查；修复关联问题滚动，区分收起笔记与退出阅读。\n- 更新后提供带图功能演示，可在设置中重看。\n\n**桌面更新**：Mac、Windows 安装包已恢复旧版更新器可识别的标准名称。已安装的用户请在「设置 → 版本与更新」重新点击「检查更新」。更新前请保存内容；若很早的版本无法完成更新，可从下方下载安装包覆盖原位置，不要先卸载或删除资料。\n\nAndroid 沿用原签名覆盖安装。iPhone／iPad 继续使用 [Web App](https://reader.wenjian-app.workers.dev/read/)，在 Safari 分享菜单中选择“添加到主屏幕”；部分网络可能需要代理。\n\n<!-- wenjian-build:343 -->\n<!-- wenjian-display-build:343 -->\n<!-- wenjian-platforms:darwin,win32,android -->\n",
       "published_at": "2026-10-29T05:52:18Z",
       "draft": false,
       "prerelease": false,
@@ -36,8 +36,8 @@
           "state": "uploaded"
         },
         {
-          "name": "Wenjian-3.141-build343-macOS-arm64-Manual.zip",
-          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.141-build343/Wenjian-3.141-build343-macOS-arm64-Manual.zip",
+          "name": "Wenjian-3.141-build343-macOS-arm64.zip",
+          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.141-build343/Wenjian-3.141-build343-macOS-arm64.zip",
           "state": "uploaded"
         },
         {
@@ -46,13 +46,13 @@
           "state": "uploaded"
         },
         {
-          "name": "Wenjian-3.141-build343-Windows-x64-Manual.zip",
-          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.141-build343/Wenjian-3.141-build343-Windows-x64-Manual.zip",
+          "name": "Wenjian-3.141-build343-Windows-x64-Setup.exe",
+          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.141-build343/Wenjian-3.141-build343-Windows-x64-Setup.exe",
           "state": "uploaded"
         },
         {
-          "name": "Wenjian-3.141-build343-Windows-x64-Setup.exe",
-          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.141-build343/Wenjian-3.141-build343-Windows-x64-Setup.exe",
+          "name": "Wenjian-3.141-build343-Windows-x64.zip",
+          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.141-build343/Wenjian-3.141-build343-Windows-x64.zip",
           "state": "uploaded"
         }
       ]

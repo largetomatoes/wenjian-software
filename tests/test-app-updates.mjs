@@ -109,3 +109,16 @@ assert.equal(selectUpdate([release342,manual341,guarded339],{platform:'darwin',a
 console.log('PASS: Android may update to 342; Windows uses manual installer; Mac stays at 341');
 
 const guardedRoot='https://github.com/largetomatoes/wenjian-software/releases';for(const [platform,arch,suffix] of [['darwin','arm64','macOS-arm64'],['win32','x64','Windows-x64']]){const r={tag_name:'v3.141-build344',html_url:guardedRoot+'/tag/v3.141-build344',body:'<!-- wenjian-build:344 -->',assets:[{name:'Wenjian-3.141-build344-'+suffix+'-Manual.zip',state:'uploaded',browser_download_url:guardedRoot+'/download/v3.141-build344/Wenjian-3.141-build344-'+suffix+'-Manual.zip'}]};assert.equal(selectUpdate([r],{version:'3.141',build:'342',platform,arch}).manual,true);const safe=selectUpdate([r],{version:'3.141',build:'343',platform,arch});assert.equal(safe.state,'available');assert.equal(safe.manual,undefined);assert(safe.download.endsWith('-Manual.zip'));}console.log('PASS: guarded desktop archives keep legacy upgrades manual, while 343+ can use the verified updater');
+
+// Regression for the exact public 343 package names: exercise pre-343 discovery.
+const standard343=JSON.parse(fs.readFileSync('updates/releases.json','utf8')).releases.find(r=>r.tag_name==='v3.141-build343');
+assert(standard343,'Public 343 release required for compatibility regression');
+const before343={exports:{}};
+vm.runInNewContext(ts.transpileModule(execFileSync('git',['show','81a4dae:lib/app-updates.ts'],{encoding:'utf8'}),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText,{module:before343,exports:before343.exports,URL});
+for(const [platform,arch,build] of [['darwin','arm64','341'],['win32','x64','342']]){
+ for(const client of [before343.exports,module.exports]){
+  const update=client.selectUpdate([standard343],{platform,arch,version:'3.141',build});
+  assert.equal(update.state,'available');assert.equal(update.build,343);assert(!update.download.includes('-Manual'));assert(!update.manual);
+ }
+}
+console.log('PASS: actual pre-343 discovery finds standard public Mac and Windows 343 archives');
