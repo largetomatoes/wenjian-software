@@ -523,7 +523,7 @@ export function LibraryReader({embedded=false,paneKey='library',interactive=true
   if(!source.sourceLocation){setReaderNotice('原文位置暂不可用，摘录和笔记仍完整保留。');return;}
   if(active?.format==='pdf'&&source.zoteroPosition&&source.sourceLocation.startsWith('pdf:')&&pdfRef.current){try{const pageNumber=Number(source.sourceLocation.slice(4)),pdfPage=await pdfRef.current.getPage(pageNumber),viewport=pdfPage.getViewport({scale:1,rotation:0}),rects=zoteroPdfRects({position:source.zoteroPosition} as ZoteroAnnotation,pageNumber,viewport).map(r=>({x:r.left/viewport.width,y:r.top/viewport.height,width:r.width/viewport.width,height:r.height/viewport.height}));if(rects.length)source={...source,rects,anchorY:rects[0].y+rects[0].height/2};}catch{setReaderNotice('原文的精确位置暂不可用，仍可核对这一页。');}}
   const synthetic:ReadingNote={id:'composition-source',sourceId:source.id,sources:[source],libraryBookId:source.libraryBookId,book:source.bookTitle,author:source.author||'',chapter:source.chapter||'',locator:source.locator,sourceLocation:source.sourceLocation,quote:source.quote||'',interpretation:'',questionIds:[],at:new Date().toISOString(),thoughts:[],anchorY:source.anchorY};
-  goToReadingNote(synthetic);setBookThoughtsOpen(true);
+  const overlay=thoughtSheetRef.current?.getAttribute('data-slot')==='sheet-content';if(overlay&&!await changeNotesOpen(false))return;goToReadingNote(synthetic);setBookThoughtsOpen(!overlay);
  }
  function returnToReading(){const previous=readingReturn;if(!previous)return;setZoomMode(previous.zoomMode);setCustomZoom(previous.customZoom);if(active?.format==='pdf'){if(pdfMode==='continuous')navigatePdf(previous.page,previous.offset);else{pdfOffsetRef.current={bookId:active.id,page:previous.page,offset:previous.offset};navigatePdf(previous.page);requestAnimationFrame(()=>pdfStageRef.current?.scrollTo({top:previous.scrollTop,left:previous.scrollLeft}));}}else if(previous.cfi)void displayEpub(renditionRef.current,previous.cfi);setReadingReturn(null);}
  function openBookThoughts(){setPaperMode(false);setCompositionRequest({id:crypto.randomUUID(),kind:'list'});setNoteComposing(!!bookThoughtText.trim());setNoteTab('own');setFocusedBookThoughtId(null);setContinuingId(null);setBookThoughtsOpen(true);}
@@ -561,7 +561,7 @@ export function LibraryReader({embedded=false,paneKey='library',interactive=true
  const retainRef=useRef(retainReaderState);retainRef.current=retainReaderState;
  useEffect(()=>()=>retainRef.current(),[]);
  const closingReaderRef=useRef(false);
- async function changeNotesOpen(next:boolean){if(next){setBookThoughtsOpen(true);return;}try{const jobs:Promise<unknown>[]=[];window.dispatchEvent(new CustomEvent('wenjian:flush-drafts',{detail:{jobs}}));await Promise.all(jobs);setBookThoughtsOpen(false);setPaperMode(false);}catch(cause){setReaderError((cause as Error).message||'笔记尚未保存，请稍后再收起。');}}
+ async function changeNotesOpen(next:boolean){if(next){setBookThoughtsOpen(true);return true;}try{const jobs:Promise<unknown>[]=[];window.dispatchEvent(new CustomEvent('wenjian:flush-drafts',{detail:{jobs}}));await Promise.all(jobs);setBookThoughtsOpen(false);setPaperMode(false);return true;}catch(cause){setReaderError((cause as Error).message||'笔记尚未保存，请稍后再收起。');return false;}}
  async function changeReaderOpen(next:boolean){
   if(next){onOpenChange(true);return;}
   if(closingReaderRef.current)return;
