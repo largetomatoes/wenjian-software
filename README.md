@@ -1,4 +1,4 @@
-> 当前版本：**问间 3.141（338）· 全平台统一更新**。Mac、Windows、Android 安装包及 iPhone／iPad Web App 入口：[完整发布页](https://github.com/largetomatoes/wenjian-software/releases/tag/v3.141-build338) · [改动说明](RELEASE_NOTES_3.141_338.md) · [构建说明](BUILDING.md)。
+> 当前版本：**问间 3.141（343）· 阅读笔记板与全平台统一更新**。Mac、Windows、Android 安装包及 iPhone／iPad Web App 入口：[完整发布页](https://github.com/largetomatoes/wenjian-software/releases/tag/v3.141-build343) · [改动说明](RELEASE_NOTES_3.141_343.md) · [构建说明](BUILDING.md)。
 
 # 问间 · 3.141
 
@@ -35,11 +35,13 @@ Copyright (C) 2026 西林sirens。原版本：[largetomatoes/wenjian-software](h
 
 ## 下载与安装
 
-3.14（330）提供 Mac、可选择安装磁盘的 Windows 安装版、便携 ZIP 和同证书签名的 Android 安装包；iPhone / iPad 使用 [Web App](https://reader.wenjian-app.workers.dev/read/)。变更及验证范围见 [本次发布说明](RELEASE_NOTES_3.14_330.md)。
+3.141（343）提供 Mac、可选择安装磁盘的 Windows 安装版、便携 ZIP 和同证书签名的 Android 安装包；iPhone / iPad 使用 [Web App](https://reader.wenjian-app.workers.dev/read/)。变更及验证范围见 [本次发布说明](RELEASE_NOTES_3.141_343.md)。
 
-从仓库的 **Releases** 下载对应系统的安装包。Mac（Apple 芯片）使用 `Wenjian-*-macOS-arm64.zip`，解压后把“问间”拖入“应用程序”；Windows x64 推荐使用 `Wenjian-*-Windows-x64-Setup.exe` 安装，也可使用 `Wenjian-*-Windows-x64.zip`，解压后运行 `Wenjian.exe`。Android 8.0+ 使用 `Wenjian-*-Android.apk`，移动版以阅读和笔记为主；PDF 需要 WebView 111+。当前构建没有 Apple 公证或 Windows 商业代码签名，系统首次启动时可能要求手动允许。
+从仓库的 **Releases** 下载对应系统的安装包。Mac（Apple 芯片）使用 `Wenjian-*-macOS-arm64-Manual.zip`，解压后把“问间”拖入“应用程序”；Windows x64 推荐使用 `Wenjian-*-Windows-x64-Setup.exe` 安装，也可使用 `Wenjian-*-Windows-x64-Manual.zip`，解压后运行 `Wenjian.exe`。Android 8.0+ 使用 `Wenjian-*-Android.apk`，移动版以阅读和笔记为主；PDF 需要 WebView 111+。当前构建没有 Apple 公证或 Windows 商业代码签名，系统首次启动时可能要求手动允许。
 
 应用本身不需要登录。未配置云备份时，笔记和电子书只保存在本机；已有的独立“问间同步”目录仍保存笔记，不会改动 Obsidian 的目录。问间会核对并复制旧目录中的原书到应用自己的本地书库，之后导入的新书也保存在此处。启用三端同步后，书籍原件会另行上传到所选的云端资料库；旧目录中的原书暂时保留，方便回退。若原数据目录暂时不可用，应用会停止启动，避免误建空白资料库。
+
+旧桌面版首次升级到 343，请保存并正常退出后手动覆盖安装，勿先卸载。此命名保护有风险的旧更新器；343 及以后保留修复后的签名更新能力。
 
 ## 首次使用与核心问题
 
@@ -52,6 +54,8 @@ Copyright (C) 2026 西林sirens。原版本：[largetomatoes/wenjian-software](h
 - 问题树、回答、交叉思考、卡片集和修改记录保留思考的来源与形成过程。
 - 全局搜索能按记得的大意寻找思考、回应、读书笔记、书籍思考和文稿，并打开对应记录。
 - 未正式保存的卡片、问题页、读书笔记和文稿草稿会保存在本机；文稿修改时会检查版本冲突。
+- 阅读上方的「笔记板」可持续写作。电脑拖入选文，手机从选文更多操作中引用；正文以自选关键词显示摘录，多处摘录可梳理联系并保留历史。宽屏平板支持并排阅读与写作。
+- 自动同步可在设置中选择手动、5、15、30、60 分钟，默认 15 分钟；本机自动保存不受影响。更新后提供带图功能演示，设置中可重看。
 - PDF 和 EPUB 阅读支持原文摘录、过程笔记、读书笔记和书籍思考。保存后的过程笔记可增减问题与交叉板块关联；附近批注自动分组，悬停预览、点击分别查看，从问题页可回到原文。
 - PDF 优先使用原生文字；需要 OCR 的页面自动在本机识别，缓存按识别版本和页面旋转区分。新摘录合并 PDF 排版产生的行内换行，按笔记窗口宽度自然折行，保留可识别的段落、英文词间空格和列表；保存前可校对，并选择“保留原文分行”。原始摘录和页码位置保留，已保存的笔记不会自动重写。
 - 书库左侧可新建文件夹分类、改名、移动书籍和按书名或作者搜索。选中文件夹后导入的新书自动归入其中；移除文件夹会把书放回“未分类”。分类仅整理书目，原文件、阅读位置和笔记仍保留。

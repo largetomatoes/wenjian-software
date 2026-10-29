@@ -191,3 +191,11 @@ Web App 执行 `npm run build:pwa`，独立静态资源及受限 WebDAV 中转�
 330 新增的纯逻辑及交互检查：`node tests/test-question-links-330.cjs`、`node tests/test-release330-ui.cjs`；后者需要可用的桌面 Electron 测试运行时及 Chrome，使用隔离虚构资料。已有移动 API、恢复与三设备同步检查继续适用。平台模拟和静态构建不等同于所有设备的实测。
 
 对历史已发布更新代码的兼容检查会读取 Git 历史提交／标签，需使用完整克隆；不含 `.git` 的源码 ZIP 仍可独立构建应用，但不能单独还原这些历史测试夹具。
+
+## 3.141（343）统一构建
+
+桌面清单、native-Info.plist、windows-release.json、Android versionCode、Web App 与便携插件宿主构建号均为 343。Mac 与 Windows 串行运行各自构建脚本；Android 可用 `.github/workflows/android-release-build.yml` 在已有 SDK 的 CI 生成对齐未签名包，再用 `scripts/sign-ci-android.mjs` 和本机原密钥签署。私钥不进入源码或 CI。iPhone/iPad 沿用 Web App。
+
+桌面 ZIP 发行文件使用 `-Manual.zip` 后缀，使有风险的旧版更新器不会自动替换程序。343 及以后能识别此归档并使用已修复的签名更新器；较旧版本请先正常退出，再手动覆盖安装。原应用身份、资料路径和 Android 签名保持不变。
+
+先运行 TypeScript、同步、完整备份和阅读笔记模型检查；`tests/test-reading-portable-ui.cjs` 使用 Chromium 与持久化 WebKit 隔离资料测试手机和平板，`tests/test-reading-keywords-ui.cjs` 与 `tests/test-reading-usability-ui.cjs` 验证最终 Mac 包，Windows 安装/覆盖/回滚交给 `windows-release-smoke.yml`。图示全部来自虚构资料。
