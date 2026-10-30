@@ -18,3 +18,15 @@
 - 移动存储、插件、更新签名、图形偏好及完整备份：本机适用的 41 项检查通过。两项明确要求 Windows 的安装测试留给 Windows 机器，不以 Mac 运行结果当作功能失败或验收。
 - Mac 私有基准的两篇原笔记均完整保留；未以私人内容作为发布测试数据。
 - 最终构建、CI 安装检查和发布校验将在附件 validation-344.json 中记录。
+
+## 正式发布回执（2026-10-30）
+
+- [问间 3.141（344）](https://github.com/largetomatoes/wenjian-software/releases/tag/v3.141-build344) 已正式发布，9 个附件的远端 SHA256 与本机一致；包括 Mac、Windows 安装版与便携版、Android、完整源码、更新签名与验证记录。
+- 发布源码与标签：959f594b8571d3dbef4d47531bea69e48c509474。应用安装包构建自 ab86c1c；两者仅相差 Windows 测试隔离和卸载清理等待，应用输入代码完全相同。附件 validation-344.json 保留此对应关系。
+- [Android 原生构建与单元检查](https://github.com/largetomatoes/wenjian-software/actions/runs/40987619488) 通过；本机使用原证书签名，v1/v2/v3 和证书指纹核验通过。
+- [Windows 最终检查](https://github.com/largetomatoes/wenjian-software/actions/runs/40989960160) 两组全部通过：实际安装/字体/覆盖/卸载/中断恢复，以及新机器上的 339 → 344 升级，笔记与草稿字节保持不变。测试改为等待 NSIS 子进程实际完成清理；不以启动器返回或固定等待 5 秒作为完成依据。
+- Mac 最终包 8 项笔记切换检查、三种手机/平板浏览器各 17 项阅读与主题查找检查通过；实际 Web App 343 → 344 升级后保存内容、未提交草稿与离线重开通过。未将浏览器模拟当作 Android/iOS 真机验收。
+- [官网](https://largetomatoes.github.io/wenjian-web/) 已更新，Pages 任务 [40990858300](https://github.com/largetomatoes/wenjian-web/actions/runs/40990858300) 通过；线上 HTML、图片与 344 更新清单均核对一致。
+- [原 Web App](https://reader.wenjian-app.workers.dev/read/) 已在线运行 344，最终 Service Worker 核对一致。Cloudflare 版本 918cfb0a-bcca-4c65-aa72-ebaad93115ee，原网址与浏览器资料位置继续沿用。
+- 正式发布后的元数据检查确认 Mac / Windows / Android 的 343 客户端均可发现标准名称的 344 更新包，344 自身显示当前版本；没有 Manual 后缀。
+- 本次没有退出或替换使用者正在使用的本机问间。测试仅使用独立虚构资料。
