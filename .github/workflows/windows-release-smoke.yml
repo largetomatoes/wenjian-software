@@ -54,6 +54,60 @@ jobs:
       - name: Test interrupted update recovery
         shell: pwsh
         run: ./scripts/test-windows-updater-recovery.ps1 -ArtifactDirectory package-test
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: windows-installation-report
+          path: package-test/*report*
+
+  legacy-upgrade:
+    runs-on: windows-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Download this release installation and update packages
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ inputs.release_tag }}
+          PACKAGE_DOWNLOADS: ${{ inputs.packages }}
+        run: |
+          if ($env:RELEASE_TAG -notmatch '^v3\.[0-9]+-build[0-9]+$') { throw 'Invalid release tag' }
+          New-Item -ItemType Directory -Force package-test | Out-Null
+          if ($env:PACKAGE_DOWNLOADS) {
+            $items=@($env:PACKAGE_DOWNLOADS | ConvertFrom-Json)
+            if ($items.Count -ne 2) { throw 'Exactly two software packages are required' }
+            foreach ($item in $items) {
+              Write-Output "::add-mask::$($item.url)"
+              $uri=[uri]$item.url
+              if ($uri.Scheme -ne 'https' -or $uri.Host -ne 'release-assets.githubusercontent.com' -or $uri.UserInfo -or $uri.Port -ne 443) { throw 'Invalid package host' }
+              if ($item.name -notmatch '^Wenjian-3[.][0-9]+-build[0-9]+-Windows-x64(?:-Setup[.]exe|[.]zip)$' -or $item.sha256 -notmatch '^[a-f0-9]{64}$') { throw 'Invalid software package identity' }
+              $destination=Join-Path package-test $item.name
+              Invoke-WebRequest $uri -OutFile $destination
+              if ((Get-FileHash $destination -Algorithm SHA256).Hash.ToLowerInvariant() -ne $item.sha256) { throw 'Package checksum mismatch' }
+            }
+          } else {
+            gh release download $env:RELEASE_TAG --repo $env:GITHUB_REPOSITORY --pattern '*Windows-x64-Setup.exe' --pattern '*Windows-x64*.zip' --dir package-test
+            if ($LASTEXITCODE -ne 0) { throw 'Release download failed' }
+          }
+
+      - name: Seed only this clean runner's legacy-upgrade notebook and draft
+        shell: pwsh
+        run: |
+          $key='HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\Wenjian'
+          if (Test-Path $key) { throw 'Legacy upgrade requires a fresh runner without earlier installer registration' }
+          $data=Join-Path $env:APPDATA '问间'
+          if (Test-Path $data) { throw 'Legacy upgrade requires a fresh data directory' }
+          New-Item -ItemType Directory -Force $data | Out-Null
+          $seed=Get-Content 'work/mac-app/seed.json' -Raw -Encoding UTF8 | ConvertFrom-Json
+          $seed.data.setupCompleted=$true
+          $seed.data.notes[0].title='虚构旧版升级测试'
+          $seed.data.cards=@(@{id='legacy-upgrade-card';text='旧版记录必须保留';at='2026-10-16T00:00:00Z';origin='自己的思考';source='';thoughts=@()})
+          [IO.File]::WriteAllText((Join-Path $data 'notebook.json'),($seed|ConvertTo-Json -Depth 100),[Text.UTF8Encoding]::new($false))
+          [IO.File]::WriteAllText((Join-Path $data 'drafts.json'),'{"legacy-upgrade":{"text":"未提交的虚构草稿"}}',[Text.UTF8Encoding]::new($false))
       - name: Download existing Windows 339 installer
         shell: pwsh
         env:
@@ -65,8 +119,9 @@ jobs:
       - name: Verify old installation upgrades without losing data
         shell: pwsh
         run: ./scripts/test-windows-upgrade-339.ps1 -OldDirectory package-old -NewDirectory package-test
+
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: windows-installation-report
+          name: windows-legacy-upgrade-report
           path: package-test/*report*
