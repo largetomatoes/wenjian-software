@@ -1,4 +1,4 @@
-> 当前版本：**问间 3.141（343）· 阅读笔记板与全平台统一更新**。Mac、Windows、Android 安装包及 iPhone／iPad Web App 入口：[完整发布页](https://github.com/largetomatoes/wenjian-software/releases/tag/v3.141-build343) · [改动说明](RELEASE_NOTES_3.141_343.md) · [构建说明](BUILDING.md)。
+> 当前版本：**问间 3.141（344）· 阅读笔记板与全平台统一更新**。Mac、Windows、Android 安装包及 iPhone／iPad Web App 入口：[完整发布页](https://github.com/largetomatoes/wenjian-software/releases/tag/v3.141-build343) · [改动说明](RELEASE_NOTES_3.141_343.md) · [构建说明](BUILDING.md)。
 
 # 问间 · 3.141
 

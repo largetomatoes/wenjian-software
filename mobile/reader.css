@@ -175,3 +175,14 @@ html[data-wenjian-mobile=true] .update-highlights img{max-height:42dvh}
  html[data-wenjian-mobile=true] .mobile-reading-header>.mobile-board-entry span{display:inline}
 }
 html[data-wenjian-mobile=true] .reader-notes-panel[hidden]{display:none!important}
+
+/* Book/title/topic lookup stays secondary to reading dialogue on phones and tablets. */
+html[data-wenjian-mobile=true] .book-note-switcher>summary{min-height:40px}
+html[data-wenjian-mobile=true] .book-note-switcher-popover{width:min(360px,calc(100vw - 64px));min-width:220px}
+html[data-wenjian-mobile=true] .note-switcher-list{max-height:50dvh;touch-action:pan-y;-webkit-overflow-scrolling:touch}
+html[data-wenjian-mobile=true] .note-switcher-list>button{min-height:60px}
+html[data-wenjian-mobile=true] .note-lookup-search input,html[data-wenjian-mobile=true] .note-lookup-facets select{font-size:16px;min-height:44px}
+html[data-wenjian-mobile=true] .note-lookup-facets{gap:8px}
+html[data-wenjian-mobile=true] .note-lookup-menu{min-width:40px;min-height:44px}
+html[data-wenjian-mobile=true] .note-topic-filter>div{touch-action:pan-y}
+.mobile-note-lookup{min-width:0;padding-bottom:18px}

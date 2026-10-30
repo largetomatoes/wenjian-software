@@ -7,7 +7,7 @@ data.bookThoughts=[note('across-chapters','跨章节的一个判断'),note('shar
 for(let i=1;i<=35;i++)data.bookThoughts.push(note('directory-'+i,'目录示例 '+String(i).padStart(2,'0'),[]));
 data.bookThoughts[0].tags=['诚实'];data.bookThoughts[0].modifiedAt='2026-10-29T11:00:00Z';data.bookThoughts[1].tags=['语言'];
 const epubOnly=note('epub-only','另一本书的对话',[sources[2]]);epubOnly.libraryBookId='reading-epub';epubOnly.bookTitle='阅读联动 EPUB 样书';epubOnly.composition.homeBookId='reading-epub';epubOnly.text=composition.flattenComposition(epubOnly.composition);epubOnly.tags=['诚实','语言'];epubOnly.modifiedAt='2026-10-29T11:00:00Z';data.bookThoughts.push(epubOnly);
-fs.writeFileSync(path.join(dir,'notebook.json'),JSON.stringify(seed));const drafts=JSON.parse(fs.readFileSync(path.join(dir,'drafts.json')));drafts['update-guide:reading-board-usability-2026-10-29']={seenAt:now};fs.writeFileSync(path.join(dir,'drafts.json'),JSON.stringify(drafts));
+fs.writeFileSync(path.join(dir,'notebook.json'),JSON.stringify(seed));const drafts=JSON.parse(fs.readFileSync(path.join(dir,'drafts.json')));drafts['update-guide:reading-dialogue-344-2026-10-30']={seenAt:now};fs.writeFileSync(path.join(dir,'drafts.json'),JSON.stringify(drafts));
 (async()=>{let app;const checks=[],errors=[];try{
  app=await _electron.launch({executablePath:path.join(bundle,'Contents/MacOS/问间'),env:{...process.env,WENJIAN_TEST_DATA_DIR:dir,WENJIAN_TEST_HEADLESS:'1'},timeout:30000});const page=await app.firstWindow();page.on('pageerror',e=>errors.push(e.message));
  const saved=()=>page.evaluate(()=>fetch('/api/notebook',{cache:'no-store'}).then(r=>r.json()));
