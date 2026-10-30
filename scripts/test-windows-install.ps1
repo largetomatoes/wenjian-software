@@ -102,7 +102,13 @@ try{
  Check ($null -ne $running) 'Updated program is running'
  CloseApp $running
  $uninstall=Start-Process -FilePath (Join-Path $installed 'Uninstall.exe') -ArgumentList '/S' -Wait -PassThru
- Start-Sleep -Seconds 5
+ # NSIS may copy its uninstaller to TEMP and detach a cleanup child.
+ # Observe actual completion instead of treating the launcher's exit as completion.
+ $cleanupDeadline=(Get-Date).AddSeconds(90)
+ while(((Test-Path (Join-Path $installed 'Wenjian.exe')) -or (Test-Path 'HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\Wenjian')) -and (Get-Date) -lt $cleanupDeadline){Start-Sleep -Milliseconds 500}
+ if(Test-Path (Join-Path $installed 'Wenjian.exe')){
+  Get-CimInstance Win32_Process|Where-Object {$_.Name -eq 'Wenjian.exe' -or $_.Name -like '*Au_.exe'}|Select-Object ProcessId,ParentProcessId,Name,ExecutablePath|ConvertTo-Json|Set-Content (Join-Path $artifacts 'windows-uninstall-process-report.json')
+ }
  Check ($uninstall.ExitCode -eq 0) 'Uninstaller exits successfully'
  Check (-not(Test-Path (Join-Path $installed 'Wenjian.exe'))) 'Uninstall removes the program from the selected directory'
  Check (-not(Test-Path 'HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\Wenjian')) 'Uninstall clears its program registration'
