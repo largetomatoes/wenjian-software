@@ -103,6 +103,9 @@ try{
  CloseApp $running
  $uninstall=Start-Process -FilePath (Join-Path $installed 'Uninstall.exe') -ArgumentList '/S' -Wait -PassThru
  Start-Sleep -Seconds 5
+ Check ($uninstall.ExitCode -eq 0) 'Uninstaller exits successfully'
+ Check (-not(Test-Path (Join-Path $installed 'Wenjian.exe'))) 'Uninstall removes the program from the selected directory'
+ Check (-not(Test-Path 'HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\Wenjian')) 'Uninstall clears its program registration'
  Check (Test-Path (Join-Path $data 'notebook.json')) 'Uninstall preserves notebook data'
  $remaining=Get-Content (Join-Path $data 'notebook.json') -Raw -Encoding UTF8 | ConvertFrom-Json
  Check ($remaining.data.cards.id -contains 'installation-fixture') 'Uninstall preserves original fixture content'
