@@ -38,3 +38,7 @@
 - Mac 实际 344→345 安装、启动与恢复副本验证通过；53 项核心回归、9 项输入/OCR/高亮流程、5 项摘录拖入及原同步协议互通通过。
 - Android 原生构建与单元检查通过，沿用原证书；手机 Chromium、iPhone/iPad WebKit 各17项阅读交互检查通过。Web App 344→345 的同域更新保留卡片、草稿与离线重开。浏览器检查不等于实体手机性能测试。
 - 不改变真实资料位置；本轮没有退出或覆盖使用者正在使用的本机问间。
+
+### 公开入口复验
+
+[官网 Pages](https://github.com/largetomatoes/wenjian-web/actions/runs/41394548444) 已部署 345 的功能、下载和升级说明。原 [iPhone/iPad Web App](https://reader.wenjian-app.workers.dev/read/) 已部署 345（Cloudflare 0320f9df-8feb-46c3-87a6-c2af75d7250a），保持同域浏览器资料库。线上首次打开、虚构卡片保存、Service Worker 接管与离线重开通过；验收脚本处理首次功能演示弹窗，不改变产品代码。两条公开更新索引都提供 345 和9个附件；实际历史检测器的24组平台组合核对通过，匿名清单下载与原RSA签名验证通过。319 不承诺自动更新，保留一次覆盖安装说明。
