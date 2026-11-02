@@ -30,9 +30,15 @@ function Launch($exe){
  throw 'Installed application server did not start'
 }
 function CloseApp($app){
- $app.Refresh()
- $null=$app.CloseMainWindow()
- if(-not $app.WaitForExit(30000)){
+ # The HTTP service may be ready while Chromium still prepares its window.
+ # Refresh the cached process handle and send WM_CLOSE only once it exists.
+ $sent=$false
+ for($i=0;$i -lt 120;$i++){
+  $app.Refresh();if($app.HasExited){break}
+  if($app.MainWindowHandle -ne [IntPtr]::Zero){$sent=$app.CloseMainWindow();if($sent){break}}
+  Start-Sleep -Milliseconds 250
+ }
+ if(-not $app.HasExited -and (-not $sent -or -not $app.WaitForExit(30000))){
   Get-CimInstance Win32_Process | Where-Object {$_.Name -eq 'Wenjian.exe'} | Select-Object ProcessId,ParentProcessId,ExecutablePath,CommandLine | ConvertTo-Json | Set-Content (Join-Path $artifacts 'windows-exit-process-report.json') -Encoding UTF8
   throw 'Application did not finish saving and exit normally'
  }
