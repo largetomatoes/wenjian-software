@@ -1,7 +1,62 @@
 {
   "schema": 1,
-  "generatedAt": "2026-10-30T02:14:57Z",
+  "generatedAt": "2026-11-02T05:28:34Z",
   "releases": [
+    {
+      "tag_name": "v3.141",
+      "html_url": "https://github.com/largetomatoes/wenjian-software/releases/tag/v3.141",
+      "body": "# 问间 3.141（345）\n\n- 优化输入、高亮和 OCR 时的响应；Mac 与 Windows 使用后台记录保存，减少整库读写。\n- 普通高亮与带过程笔记的高亮可分别选择颜色，并记住各自的默认颜色。\n- 修复 PDF、OCR 和 EPUB 摘录拖入笔记板空白区域失败，保留原文定位与修改记录。\n- Android、iPhone／iPad Web App 同步阅读编辑器改动，保留手机和平板布局。\n- 改进跨版本迁移、更新前资料保护，以及 Mac 临时只读位置的更新提示。\n\n支持跳跃更新，无需逐版安装。320 起提供兼容升级入口；319 及更早版本受旧仓库地址限制，若检查不到更新，请下载本平台安装包，正常退出后覆盖原位置。请勿先卸载或删除资料；旧更新器无法完成安装时也采用覆盖安装。\n\nMac：解压后把「问间.app」拖到“应用程序”并替换，再从该位置打开。当前未作 Apple 公证；首次打开如被拦截，请到“系统设置 → 隐私与安全性”确认打开。Windows 推荐安装版，保留选择磁盘与安装目录。Android 沿用原签名，覆盖安装即可。\n\niPhone／iPad 继续使用[原 Web App](https://reader.wenjian-app.workers.dev/read/)，在 Safari 点击分享 → 添加到主屏幕 → 添加；部分网络需要代理。先保存内容，再确认网页更新。\n\n<!-- wenjian-build:345 -->\n<!-- wenjian-display-build:345 -->\n<!-- wenjian-platforms:darwin,win32,android -->\n",
+      "published_at": "2026-11-02T05:28:34Z",
+      "draft": false,
+      "prerelease": false,
+      "assets": [
+        {
+          "name": "apk-verification.txt",
+          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.141/apk-verification.txt",
+          "state": "uploaded"
+        },
+        {
+          "name": "SHA256SUMS.txt",
+          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.141/SHA256SUMS.txt",
+          "state": "uploaded"
+        },
+        {
+          "name": "update-manifest-345.json",
+          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.141/update-manifest-345.json",
+          "state": "uploaded"
+        },
+        {
+          "name": "validation-345.json",
+          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.141/validation-345.json",
+          "state": "uploaded"
+        },
+        {
+          "name": "Wenjian-3.141-build345-Android.apk",
+          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.141/Wenjian-3.141-build345-Android.apk",
+          "state": "uploaded"
+        },
+        {
+          "name": "Wenjian-3.141-build345-macOS-arm64.zip",
+          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.141/Wenjian-3.141-build345-macOS-arm64.zip",
+          "state": "uploaded"
+        },
+        {
+          "name": "Wenjian-3.141-build345-Source.zip",
+          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.141/Wenjian-3.141-build345-Source.zip",
+          "state": "uploaded"
+        },
+        {
+          "name": "Wenjian-3.141-build345-Windows-x64-Setup.exe",
+          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.141/Wenjian-3.141-build345-Windows-x64-Setup.exe",
+          "state": "uploaded"
+        },
+        {
+          "name": "Wenjian-3.141-build345-Windows-x64.zip",
+          "browser_download_url": "https://github.com/largetomatoes/wenjian-software/releases/download/v3.141/Wenjian-3.141-build345-Windows-x64.zip",
+          "state": "uploaded"
+        }
+      ]
+    },
     {
       "tag_name": "v3.141-build344",
       "html_url": "https://github.com/largetomatoes/wenjian-software/releases/tag/v3.141-build344",
