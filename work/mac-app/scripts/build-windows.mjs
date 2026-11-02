@@ -4,6 +4,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { packager } from '@electron/packager';
 import * as asar from '@electron/asar';
+import {updateWindowsAsarIntegrity,verifyWindowsAsarIntegrity} from './windows-asar-integrity.mjs';
 
 const macAppRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const projectRoot = path.resolve(macAppRoot, '../..');
@@ -150,6 +151,7 @@ if (prepareOnly) {
     await asar.createPackage(stage,path.join(resources,'app.asar'));
     for(const name of ['static','plugin-catalog.json','plugin-guide.md','plugin-devkit'])await cp(path.join(resourceStage,name),path.join(resources,name),{recursive:true});
     await cp(path.join(macAppRoot,'seed.json'),path.join(resources,'seed.json'));
+    await updateWindowsAsarIntegrity(appRoot);
   }else{
   const paths = await packager({
     dir: stage,
@@ -173,6 +175,7 @@ if (prepareOnly) {
   for (const name of ['Wenjian.exe', 'resources/app.asar', 'resources/static/index.html', 'resources/seed.json']) {
     await requireFile(path.join(appRoot, name));
   }
+  await verifyWindowsAsarIntegrity(appRoot);
   const builtManifest = JSON.parse(await readFile(path.join(stage, 'package.json'), 'utf8'));
   const archive = path.join(releaseRoot, `Wenjian-${version}-build${builtManifest.buildVersion}-Windows-x64.zip`);
   execFileSync(process.env.PYTHON||'python3', [path.join(macAppRoot, 'scripts/archive-windows.py'), appRoot, archive], { stdio: 'inherit',env:{...process.env,PYTHONUTF8:'1',PYTHONIOENCODING:'utf-8'} });
