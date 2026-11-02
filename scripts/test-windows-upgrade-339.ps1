@@ -37,7 +37,7 @@ Record 'old-installed'
 if($OldBuild -ge 345){
  $env:WENJIAN_TEST_DISABLE_EXTERNAL='1';$env:WENJIAN_TEST_DATA_DIR=$data
  [IO.File]::WriteAllText((Join-Path $data 'tray-config.json'),'{"choiceVersion":2,"closeToTray":false}',[Text.UTF8Encoding]::new($false))
- $legacy=Start-Process -FilePath (Join-Path $target 'Wenjian.exe') -PassThru -WindowStyle Hidden
+ $legacy=Start-Process -FilePath (Join-Path $target 'Wenjian.exe') -PassThru
  try{
   $ready=$false
   for($i=0;$i -lt 120;$i++){
@@ -48,7 +48,16 @@ if($OldBuild -ge 345){
   }
   if(-not $ready -or -not(Test-Path ($file+'.sqlite3'))){throw 'Old release did not create its real record database'}
  }finally{
-  if(-not $legacy.HasExited){$null=$legacy.CloseMainWindow();if(-not $legacy.WaitForExit(15000)){Stop-Process -Id $legacy.Id -Force;throw 'Old fixture did not quit normally'}}
+  if(-not $legacy.HasExited){
+   # The local HTTP listener starts before Electron creates its main window.
+   # Process caches MainWindowHandle, so refresh and wait for that actual window.
+   $sent=$false
+   for($i=0;$i -lt 120;$i++){$legacy.Refresh();if($legacy.HasExited){break};if($legacy.MainWindowHandle -ne [IntPtr]::Zero){$sent=$legacy.CloseMainWindow();if($sent){break}};Start-Sleep -Milliseconds 250}
+   if(-not $legacy.HasExited -and (-not $sent -or -not $legacy.WaitForExit(30000))){
+    $report.legacyCloseRequested=$sent;Record 'old-close-failed'
+    Stop-Process -Id $legacy.Id -Force;throw 'Old fixture did not quit normally'
+   }
+  }
  }
  $before=(Get-FileHash -LiteralPath $file -Algorithm SHA256).Hash
  $draftBefore=(Get-FileHash -LiteralPath $draft -Algorithm SHA256).Hash
