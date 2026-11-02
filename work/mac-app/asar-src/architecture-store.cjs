@@ -30,7 +30,8 @@ function readLegacy(file,kind='notebook'){
  return value;
 }
 function atomic(file,value){const temporary=file+'.architecture-new';const fd=fs.openSync(temporary,'w',0o600);try{fs.writeFileSync(fd,JSON.stringify(value)+'\n');fs.fsyncSync(fd);}finally{fs.closeSync(fd);}fs.renameSync(temporary,file);}
-function createStore({file,draftsFile,database=file+'.sqlite3',validateTransition=()=>'',normalizeNotebook=null,fault=()=>{}}){
+function legacyFingerprint(file,draftsFile){return [file,draftsFile].filter(Boolean).flatMap(source=>['','.wj-journal','.wj-checkpoint'].map(suffix=>{try{const s=fs.statSync(source+suffix,{bigint:true});return [String(s.ino),String(s.size),String(s.mtimeNs),String(s.ctimeNs)];}catch(error){if(error.code==='ENOENT')return null;throw error;}}));}
+function createStore({file,draftsFile,database=file+'.sqlite3',validateTransition=()=>'',normalizeNotebook=null,fault=()=>{},legacyGuardFile=file,legacyGuardDrafts=draftsFile}){
  const db=new DatabaseSync(database);db.exec('PRAGMA foreign_keys=ON; PRAGMA busy_timeout=5000; PRAGMA journal_mode=WAL; PRAGMA synchronous=FULL;');
  db.exec(`CREATE TABLE IF NOT EXISTS meta(key TEXT PRIMARY KEY,json TEXT NOT NULL);
  CREATE TABLE IF NOT EXISTS blobs(hash TEXT PRIMARY KEY,json TEXT NOT NULL);
@@ -78,7 +79,12 @@ function createStore({file,draftsFile,database=file+'.sqlite3',validateTransitio
    meta('normalizedModel',0);meta('migration',{schema:1,at:new Date().toISOString(),sourceHash:hash(envelope),draftHash:hash(drafts)});
   });
  }
- try{if(!getMeta('migration'))importSnapshot(readLegacy(file),draftsFile?readLegacy(draftsFile,'draft'):{});}catch(error){db.close();throw error;}
+ const legacyState=()=>legacyFingerprint(legacyGuardFile,legacyGuardDrafts);
+ try{if(!getMeta('migration'))importSnapshot(readLegacy(file),draftsFile?readLegacy(draftsFile,'draft'):{});
+  const saved=getMeta('legacyFileState'),current=legacyState();
+  if(saved&&stable(saved)!==stable(current))throw Error('检测到旧版软件或外部工具改动了旧资料文件。为避免覆盖任何一份记录，问间已停止载入；请保留原文件与 SQLite 数据库，通过完整备份核对恢复。');
+  if(!saved)meta('legacyFileState',current);
+ }catch(error){db.close();throw error;}
  function normalizeImported(){if(!normalizeNotebook||getMeta('normalizedModel')===1)return;const before=snapshot(),data=normalizeNotebook(before.data);if(stable(data)!==stable(before.data))operation('write',{value:{...before,version:before.version+1,data}});meta('normalizedModel',1);}
  normalizeImported();
  function patch(input){
@@ -138,9 +144,9 @@ function createStore({file,draftsFile,database=file+'.sqlite3',validateTransitio
   }
   if(type==='search'){const term=String(input.query||'').trim();if(!term)return {results:[]};const args=[],clauses=[];if([...term].length>=3){clauses.push('search_index MATCH ?');args.push('"'+term.replace(/"/g,'""')+'"');}else{clauses.push("(title LIKE ? ESCAPE '\\' OR body LIKE ? ESCAPE '\\')");const like='%'+term.replace(/[\\%_]/g,'\\$&')+'%';args.push(like,like);}if(input.bookId){clauses.push('book=?');args.push(input.bookId);}if(input.chapter){clauses.push('chapter=?');args.push(input.chapter);}return {results:q('SELECT collection,id,title,substr(body,1,240) preview,book,chapter FROM search_index WHERE '+clauses.join(' AND ')+' LIMIT 100').all(...args)};}
   if(type==='metrics')return {schema:1,migration:getMeta('migration'),version:getMeta('version',0),records:q('SELECT collection,count(*) count FROM records GROUP BY collection').all(),historyBlobs:q('SELECT count(*) count FROM blobs').get().count,recoveryVersions:q('SELECT count(*) count FROM versions').get().count,pendingChanges:q('SELECT count(*) count FROM outbox').get().count,drafts:q('SELECT count(*) count FROM drafts').get().count,databaseBytes:[database,database+'-wal',database+'-shm'].reduce((n,file)=>n+(fs.existsSync(file)?fs.statSync(file).size:0),0),integrity:q('PRAGMA quick_check').get().quick_check};
-  if(type==='export'){const value=snapshot(),drafts=operation('draft-read');atomic(file,value);if(draftsFile)atomic(draftsFile,drafts);db.exec('PRAGMA wal_checkpoint(PASSIVE)');return {version:value.version,notebookHash:hash(value),draftHash:hash(drafts)};}
-  if(type==='restore-envelope'){importSnapshot(input.envelope,input.drafts||{},true);normalizeImported();return {ok:true};}
-  if(type==='restore'){importSnapshot(readLegacy(file),draftsFile?readLegacy(draftsFile,'draft'):{},true);normalizeImported();return {ok:true};}
+  if(type==='export'){const value=snapshot(),drafts=operation('draft-read');atomic(file,value);if(draftsFile)atomic(draftsFile,drafts);meta('legacyFileState',legacyState());db.exec('PRAGMA wal_checkpoint(PASSIVE)');return {version:value.version,notebookHash:hash(value),draftHash:hash(drafts)};}
+  if(type==='restore-envelope'){importSnapshot(input.envelope,input.drafts||{},true);normalizeImported();meta('legacyFileState',legacyState());return {ok:true};}
+  if(type==='restore'){importSnapshot(readLegacy(file),draftsFile?readLegacy(draftsFile,'draft'):{},true);normalizeImported();meta('legacyFileState',legacyState());return {ok:true};}
   if(type==='checkpoint'){db.exec('PRAGMA wal_checkpoint(PASSIVE)');return {ok:true};}
   throw Error('不支持的架构存储操作：'+type);
  }

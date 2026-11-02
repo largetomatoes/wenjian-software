@@ -148,7 +148,7 @@ if (prepareOnly) {
   execFileSync('/usr/libexec/PlistBuddy',['-c',`Set :CFBundleShortVersionString ${version}`,path.join(application,'Contents/Info.plist')]);
   execFileSync('codesign', ['--force', '--deep', '--sign', '-', application], { stdio: 'inherit' });
   execFileSync('codesign', ['--verify', '--deep', '--strict', application], { stdio: 'inherit' });
-  const archive = path.join(releaseRoot, `Wenjian-${version}-macOS-arm64.zip`);
+  const archive = path.join(releaseRoot, `Wenjian-${version}-build${buildVersion}-macOS-arm64.zip`);
   await rm(archive, { force: true });
   execFileSync('ditto', ['-c', '-k', '--sequesterRsrc', '--keepParent', application, archive], { stdio: 'inherit' });
   await requireFile(archive);

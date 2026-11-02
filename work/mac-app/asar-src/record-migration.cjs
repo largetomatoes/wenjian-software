@@ -19,7 +19,7 @@ function prepareRecordDatabase({file,draftsFile,normalizeNotebook,validateTransi
  const stage=path.join(folder,'verified.sqlite3');let store;
  try{
   fault('before-import');
-  store=createStore({file:savedFile,draftsFile:savedDrafts,database:stage,normalizeNotebook,validateTransition});
+  store=createStore({file:savedFile,draftsFile:savedDrafts,database:stage,normalizeNotebook,validateTransition,legacyGuardFile:file,legacyGuardDrafts:draftsFile});
   const actual=store.snapshot(),expected={...before,data:normalizeNotebook?normalizeNotebook(before.data):before.data};
   // Normalization may advance the local version once; all envelope fields,
   // sync history, original words and keyed drafts must still match exactly.
