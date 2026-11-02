@@ -16,7 +16,7 @@ $report=[ordered]@{platform='Windows';installer=$setup[0].Name;checks=@()}
 function Check($condition,$label){if(-not $condition){throw $label};$script:report.checks+=@($label);Write-Output ('PASS: '+$label);$script:report|ConvertTo-Json -Depth 20|Set-Content (Join-Path $artifacts 'windows-install-report.json') -Encoding UTF8}
 function InstallSetup { Write-Host 'Starting silent setup';$process=Start-Process -FilePath $setup[0].FullName -ArgumentList @('/S',('/D='+$installed)) -PassThru;if(-not $process.WaitForExit(180000)){Get-Process|Select-Object Id,ProcessName,MainWindowTitle|ConvertTo-Json|Set-Content (Join-Path $artifacts 'windows-process-report.json');Stop-Process -Id $process.Id -Force;throw 'Setup timed out after 180 seconds'};Write-Host ('Setup exit code: '+$process.ExitCode);if($process.ExitCode -ne 0){Get-CimInstance Win32_Process | Where-Object {$_.Name -eq 'Wenjian.exe'} | Select-Object ProcessId,ParentProcessId,ExecutablePath,CommandLine | ConvertTo-Json | Set-Content (Join-Path $artifacts 'windows-install-failure-processes.json')};return $process }
 function Launch($exe){
- $app=Start-Process -FilePath $exe -ArgumentList '--remote-debugging-port=0' -PassThru
+ $app=Start-Process -FilePath $exe -ArgumentList '--remote-debugging-port=0' -PassThru -RedirectStandardOutput (Join-Path $artifacts 'startup-output-report.log') -RedirectStandardError (Join-Path $artifacts 'startup-error-report.log')
  Write-Host ('Launching application PID '+$app.Id)
  for($i=0;$i -lt 120;$i++){
   Start-Sleep -Milliseconds 500
@@ -25,6 +25,8 @@ function Launch($exe){
  }
  Get-CimInstance Win32_Process | Where-Object {$_.Name -eq 'Wenjian.exe'} | Select-Object ProcessId,ParentProcessId,ExecutablePath,CommandLine | ConvertTo-Json | Set-Content (Join-Path $artifacts 'windows-startup-process-report.json') -Encoding UTF8
  Get-NetTCPConnection -State Listen | Select-Object LocalPort,OwningProcess | ConvertTo-Json | Set-Content (Join-Path $artifacts 'windows-startup-network-report.json') -Encoding UTF8
+ Get-Content (Join-Path $artifacts 'startup-error-report.log') -ErrorAction SilentlyContinue | Write-Output
+ Get-Content (Join-Path $artifacts 'startup-output-report.log') -ErrorAction SilentlyContinue | Write-Output
  throw 'Installed application server did not start'
 }
 function CloseApp($app){

@@ -28,6 +28,7 @@ if($old.Count -eq 1){Install $old[0].FullName}else{
  New-Item -ItemType Directory -Force $target | Out-Null
  Copy-Item -Path (Join-Path $oldExe.Directory.FullName '*') -Destination $target -Recurse
 }
+$oldAsarHash=(Get-FileHash (Join-Path $target 'resources/app.asar') -Algorithm SHA256).Hash
 $oldExeHash=(Get-FileHash (Join-Path $target 'Wenjian.exe') -Algorithm SHA256).Hash
 $report.checks+=@('Original version installs at the selected path on a clean runner')
 Record 'old-installed'
@@ -36,7 +37,7 @@ Record 'new-installed'
 if(-not(Test-Path (Join-Path $target 'Wenjian.exe')) -or -not(Test-Path (Join-Path $target 'resources/app.asar'))){throw 'Updated installation missing files'}
 if((Get-FileHash -LiteralPath $file -Algorithm SHA256).Hash -ne $before){throw 'Notebook changed during installer upgrade'}
 $previous=@(Get-ChildItem $env:RUNNER_TEMP -Directory | Where-Object {$_.FullName.StartsWith($target+'.previous-')})
-$preserved=@($previous|Where-Object {(Test-Path (Join-Path $_.FullName 'Wenjian.exe')) -and (Test-Path (Join-Path $_.FullName 'resources/app.asar')) -and ((Get-FileHash (Join-Path $_.FullName 'Wenjian.exe') -Algorithm SHA256).Hash -eq $oldExeHash)})
+$preserved=@($previous|Where-Object {(Test-Path (Join-Path $_.FullName 'Wenjian.exe')) -and (Test-Path (Join-Path $_.FullName 'resources/app.asar')) -and ((Get-FileHash (Join-Path $_.FullName 'Wenjian.exe') -Algorithm SHA256).Hash -eq $oldExeHash) -and ((Get-FileHash (Join-Path $_.FullName 'resources/app.asar') -Algorithm SHA256).Hash -eq $oldAsarHash)})
 if($preserved.Count -lt 1){throw 'The exact previous program was not preserved'}
 if($draftBefore -and (Get-FileHash -LiteralPath $draft -Algorithm SHA256).Hash -ne $draftBefore){throw 'Draft changed during installer upgrade'}
 $report.checks+=@('New installer replaces the older version at the same selected path','Notebook remains byte-for-byte unchanged','Unsubmitted draft remains byte-for-byte unchanged','Exact previous executable and app archive remain available')
@@ -44,7 +45,7 @@ $report.checks+=@('New installer replaces the older version at the same selected
 $env:WENJIAN_TEST_DISABLE_EXTERNAL='1'
 $env:WENJIAN_TEST_DATA_DIR=$data
 [IO.File]::WriteAllText((Join-Path $data 'tray-config.json'),'{"choiceVersion":2,"closeToTray":false}',[Text.UTF8Encoding]::new($false))
-$app=Start-Process -FilePath (Join-Path $target 'Wenjian.exe') -PassThru -WindowStyle Hidden
+$app=Start-Process -FilePath (Join-Path $target 'Wenjian.exe') -PassThru -WindowStyle Hidden -RedirectStandardOutput (Join-Path $NewDirectory 'upgrade-output-report.log') -RedirectStandardError (Join-Path $NewDirectory 'upgrade-error-report.log')
 try{
  $origin=$null
  for($attempt=0;$attempt -lt 120;$attempt++){
@@ -53,7 +54,7 @@ try{
   }
   if($origin){break};if($app.HasExited){throw 'New app exited before migration completed'};Start-Sleep -Milliseconds 500
  }
- if(-not $origin){throw 'Updated app did not start its notebook service'}
+ if(-not $origin){Get-Content (Join-Path $NewDirectory 'upgrade-error-report.log') -ErrorAction SilentlyContinue | Write-Output;throw 'Updated app did not start its notebook service'}
  $snapshot=Invoke-RestMethod ($origin+'/api/notebook')
  if($snapshot.architecture -ne 1 -or -not($snapshot.data.cards.id -contains 'legacy-upgrade-card')){throw 'Older notebook was not preserved in the record database'}
  $draftValue=Invoke-RestMethod ($origin+'/api/drafts?key=legacy-upgrade')

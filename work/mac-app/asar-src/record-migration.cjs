@@ -29,7 +29,7 @@ function prepareRecordDatabase({file,draftsFile,normalizeNotebook,validateTransi
   // Concurrent source changes must never be silently omitted from migration.
   if(stable(readLegacy(file))!==stable(before)||draftsFile&&stable(readLegacy(draftsFile,'draft'))!==stable(drafts))throw Error('迁移期间原资料发生变化，请重新打开问间；原文件未修改。');
   if(fs.existsSync(database))throw Error('已有另一份资料库，已停止自动迁移。');
-  const fd=fs.openSync(stage,'r');try{fs.fsyncSync(fd);}finally{fs.closeSync(fd);}
+  const fd=fs.openSync(stage,'r+');try{fs.fsyncSync(fd);}finally{fs.closeSync(fd);}
   fs.chmodSync(stage,0o600);fs.renameSync(stage,database);
   fs.writeFileSync(path.join(folder,'receipt.json'),JSON.stringify({schema:1,at:new Date().toISOString(),notebookHash:hash(expected),draftHash:hash(drafts),database:'notebook.json.sqlite3',integrity:'ok'}),{mode:0o600});
   return {existing:false,recovery:folder};
