@@ -1,0 +1,37 @@
+import fs from 'node:fs/promises';import path from 'node:path';import crypto from 'node:crypto';import {execFileSync} from 'node:child_process';
+import * as asar from '../work/mac-app/node_modules/@electron/asar/lib/asar.js';
+const root=process.cwd(),out=path.join(root,'交付','问间架构试用'),application=path.join(out,'问间·架构试用.app'),contents=path.join(application,'Contents'),resources=path.join(contents,'Resources'),stage=path.join(root,'work/mac-app/mac-stage'),source='/Applications/问间.app/Contents';
+if(process.platform!=='darwin')throw Error('This preview requires macOS.');
+await fs.mkdir(out,{recursive:true});
+await fs.rm(application,{recursive:true,force:true});await fs.mkdir(resources,{recursive:true});
+// Reuse only Electron's signed runtime and icon. No formal user profile or
+// notebooks are consulted or copied by this builder.
+for(const name of ['Frameworks','MacOS','PkgInfo'])await fs.cp(path.join(source,name),path.join(contents,name),{recursive:true,verbatimSymlinks:true});
+for(const name of ['AppIcon.icns'])await fs.cp(path.join(root,'work/mac-app',name),path.join(resources,name));
+const bootstrap=`const {app}=require('electron'),fs=require('node:fs'),path=require('node:path');
+app.setName('问间·架构试用');
+const dir=path.resolve(process.env.WENJIAN_TEST_DATA_DIR||path.join(process.resourcesPath,'../../../试用资料'));
+const marker=path.join(dir,'.wenjian-architecture-trial.json');
+if(fs.existsSync(dir)&&fs.readdirSync(dir).length&&!fs.existsSync(marker))throw Error('该目录已有资料，但没有架构试用标记。为保护资料，拒绝使用。');
+fs.mkdirSync(dir,{recursive:true});fs.mkdirSync(path.join(dir,'library'),{recursive:true});
+if(!fs.existsSync(marker))fs.writeFileSync(marker,JSON.stringify({isolated:true,schema:1,createdAt:new Date().toISOString()}));
+const fixture=path.join(process.resourcesPath,'preview-fixtures');
+for(const name of ['notebook.json','drafts.json'])if(!fs.existsSync(path.join(dir,name)))fs.copyFileSync(path.join(fixture,name),path.join(dir,name));
+for(const name of fs.readdirSync(path.join(fixture,'library')))if(!fs.existsSync(path.join(dir,'library',name)))fs.copyFileSync(path.join(fixture,'library',name),path.join(dir,'library',name));
+process.env.WENJIAN_TEST_DATA_DIR=dir;app.setPath('userData',dir);app.setPath('sessionData',path.join(dir,'session'));require('./main.js');`;
+await fs.writeFile(path.join(stage,'architecture-preview-main.cjs'),bootstrap);
+const pkg=JSON.parse(await fs.readFile(path.join(stage,'package.json'),'utf8'));Object.assign(pkg,{main:'architecture-preview-main.cjs',name:'wenjian-architecture-preview',productName:'问间·架构试用',architectureTrial:true,displayBuild:'344 · 架构试用 1'});await fs.writeFile(path.join(stage,'package.json'),JSON.stringify(pkg,null,2));
+await asar.createPackage(stage,path.join(resources,'app.asar'));
+await fs.cp(path.join(root,'work/mac-app/mac-resources/static'),path.join(resources,'static'),{recursive:true});
+const html=path.join(resources,'static/index.html');await fs.writeFile(html,(await fs.readFile(html,'utf8')).replace('<html','<html data-wenjian-architecture="true"'));
+for(const name of ['plugin-catalog.json','plugin-guide.md','plugin-devkit'])await fs.cp(path.join(root,'work/mac-app/mac-resources',name),path.join(resources,name),{recursive:true});
+await fs.cp(path.join(root,'tests/fixtures/reading-board'),path.join(resources,'preview-fixtures'),{recursive:true});
+const fixture=path.join(resources,'preview-fixtures'),data=JSON.parse(await fs.readFile(path.join(fixture,'notebook.json'),'utf8'));data.data.zoteroEnabled=false;
+await fs.writeFile(path.join(fixture,'notebook.json'),JSON.stringify(data));
+await fs.copyFile(path.join(fixture,'notebook.json'),path.join(resources,'seed.json'));
+const plist=JSON.parse(execFileSync('/usr/bin/plutil',['-convert','json','-o','-',path.join(source,'Info.plist')],{encoding:'utf8'}));
+Object.assign(plist,{CFBundleIdentifier:'com.wenjian.architecture.preview',CFBundleName:'问间',CFBundleIconFile:'AppIcon.icns',CFBundleDisplayName:'问间·架构试用',CFBundleShortVersionString:'3.141',CFBundleVersion:'344'});
+const header=asar.getRawHeader(path.join(resources,'app.asar'));plist.ElectronAsarIntegrity={'Resources/app.asar':{algorithm:'SHA256',hash:crypto.createHash('sha256').update(header.headerString).digest('hex')}};
+await fs.writeFile(path.join(contents,'Info.plist'),JSON.stringify(plist));execFileSync('/usr/bin/plutil',['-convert','xml1',path.join(contents,'Info.plist')]);
+execFileSync('codesign',['--force','--deep','--sign','-',application],{stdio:'inherit'});execFileSync('codesign',['--verify','--deep','--strict',application],{stdio:'inherit'});
+await fs.copyFile(path.join(root,'docs/Mac安装与架构试用说明.md'),path.join(out,'使用说明.md'));console.log(application);

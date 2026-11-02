@@ -34,6 +34,7 @@ function buildSpa() {
 }
 
 async function prepare() {
+  execFileSync(process.execPath,[path.join(projectRoot,'scripts/build-architecture-model.mjs')],{cwd:projectRoot,stdio:'inherit'});
   buildSpa();
   for (const name of ['index.html', 'reader/pdf/pdf.worker.min.mjs', 'reader/pdf/cmaps/UniGB-UCS2-H.bcmap', 'reader/pdf/standard_fonts/FoxitSerif.pfb', 'reader/ocr/worker.min.js', 'reader/ocr/chi_sim.traineddata.gz', 'reader/ocr/eng.traineddata.gz']) {
     await requireFile(path.join(spaDist, name));
@@ -48,7 +49,7 @@ async function prepare() {
   await mkdir(stage, { recursive: true });
   await mkdir(resourceStage, { recursive: true });
   await cp(path.join(appRoot, 'asar-src'), stage, { recursive: true });
-  for(const name of ['plugin-contract.cjs','plugin-model.cjs'])await cp(path.join(projectRoot,'lib',name),path.join(stage,name));
+  for(const name of ['colored-rectangles.cjs','mark-colors.cjs','plugin-contract.cjs','plugin-model.cjs'])await cp(path.join(projectRoot,'lib',name),path.join(stage,name));
   await cp(path.join(projectRoot,'plugins/catalog.json'),path.join(resourceStage,'plugin-catalog.json'));
   await cp(path.join(projectRoot,'plugins/README.md'),path.join(resourceStage,'plugin-guide.md'));
   const kit=path.join(resourceStage,'plugin-devkit');

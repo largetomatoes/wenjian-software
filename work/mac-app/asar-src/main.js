@@ -22,10 +22,14 @@ const { URL } = require('node:url');
 let pdfExporter;
 const createAnnotatedPdf=(...args)=>{pdfExporter??=require('./pdf-export');return pdfExporter.createAnnotatedPdf(...args);};
 const { MAGIC: BACKUP_MAGIC, exportCompleteBackup: exportCompleteBackupFile, inspectCompleteBackup, restoreCompleteBackup: restoreCompleteBackupFile } = require('./complete-backup');
+const ARCHITECTURE_TRIAL=require('./package.json').architectureTrial===true;
+const RECORD_STORAGE=ARCHITECTURE_TRIAL||['darwin','win32'].includes(process.platform)&&require('./package.json').recordStorage===true;
+const OFFLINE_FIXTURE=!!process.env.WENJIAN_TEST_DATA_DIR&&process.env.WENJIAN_TEST_DISABLE_EXTERNAL==='1';
+let architectureData=null;
 let windowsData=null,windowsDrafts=null;
 async function checkpointLocalData(){await windowsData?.call('checkpoint');await windowsDrafts?.call('checkpoint');}
-async function restoreCompleteBackup(options){await checkpointLocalData();return restoreCompleteBackupFile(options);}
-async function exportCompleteBackup(options){await checkpointLocalData();return exportCompleteBackupFile(options);}
+async function restoreCompleteBackup(options){await checkpointLocalData();return architectureData?require('./architecture-backup.cjs').restoreArchitectureBackup(windowsData,options):restoreCompleteBackupFile(options);}
+async function exportCompleteBackup(options){await checkpointLocalData();if(architectureData)await windowsData.call('export');return exportCompleteBackupFile(options);}
 const { createOssArchiveClient, validateOssConfig } = require('./oss-cloud');
 const {isolateLegacyNotebook}=require('./local-sync-migration.cjs');
 const {createNutstoreClient,validateNutstoreConfig,nutstoreTarget,canCorrectUnconfirmedSync,validBackupName}=require('./nutstore-sync.cjs');
@@ -71,7 +75,7 @@ app.commandLine.appendSwitch('disable-features', 'PushMessaging,BackgroundFetch,
 app.commandLine.appendSwitch('proxy-server', '127.0.0.1:9');
 app.commandLine.appendSwitch('proxy-bypass-list', 'localhost;127.0.0.1;[::1]');
 app.commandLine.appendSwitch('host-resolver-rules', 'MAP * 0.0.0.0, EXCLUDE localhost, EXCLUDE 127.0.0.1, EXCLUDE [::1]');
-app.setName('问间');
+app.setName(ARCHITECTURE_TRIAL?'问间·架构试用':'问间');
 if (process.env.WENJIAN_TEST_DATA_DIR) app.setPath('userData', process.env.WENJIAN_TEST_DATA_DIR);
 const headlessFixture=process.platform==='darwin'&&!!process.env.WENJIAN_TEST_DATA_DIR&&process.env.WENJIAN_TEST_HEADLESS==='1';
 if(headlessFixture)app.setActivationPolicy('accessory');
@@ -274,7 +278,7 @@ async function handleMaintenance(request,response){
 }
 async function handleApi(request, response) {
   try {
-    if (request.method === 'GET') {const current=await readStore();return jsonReply(response,200,{version:current.version,data:current.data,storage:storageMode,storageDirectory:storageDir});}
+    if (request.method === 'GET') {if(architectureData)return jsonReply(response,200,await windowsData.call('snapshot'));const current=await readStore();return jsonReply(response,200,{version:current.version,data:current.data,storage:storageMode,storageDirectory:storageDir});}
     if (restoringBackup) return jsonReply(response, 423, { error: '正在恢复备份，请稍候。' });
     const input = await requestBody(request);
     if(windowsData&&request.method==='PATCH'&&input.delta===true){
@@ -368,7 +372,7 @@ async function handleAnnotatedPdfExport(request, response) {
   try {
     if (request.method !== 'POST') return jsonReply(response, 405, { error: '不支持的操作。' });
     const input = await requestBody(request);
-    const store = await readStore();
+    const store = architectureData?{data:{libraryBooks:[(await windowsData.call('record',{collection:'libraryBooks',id:input.bookId})).value].filter(Boolean)}}:await readStore();
     const book = store.data.libraryBooks.find((entry) => entry.id === input.bookId && entry.format === 'pdf');
     if (!book || path.basename(book.storedFile) !== book.storedFile) return jsonReply(response, 404, { error: '没有找到这本 PDF。' });
     const sourcePath = path.join(libraryDir, book.storedFile);
@@ -796,10 +800,7 @@ function appUpdater(){
   platform:process.platform,arch:process.arch,exePath:process.execPath,bundleId:'site.chatgpt.liyibo2432023353.question-atlas-notes',
   releases:()=>cachedPublicReleases(path.join(app.getPath('userData'),'update-check-cache.json'),true),
   protect:async()=>{if(mainWindow&&!mainWindow.isDestroyed()){const ready=await mainWindow.webContents.executeJavaScript('window.__wenjianPrepareClose ? window.__wenjianPrepareClose() : Promise.resolve(true)');if(ready===false)throw Error('草稿尚未保存，请完成保存后再更新。');}await notebookQueue;await draftQueue;restoringBackup=true;
-   await checkpointLocalData();const current=await readStore();if(!validNotebookData(current.data))throw Error('资料未能核验，未开始安装。');
-   const folder=path.join(app.getPath('userData'),'update-cache','safeguard-'+Date.now());await fsp.mkdir(folder,{recursive:true,mode:0o700});
-   await fsp.copyFile(dataPath,path.join(folder,'notebook.json'));const before=await fsp.readFile(dataPath),copied=await fsp.readFile(path.join(folder,'notebook.json'));if(!before.equals(copied))throw Error('资料正在变化，请稍后安装。');
-   const drafts=await readDrafts();await fsp.writeFile(path.join(folder,'drafts.json'),JSON.stringify(drafts),{mode:0o600});
+   await require('./update-safeguard.cjs').protectUpdateData({directory:path.join(app.getPath('userData'),'update-cache'),checkpoint:checkpointLocalData,exportRecords:architectureData?()=>windowsData.call('export'):undefined,readNotebook:readStore,readDrafts,validate:validNotebookData});
   }
  });return applicationUpdater;
 }
@@ -878,6 +879,23 @@ async function startServer() {
     const url = new URL(request.url, 'http://127.0.0.1');
     if(process.platform==='darwin'&&url.pathname.startsWith('/api/')&&url.pathname!=='/api/app/info'&&(request.headers.host!==`127.0.0.1:${localPort}`||request.headers['x-wenjian-host']!==hostApiToken))return jsonReply(response,403,{error:'此接口仅供问间主窗口使用，请通过已授权的插件 SDK 操作。'});
     if(restoringBackup&&request.method!=='GET'&&!url.pathname.startsWith('/api/app/'))return jsonReply(response,423,{error:'正在保护或恢复资料，请稍候。'});
+    if(ARCHITECTURE_TRIAL||OFFLINE_FIXTURE){
+      if(url.pathname==='/api/app/releases')return jsonReply(response,200,[]);
+      if(url.pathname==='/api/sync/identity')return jsonReply(response,200,{configured:false,paused:true,pausedReason:'独立架构试用使用本地副本，不连接共享云库。'});
+      if(url.pathname.startsWith('/api/sync/')&&(ARCHITECTURE_TRIAL||!['/api/sync/local','/api/sync/commit','/api/sync/revision'].includes(url.pathname))||url.pathname.startsWith('/api/cloud/')||url.pathname.startsWith('/api/zotero/')||url.pathname==='/api/app/update')return jsonReply(response,403,{error:'独立架构试用不操作正式云库、Zotero 或正式更新。'});
+    }
+    if(architectureData){
+      if(url.pathname.startsWith('/api/architecture/')){
+        void (async()=>{try{const route=url.pathname.slice('/api/architecture/'.length);
+          if(request.method==='GET'&&route==='metrics')return jsonReply(response,200,{...await windowsData.call('metrics'),timings:architectureData.timings});
+          if(request.method==='GET'&&route==='ocr-text')return jsonReply(response,200,await windowsData.call('ocr-text',{bookId:url.searchParams.get('bookId')}));
+          if(request.method==='GET'&&route==='ocr')return jsonReply(response,200,await windowsData.call('ocr-page',{bookId:url.searchParams.get('bookId'),page:Number(url.searchParams.get('page'))}));
+          if(request.method==='GET'&&route==='search')return jsonReply(response,200,await windowsData.call('search',{query:url.searchParams.get('q'),bookId:url.searchParams.get('bookId'),chapter:url.searchParams.get('chapter')}));
+          if(request.method==='POST'&&route==='records')return await serializeNotebook(async()=>jsonReply(response,200,await windowsData.call('records',await requestBody(request,32*1024*1024))));
+          return jsonReply(response,405,{error:'不支持的试用操作。'});
+        }catch(error){return jsonReply(response,error.status||500,{error:error.message||'修改尚未保存。'});}})();return;
+      }
+    }
     if (url.pathname === '/api/backup/restore' && request.method === 'POST') { if(request.headers.origin && request.headers.origin !== `http://127.0.0.1:${localPort}`)return jsonReply(response,403,{error:'来源不匹配'}); void restoreBackup().then(()=>jsonReply(response,200,{finished:true})).catch(()=>jsonReply(response,500,{error:'无法恢复备份'})); }
     else if (url.pathname.startsWith('/api/reader/ocr/')) void handleWindowsModel(request,response,url.pathname);
     else if (url.pathname==='/api/plugins'||url.pathname==='/api/plugins/invoke') void handlePlugins(request,response,url);
@@ -1028,15 +1046,15 @@ else {
     } else {
       if (!fs.existsSync(dataPath)) throw new Error('坚果云目录中的笔记暂时不可用。问间已停止启动，避免打开空白资料库。');
     }
-    if(['win32','darwin'].includes(process.platform)&&storageMode==='local'){const {createWindowsData}=require('./windows-data.cjs');windowsData=createWindowsData(dataPath);windowsDrafts=createWindowsData(draftsPath,'draft');}
-    const store = await readStore();
-    await appUpdater().init();
+    if(RECORD_STORAGE&&storageMode==='local'){if(ARCHITECTURE_TRIAL&&!process.env.WENJIAN_TEST_DATA_DIR)throw Error('架构试用必须使用独立资料目录。');architectureData=require('./architecture-data.cjs').createArchitectureData(dataPath,draftsPath);windowsData=architectureData.notebook;windowsDrafts=architectureData.drafts;}else if(['win32','darwin'].includes(process.platform)&&storageMode==='local'){const {createWindowsData}=require('./windows-data.cjs');windowsData=createWindowsData(dataPath);windowsDrafts=createWindowsData(draftsPath,'draft');}
+    const store = architectureData?await windowsData.call('snapshot'):await readStore();
+    if(!ARCHITECTURE_TRIAL)await appUpdater().init();
     libraryDir = await prepareLocalLibrary({ storageDir, userDataDir: app.getPath('userData'), books: store.data.libraryBooks, storageMode });
     if (storageMode === 'local') await fsp.writeFile(path.join(storageDir, '.wenjian-storage.json'), `${JSON.stringify({ initializedAt: new Date().toISOString() })}\n`, { flag: 'wx' }).catch((error) => { if (error.code !== 'EEXIST') throw error; });
     localPort = await startServer();
     console.log(`WENJIAN_LOCAL_PORT=${localPort}`);
     setMenu(); createWindow();
-    mainWindow.once('ready-to-show',()=>void appUpdater().confirmBoot());
+    if(!ARCHITECTURE_TRIAL)mainWindow.once('ready-to-show',()=>void appUpdater().confirmBoot());
   }).catch((error) => { console.error(error); dialog.showErrorBox('问间无法启动', error.message || '本地数据未能载入。'); app.quit(); });
   app.on('activate', () => { if (BrowserWindow.getAllWindows().length === 0 && localPort) createWindow(); });
 }

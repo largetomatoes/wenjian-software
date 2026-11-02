@@ -23,6 +23,9 @@ export function isReadingSourceDrag(transfer:DataTransfer,pending?:BookThoughtSo
 
 // The mirror has exactly the same UTF-16 text as the native textarea.
 export function readingDropPoint(mirror:HTMLElement,x:number,y:number,length:number,citations:Array<{start:number;end:number}>){
+ const bounds=mirror.getBoundingClientRect();
+ if(y<bounds.top)return {offset:0,x:0,y:0,height:31};
+ if(y>bounds.bottom)return {offset:length,x:0,y:Math.max(0,mirror.scrollHeight-31),height:31};
  const old=mirror.style.pointerEvents;mirror.style.pointerEvents='auto';
  try{
   const range=(document as Document&{caretRangeFromPoint?:(x:number,y:number)=>Range|null}).caretRangeFromPoint?.(x,y);

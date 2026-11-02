@@ -6,7 +6,7 @@ import {SettingsRow} from './settings-row';
 import {isMobileReader} from '@/lib/reader-platform';
 import {readDraft,writeDraft} from '@/lib/draft-storage';
 import './update-highlights.css';
-const revision='reading-dialogue-344-2026-10-30',key='update-guide:'+revision;
+const revision='reading-dialogue-345-2026-11-02',key='update-guide:'+revision;
 const slides=[
  {title:'本书的每一篇，都能直接找到',text:'点击阅读上方的“写笔记”，再点“本书笔记 · 数量”，按标题切换本书全部笔记。新建会另开一篇；切换前先保存，每篇各自记住光标和滚动位置。',image:new URL('./update-guide-assets/book-notes.png',import.meta.url).href,alt:'虚构书籍的本书笔记列表，分别显示两篇标题和当前篇勾选'},
  {title:'按书目、标题和自己的主题查找',text:'“查找笔记”是辅助入口，可以搜索标题、正文和摘录，也可以添加或筛选自己的主题。章节放在“更多筛选”，不把一篇跨章节思考拆散。',image:new URL('./update-guide-assets/note-lookup.png',import.meta.url).href,alt:'虚构资料展示笔记标题与书目、主题及辅助章节筛选'},

@@ -1,0 +1,5 @@
+'use client';
+import {MARK_COLORS,markColor,type MarkColor} from '@/lib/mark-colors.cjs';
+import './mark-color-palette.css';
+export function ColorChoices({value,onChange,label}:{value?:string;onChange:(value:MarkColor)=>void;label:string}){return <div className="mark-color-choices" role="group" aria-label={label}>{MARK_COLORS.map(c=><button type="button" key={c.id} aria-label={label+' · '+c.label} aria-pressed={markColor(value).id===c.id} style={{'--mark-swatch':c.hex} as React.CSSProperties} onClick={()=>onChange(c.id)}>{markColor(value).id===c.id?'✓':''}</button>)}</div>;}
+export function MarkColorPalette({ordinary,process,onChange}:{ordinary:MarkColor;process:MarkColor;onChange:(kind:'ordinary'|'process',value:MarkColor)=>void}){return <details className="mark-color-palette"><summary aria-label="标记颜色"><span style={{background:markColor(ordinary).hex}}/>颜色</summary><div className="mark-color-popover"><label>普通高亮<ColorChoices value={ordinary} onChange={c=>onChange('ordinary',c)} label="普通高亮颜色"/></label><label>过程笔记<ColorChoices value={process} onChange={c=>onChange('process',c)} label="过程笔记颜色"/></label><p>分别记住下次标记的颜色</p></div></details>;}

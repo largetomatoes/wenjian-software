@@ -1,3 +1,4 @@
+const {checkInstallLocation}=require('./app-update-location.cjs');
 const fs=require('node:fs/promises'),path=require('node:path'),https=require('node:https'),crypto=require('node:crypto'),cp=require('node:child_process');
 const {createReadStream}=require('node:fs');
 const publicKey=require('./update-public-key.cjs');
@@ -65,11 +66,9 @@ function createUpdater(options){
    const names=await zipEntries(state.file);
    if(options.platform==='darwin'&&!names.some(name=>name.startsWith('问间.app/Contents/')))throw Error('Mac应用目录不匹配。');
    if(options.platform==='win32'&&!names.some(name=>name.endsWith('/Wenjian.exe')))throw Error('Windows应用目录不匹配。');
+   const target=await checkInstallLocation({platform:options.platform,exePath:options.exePath});
    await options.protect();
    const nonce=crypto.randomUUID(),config=path.join(directory,'install-'+nonce+'.json');
-   const target=options.platform==='darwin'?path.dirname(path.dirname(path.dirname(options.exePath))):path.dirname(options.exePath);
-   if(options.platform==='darwin'&&path.extname(target)!=='.app'||options.platform==='win32'&&path.parse(target).root===target)throw Error('当前应用路径不能原位更新。');
-   await fs.access(path.dirname(target),require('node:fs').constants.W_OK);
    const spec={directory,zip:state.file,target,pid:process.pid,platform:options.platform,exe:options.exePath,bundleId:options.bundleId,version:state.version,build:manifest.build,nonce,confirmation:path.join(directory,'boot-'+nonce+'.json')};
    await atomic(config,spec);await atomic(path.join(directory,'pending-install.json'),spec);
    let child;

@@ -1,6 +1,6 @@
 import {useEffect,useRef,useState} from 'react';
 import {Button} from '../components/ui/button';
-import {Textarea} from '../components/ui/textarea';
+import {LocalTextarea as Textarea} from '../components/local-textarea';
 import {Dialog,DialogContent,DialogTitle,DialogDescription} from '../components/ui/dialog';
 import {readDraft,writeDraft} from '../lib/draft-storage';
 import {type Notebook} from '../lib/notebook';

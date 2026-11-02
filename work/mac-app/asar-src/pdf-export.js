@@ -1,3 +1,5 @@
+const {markColor}=require('./mark-colors.cjs');
+const {resolveColoredRectangles}=require('./colored-rectangles.cjs');
 const { PDFDocument, PDFArray, PDFHexString, PDFName, degrees, rgb } = require('pdf-lib');
 
 function addTextAnnotation(pdfDocument, page, x, y, contents, index) {
@@ -26,7 +28,9 @@ function addTextAnnotation(pdfDocument, page, x, y, contents, index) {
 async function createAnnotatedPdf(sourceBytes, entries) {
   const pdfDocument = await PDFDocument.load(sourceBytes, { updateMetadata: false });
   let noteIndex = 0;
-  for (const entry of Array.isArray(entries) ? entries.slice(0, 5000) : []) {
+  const groups=new Map();for(const entry of Array.isArray(entries)?entries.slice(0,5000):[]){const list=groups.get(entry.page)||[];list.push(entry);groups.set(entry.page,list);}
+  for (const [pageNumber,rows] of groups) {
+    const entry={page:pageNumber,rects:resolveColoredRectangles(rows.flatMap(row=>(row.rects||[]).slice(0,1000).map(rect=>({...rect,color:row.color,priority:row.kind==='process'?2:0})))),notes:rows.flatMap(row=>row.notes||[])};
     const pageIndex = Number(entry.page) - 1;
     if (!Number.isInteger(pageIndex) || pageIndex < 0 || pageIndex >= pdfDocument.getPageCount()) continue;
     const page = pdfDocument.getPage(pageIndex), { width, height } = page.getSize();
@@ -37,7 +41,7 @@ async function createAnnotatedPdf(sourceBytes, entries) {
       const key = [nx, ny, nw, nh].map((value) => value.toFixed(4)).join(':');
       if (seen.has(key)) continue;
       seen.add(key);
-      page.drawRectangle({ x: nx * width, y: height - (ny + nh) * height, width: nw * width, height: nh * height, color: rgb(0.965, 0.835, 0.36), opacity: 0.24, borderWidth: 0, rotate: degrees(0) });
+      page.drawRectangle({ x: nx * width, y: height - (ny + nh) * height, width: nw * width, height: nh * height, color: (()=>{const hex=markColor(raw.color).hex;return rgb(parseInt(hex.slice(1,3),16)/255,parseInt(hex.slice(3,5),16)/255,parseInt(hex.slice(5,7),16)/255);})(), opacity: 0.24, borderWidth: 0, rotate: degrees(0) });
     }
     for (const note of Array.isArray(entry.notes) ? entry.notes.slice(0, 250) : []) {
       const normalizedY = Math.max(0.03, Math.min(0.97, Number(note.y)));

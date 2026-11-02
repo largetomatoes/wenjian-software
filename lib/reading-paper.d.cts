@@ -1,7 +1,8 @@
 import type {ReadingComposition,ReadingPaper,BookThoughtSource,PaperCitation} from './notebook';
+export function paperView(c:ReadingComposition,sources:BookThoughtSource[]):ReadingPaper;
 export function paperOf(c:ReadingComposition,sources:BookThoughtSource[]):ReadingPaper;
 export function projectPaper(c:ReadingComposition,p:ReadingPaper,sources:BookThoughtSource[]):ReadingComposition;
-export function replaceBody(c:ReadingComposition,body:string,sources:BookThoughtSource[]):ReadingComposition;
+export function replaceBody(c:ReadingComposition,body:string,sources:BookThoughtSource[],hint?:{start:number;end:number}):ReadingComposition;
 export function insertCitation(c:ReadingComposition,id:string,offset:number,sources:BookThoughtSource[],kind?:'marker'|'quote',citationId?:string):{composition:ReadingComposition;citationId:string;caret:number};
 export function removeCitation(c:ReadingComposition,id:string,sources:BookThoughtSource[]):ReadingComposition;
 export function citationKind(c:ReadingComposition,id:string,kind:'marker'|'quote',sources:BookThoughtSource[]):ReadingComposition;

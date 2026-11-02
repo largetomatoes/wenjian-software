@@ -8,7 +8,7 @@ import {Button} from '@/components/ui/button';
 import {findBookText,readingTextNodes,rangeForMatch,type BookSearchHit} from '@/lib/book-search';
 import type {LibraryBook,Notebook} from '@/lib/notebook';
 
-type Props={book:LibraryBook;ready:boolean;getPdf:()=>any;getEpub:()=>any;getCache:()=>Notebook['ocrCache'];getCurrentPage?:()=>number;onResult:(hit:BookSearchHit)=>Promise<void>;onClear:()=>void};
+type Props={book:LibraryBook;ready:boolean;getPdf:()=>any;getEpub:()=>any;getCache:()=>Notebook['ocrCache']|Promise<Notebook['ocrCache']>;getCurrentPage?:()=>number;onResult:(hit:BookSearchHit)=>Promise<void>;onClear:()=>void};
 export function BookSearch({book,ready,getPdf,getEpub,getCache,getCurrentPage,onResult,onClear}:Props){
  const [expanded,setExpanded]=useState(false),[query,setQuery]=useState(''),[busy,setBusy]=useState(false),[hits,setHits]=useState<BookSearchHit[]>([]),[status,setStatus]=useState(''),[error,setError]=useState('');
  const generation=useRef(0),pdfText=useRef(new Map<number,string>()),input=useRef<HTMLInputElement>(null),request=useRef<AbortController|null>(null);
@@ -23,7 +23,7 @@ export function BookSearch({book,ready,getPdf,getEpub,getCache,getCurrentPage,on
   setBusy(true);setHits([]);setError('');onClear();
   const results:BookSearchHit[]=[];let skipped=0,failed=0,nativePages=0,scanned=0,total=0;
   try{
-   const pdf=getPdf(),epub=getEpub(),cache=new Map(getCache().filter(item=>item.libraryBookId===book.id).map(item=>[item.page,item]));
+   const pdf=getPdf(),epub=getEpub(),cache=new Map((await getCache()).filter(item=>item.libraryBookId===book.id).map(item=>[item.page,item]));
    if(book.format==='pdf'&&!pdf||book.format==='epub'&&!epub)throw Error('书籍还在打开，请稍后搜索。');
    const sections=epub?.spine?.spineItems||[];total=book.format==='pdf'?pdf.numPages:sections.length;
    for(let i=0;i<total;i++){

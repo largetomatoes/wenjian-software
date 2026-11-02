@@ -3,6 +3,7 @@ import { cp, mkdir, readFile, rename, rm, stat, writeFile } from 'node:fs/promis
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { packager } from '@electron/packager';
+import * as asar from '@electron/asar';
 
 const macAppRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const projectRoot = path.resolve(macAppRoot, '../..');
@@ -66,6 +67,7 @@ function buildSpa() {
 }
 
 async function prepare() {
+  execFileSync(process.execPath,[path.join(projectRoot,'scripts/build-architecture-model.mjs')],{cwd:projectRoot,stdio:'inherit'});
   buildSpa();
   for (const name of ['index.html', 'reader/pdf/pdf.worker.min.mjs', 'reader/ocr/worker.min.js', 'reader/ocr/lstm-v1/chi_sim.traineddata.gz', 'reader/ocr/lstm-v1/eng.traineddata.gz']) {
     await requireFile(path.join(spaDist, name));
@@ -80,7 +82,7 @@ async function prepare() {
   await mkdir(stage, { recursive: true });
   await mkdir(resourceStage, { recursive: true });
   await cp(path.join(macAppRoot, 'asar-src'), stage, { recursive: true });
-  for(const name of ['plugin-contract.cjs','plugin-model.cjs','universal-delete.cjs'])await cp(path.join(projectRoot,'lib',name),path.join(stage,name));
+  for(const name of ['colored-rectangles.cjs','mark-colors.cjs','plugin-contract.cjs','plugin-model.cjs','universal-delete.cjs'])await cp(path.join(projectRoot,'lib',name),path.join(stage,name));
   await cp(path.join(projectRoot,'plugins/catalog.json'),path.join(resourceStage,'plugin-catalog.json'));
   await cp(path.join(projectRoot,'plugins/README.md'),path.join(resourceStage,'plugin-guide.md'));
   const kit=path.join(resourceStage,'plugin-devkit');
@@ -133,6 +135,22 @@ if (prepareOnly) {
   console.log(`Windows 打包文件已准备：${stage}`);
 } else {
   const electronManifest = JSON.parse(await readFile(path.join(macAppRoot, 'node_modules', 'electron', 'package.json'), 'utf8'));
+  const appRoot = path.join(outputRoot, `Wenjian-${version}-win64`);
+  const runtime=process.env.WENJIAN_WINDOWS_RUNTIME_APP;
+  if(runtime){
+    // Optional offline build, using a checksum-verified earlier distribution.
+    // Reuse only Electron binaries: no old application resources or user data.
+    if(path.resolve(runtime)===path.resolve(appRoot))throw Error('Runtime source must differ from output');
+    if((await readFile(path.join(runtime,'version'),'utf8')).trim()!==electronManifest.version)throw Error('Windows Electron runtime version mismatch');
+    const exe=await readFile(path.join(runtime,'Wenjian.exe'));if(exe.toString('ascii',0,2)!=='MZ')throw Error('Invalid Windows runtime');
+    await rm(appRoot,{recursive:true,force:true});await mkdir(appRoot,{recursive:true});
+    const {readdir}=await import('node:fs/promises');
+    for(const entry of await readdir(runtime))if(entry!=='resources')await cp(path.join(runtime,entry),path.join(appRoot,entry),{recursive:true});
+    const resources=path.join(appRoot,'resources');await mkdir(resources,{recursive:true});
+    await asar.createPackage(stage,path.join(resources,'app.asar'));
+    for(const name of ['static','plugin-catalog.json','plugin-guide.md','plugin-devkit'])await cp(path.join(resourceStage,name),path.join(resources,name),{recursive:true});
+    await cp(path.join(macAppRoot,'seed.json'),path.join(resources,'seed.json'));
+  }else{
   const paths = await packager({
     dir: stage,
     out: outputRoot,
@@ -149,9 +167,9 @@ if (prepareOnly) {
     extraResource: [path.join(resourceStage, 'static'), path.join(macAppRoot, 'seed.json'),path.join(resourceStage,'plugin-catalog.json'),path.join(resourceStage,'plugin-guide.md'),path.join(resourceStage,'plugin-devkit')],
   });
   if (paths.length !== 1) throw new Error('Windows 打包没有生成唯一的应用目录。');
-  const appRoot = path.join(outputRoot, `Wenjian-${version}-win64`);
   await rm(appRoot, { recursive: true, force: true });
   await rename(paths[0], appRoot);
+  }
   for (const name of ['Wenjian.exe', 'resources/app.asar', 'resources/static/index.html', 'resources/seed.json']) {
     await requireFile(path.join(appRoot, name));
   }

@@ -5,7 +5,7 @@ on:
       release_tag:
         description: Draft or published Release to verify
         required: true
-        default: v3.141-build344
+        default: v3.141
       packages:
         description: Optional short-lived download URLs for these public software packages only
         required: false
@@ -27,7 +27,7 @@ jobs:
           RELEASE_TAG: ${{ inputs.release_tag }}
           PACKAGE_DOWNLOADS: ${{ inputs.packages }}
         run: |
-          if ($env:RELEASE_TAG -notmatch '^v3\.[0-9]+-build[0-9]+$') { throw 'Invalid release tag' }
+          if ($env:RELEASE_TAG -notmatch '^v3\.[0-9]+(?:-build[0-9]+)?$') { throw 'Invalid release tag' }
           New-Item -ItemType Directory -Force package-test | Out-Null
           if ($env:PACKAGE_DOWNLOADS) {
             $items=@($env:PACKAGE_DOWNLOADS | ConvertFrom-Json)
@@ -61,6 +61,10 @@ jobs:
           path: package-test/*report*
 
   legacy-upgrade:
+    strategy:
+      fail-fast: false
+      matrix:
+        old_build: [319, 320, 321, 339, 344]
     runs-on: windows-latest
     timeout-minutes: 20
     steps:
@@ -75,7 +79,7 @@ jobs:
           RELEASE_TAG: ${{ inputs.release_tag }}
           PACKAGE_DOWNLOADS: ${{ inputs.packages }}
         run: |
-          if ($env:RELEASE_TAG -notmatch '^v3\.[0-9]+-build[0-9]+$') { throw 'Invalid release tag' }
+          if ($env:RELEASE_TAG -notmatch '^v3\.[0-9]+(?:-build[0-9]+)?$') { throw 'Invalid release tag' }
           New-Item -ItemType Directory -Force package-test | Out-Null
           if ($env:PACKAGE_DOWNLOADS) {
             $items=@($env:PACKAGE_DOWNLOADS | ConvertFrom-Json)
@@ -108,20 +112,26 @@ jobs:
           $seed.data.cards=@(@{id='legacy-upgrade-card';text='旧版记录必须保留';at='2026-10-16T00:00:00Z';origin='自己的思考';source='';thoughts=@()})
           [IO.File]::WriteAllText((Join-Path $data 'notebook.json'),($seed|ConvertTo-Json -Depth 100),[Text.UTF8Encoding]::new($false))
           [IO.File]::WriteAllText((Join-Path $data 'drafts.json'),'{"legacy-upgrade":{"text":"未提交的虚构草稿"}}',[Text.UTF8Encoding]::new($false))
-      - name: Download existing Windows 339 installer
+      - name: Download the actual legacy Windows distribution
         shell: pwsh
         env:
           GH_TOKEN: ${{ github.token }}
+          OLD_BUILD: ${{ matrix.old_build }}
         run: |
           New-Item -ItemType Directory -Force package-old | Out-Null
-          gh release download v3.141-build339 --repo $env:GITHUB_REPOSITORY --pattern '*Windows-x64-Setup.exe' --dir package-old
+          if ([int]$env:OLD_BUILD -lt 321) {
+            gh release download v3.14 --repo $env:GITHUB_REPOSITORY --pattern ('*-build'+$env:OLD_BUILD+'-Windows-x64.zip') --dir package-old
+          } else {
+            $version=if([int]$env:OLD_BUILD -eq 321){'3.14'}else{'3.141'}
+            gh release download ('v'+$version+'-build'+$env:OLD_BUILD) --repo $env:GITHUB_REPOSITORY --pattern '*Windows-x64-Setup.exe' --dir package-old
+          }
           if ($LASTEXITCODE -ne 0) { throw 'Existing installer download failed' }
       - name: Verify old installation upgrades without losing data
         shell: pwsh
-        run: ./scripts/test-windows-upgrade-339.ps1 -OldDirectory package-old -NewDirectory package-test
+        run: ./scripts/test-windows-upgrade-339.ps1 -OldDirectory package-old -NewDirectory package-test -OldBuild ${{ matrix.old_build }}
 
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: windows-legacy-upgrade-report
+          name: windows-legacy-upgrade-report-${{ matrix.old_build }}
           path: package-test/*report*
