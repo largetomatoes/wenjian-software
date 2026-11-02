@@ -75,7 +75,7 @@ app.commandLine.appendSwitch('disable-features', 'PushMessaging,BackgroundFetch,
 app.commandLine.appendSwitch('proxy-server', '127.0.0.1:9');
 app.commandLine.appendSwitch('proxy-bypass-list', 'localhost;127.0.0.1;[::1]');
 app.commandLine.appendSwitch('host-resolver-rules', 'MAP * 0.0.0.0, EXCLUDE localhost, EXCLUDE 127.0.0.1, EXCLUDE [::1]');
-app.setName(ARCHITECTURE_TRIAL?'问间·架构试用':'问间');
+app.setName(ARCHITECTURE_TRIAL?(require('./package.json').previewName||'问间·架构试用'):'问间');
 if (process.env.WENJIAN_TEST_DATA_DIR) app.setPath('userData', process.env.WENJIAN_TEST_DATA_DIR);
 const headlessFixture=process.platform==='darwin'&&!!process.env.WENJIAN_TEST_DATA_DIR&&process.env.WENJIAN_TEST_HEADLESS==='1';
 if(headlessFixture)app.setActivationPolicy('accessory');
@@ -198,6 +198,7 @@ async function handleDrafts(request, response) {
     if (request.method === 'GET') {
       await draftQueue;
       const key=new URL(request.url,'http://localhost').searchParams.get('key');
+      if(architectureData&&new URL(request.url,'http://localhost').searchParams.get('recoveries')==='1')return jsonReply(response,200,await windowsDrafts.call('draft-recoveries',{bookId:new URL(request.url,'http://localhost').searchParams.get('bookId')}));
       if(windowsDrafts&&key)return jsonReply(response,200,await windowsDrafts.call('draft-get',{key}));
       return jsonReply(response, 200, { drafts: await readDrafts() });
     }
@@ -1010,7 +1011,7 @@ function setMenu() {
 function createWindow() {
   mainWindow = new BrowserWindow({ width: 1440, height: 920, minWidth: 820, minHeight: 620, title: '问间', ...(process.platform === 'darwin' ? { titleBarStyle: 'hiddenInset' } : {}), backgroundColor: '#f7f8fb', show: false, webPreferences: { contextIsolation: true, nodeIntegration: false, sandbox: true, spellcheck: process.platform!=='win32', backgroundThrottling:true } });
   mainWindow.webContents.on('will-prevent-unload',async event=>{if(installingUpdate||process.platform==='darwin'&&nativeQuitReady){event.preventDefault();return;}if(process.platform==='win32'&&windowsTray?.isQuitting()){windowsTray.cancelQuit();windowsTray.show();await dialog.showMessageBox(mainWindow,{type:'warning',title:'内容尚未提交',message:'当前编辑器仍有未提交内容，问间已取消退出。',detail:'请先保存或关闭正在编辑的内容，再从托盘菜单退出。收起到托盘不需要关闭这些内容。',buttons:['返回编辑']});}});
-  if(process.platform==='win32'){if(!windowsTray)windowsTray=require('./windows-tray.cjs').createWindowsTray({app,...require('electron'),getWindow:()=>mainWindow,isUpdating:()=>installingUpdate,prepareQuit:async()=>{if(cloudBusy)throw Error('云端备份尚未结束，请稍后退出。');if(mainWindow&&!mainWindow.isDestroyed()){let timeout;try{await Promise.race([mainWindow.webContents.executeJavaScript('window.__wenjianPrepareClose ? window.__wenjianPrepareClose() : Promise.resolve(true)'),new Promise((_,reject)=>{timeout=setTimeout(()=>reject(Error('Saving timeout')),8000);})]);}finally{clearTimeout(timeout);}}await draftQueue;await notebookQueue;await checkpointLocalData();}});windowsTray.attach(mainWindow);}
+  if(process.platform==='win32'){if(!windowsTray)windowsTray=require('./windows-tray.cjs').createWindowsTray({app,...require('electron'),getWindow:()=>mainWindow,isUpdating:()=>installingUpdate,prepareQuit:async()=>{if(cloudBusy)throw Error('云端备份尚未结束，请稍后退出。');if(mainWindow&&!mainWindow.isDestroyed()){let timeout;try{await Promise.race([mainWindow.webContents.executeJavaScript('window.__wenjianPrepareClose ? window.__wenjianPrepareClose() : Promise.resolve(true)'),new Promise((_,reject)=>{timeout=setTimeout(()=>reject(Error('保存尚未完成，请返回核对恢复草稿。')),30000);})]);}finally{clearTimeout(timeout);}}await draftQueue;await notebookQueue;await checkpointLocalData();}});windowsTray.attach(mainWindow);}
   mainWindow.once('ready-to-show', () => {if(!headlessFixture)mainWindow.show();});
   mainWindow.on('closed',()=>{mainWindow=null;pluginsRuntime?.stopAll();});
   mainWindow.loadURL(`http://127.0.0.1:${localPort}/`).catch((error) => { console.error(error); dialog.showErrorBox('问间无法打开', '本地页面载入失败，请重新打开问间。'); });
@@ -1059,6 +1060,6 @@ else {
   app.on('activate', () => { if (BrowserWindow.getAllWindows().length === 0 && localPort) createWindow(); });
 }
 let nativeQuitReady=false,nativeQuitPending=false;
-app.on('before-quit',event=>{pluginsRuntime?.stopAll();if(process.platform==='win32'&&windowsTray&&!windowsTray.isQuitting()&&!installingUpdate){event.preventDefault();void windowsTray.quit();return;}if(process.platform==='darwin'&&server&&!installingUpdate&&!nativeQuitReady){event.preventDefault();if(nativeQuitPending)return;nativeQuitPending=true;void(async()=>{try{if(mainWindow&&!mainWindow.isDestroyed())await mainWindow.webContents.executeJavaScript('window.__wenjianPrepareClose ? window.__wenjianPrepareClose() : Promise.resolve(true)');await draftQueue;await notebookQueue;await checkpointLocalData();nativeQuitReady=true;app.quit();}catch(error){dialog.showErrorBox('尚未退出',error.message||'保存尚未完成，请重试退出。');}finally{nativeQuitPending=false;}})();return;}if(process.platform!=='win32'&&server)server.close();});
+app.on('before-quit',event=>{pluginsRuntime?.stopAll();if(process.platform==='win32'&&windowsTray&&!windowsTray.isQuitting()&&!installingUpdate){event.preventDefault();void windowsTray.quit();return;}if(process.platform==='darwin'&&server&&!installingUpdate&&!nativeQuitReady){event.preventDefault();if(nativeQuitPending)return;nativeQuitPending=true;void(async()=>{try{if(mainWindow&&!mainWindow.isDestroyed())await mainWindow.webContents.executeJavaScript('window.__wenjianPrepareClose ? window.__wenjianPrepareClose() : Promise.resolve(true)');await draftQueue;await notebookQueue;await checkpointLocalData();await architectureData?.notebook.close();nativeQuitReady=true;app.quit();}catch(error){dialog.showErrorBox('尚未退出',error.message||'保存尚未完成，请重试退出。');}finally{nativeQuitPending=false;}})();return;}if(process.platform!=='win32'&&server)server.close();});
 app.on('will-quit',()=>{windowsTray?.dispose();if(server)server.close();});
 app.on('window-all-closed', () => { if (process.platform !== 'darwin') app.quit(); });

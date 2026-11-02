@@ -32,6 +32,29 @@ $oldAsarHash=(Get-FileHash (Join-Path $target 'resources/app.asar') -Algorithm S
 $oldExeHash=(Get-FileHash (Join-Path $target 'Wenjian.exe') -Algorithm SHA256).Hash
 $report.checks+=@('Original version installs at the selected path on a clean runner')
 Record 'old-installed'
+# 345 already stores live edits in SQLite. Exercise that actual state rather
+# than only testing a never-opened installation containing legacy JSON.
+if($OldBuild -ge 345){
+ $env:WENJIAN_TEST_DISABLE_EXTERNAL='1';$env:WENJIAN_TEST_DATA_DIR=$data
+ [IO.File]::WriteAllText((Join-Path $data 'tray-config.json'),'{"choiceVersion":2,"closeToTray":false}',[Text.UTF8Encoding]::new($false))
+ $legacy=Start-Process -FilePath (Join-Path $target 'Wenjian.exe') -PassThru -WindowStyle Hidden
+ try{
+  $ready=$false
+  for($i=0;$i -lt 120;$i++){
+   foreach($port in @(Get-NetTCPConnection -State Listen -OwningProcess $legacy.Id -ErrorAction SilentlyContinue)){
+    try{$snapshot=Invoke-RestMethod ('http://127.0.0.1:'+$port.LocalPort+'/api/notebook') -TimeoutSec 2;if($snapshot.architecture -eq 1 -and ($snapshot.data.cards.id -contains 'legacy-upgrade-card')){$ready=$true;break}}catch{}
+   }
+   if($ready){break};if($legacy.HasExited){throw 'Old SQLite app exited before readiness'};Start-Sleep -Milliseconds 500
+  }
+  if(-not $ready -or -not(Test-Path ($file+'.sqlite3'))){throw 'Old release did not create its real record database'}
+ }finally{
+  if(-not $legacy.HasExited){$null=$legacy.CloseMainWindow();if(-not $legacy.WaitForExit(15000)){Stop-Process -Id $legacy.Id -Force;throw 'Old fixture did not quit normally'}}
+ }
+ $before=(Get-FileHash -LiteralPath $file -Algorithm SHA256).Hash
+ $draftBefore=(Get-FileHash -LiteralPath $draft -Algorithm SHA256).Hash
+ $report.checks+=@('Actual previous SQLite release launched and saved its notebook before upgrade')
+ Record 'old-sqlite-verified'
+}
 Install $new[0].FullName
 Record 'new-installed'
 if(-not(Test-Path (Join-Path $target 'Wenjian.exe')) -or -not(Test-Path (Join-Path $target 'resources/app.asar'))){throw 'Updated installation missing files'}

@@ -5,7 +5,7 @@ on:
       release_tag:
         description: Draft or published Release to verify
         required: true
-        default: v3.141
+        default: v3.1415
       packages:
         description: Optional short-lived download URLs for these public software packages only
         required: false
@@ -45,9 +45,10 @@ jobs:
             gh release download $env:RELEASE_TAG --repo $env:GITHUB_REPOSITORY --pattern '*Windows-x64-Setup.exe' --pattern '*Windows-x64*.zip' --dir package-test
             if ($LASTEXITCODE -ne 0) { throw 'Release download failed' }
           }
+      - run: npm ci --no-audit --no-fund
       - name: Verify native Windows record migration and update safeguards
         shell: pwsh
-        run: node --test tests/test-record-migration.cjs tests/test-update-safeguard.cjs
+        run: node --test tests/test-record-migration.cjs tests/test-update-safeguard.cjs tests/test-save-reliability.cjs
       - name: Preserve Windows graphics defaults and preferences
         shell: pwsh
         run: node --test tests/test-windows-performance-settings.cjs
@@ -67,7 +68,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        old_build: [319, 320, 321, 339, 344]
+        old_build: [319, 320, 321, 339, 344, 345]
     runs-on: windows-latest
     timeout-minutes: 20
     steps:
@@ -124,6 +125,8 @@ jobs:
           New-Item -ItemType Directory -Force package-old | Out-Null
           if ([int]$env:OLD_BUILD -lt 321) {
             gh release download v3.14 --repo $env:GITHUB_REPOSITORY --pattern ('*-build'+$env:OLD_BUILD+'-Windows-x64.zip') --dir package-old
+          } elseif ([int]$env:OLD_BUILD -eq 345) {
+            gh release download v3.141 --repo $env:GITHUB_REPOSITORY --pattern '*Windows-x64-Setup.exe' --dir package-old
           } else {
             $version=if([int]$env:OLD_BUILD -eq 321){'3.14'}else{'3.141'}
             gh release download ('v'+$version+'-build'+$env:OLD_BUILD) --repo $env:GITHUB_REPOSITORY --pattern '*Windows-x64-Setup.exe' --dir package-old

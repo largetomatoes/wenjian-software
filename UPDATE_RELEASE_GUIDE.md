@@ -9,3 +9,9 @@
 先推送源码，再创建draft Release。上传三端包、校验文件、签名清单和发行说明，逐个核对GitHub返回的size/digest。核验安装和回退、草稿保护后正式发布，再更新官网链接并核验实际下载。旧发布只在新发布核验后撤下，保留私有回退副本。
 
 测试生成的替代密钥仅用于隔离单元测试，不可替换发布公钥。不要把新版“打开下载页面”当作自动安装；当前安装实现位于work/mac-app/asar-src/app-updater.cjs及Android WenjianUpdateClient.java。
+
+## 3.1415（346）发布与兼容
+
+使用纯标签 `v3.1415`，构建号 346，保留旧正式版本与附件。320 的检测器只识别纯版本标签，不能用后缀标签代替此次标签。签名清单为 `update-manifest-346.json`；Mac / Windows 标准更新 ZIP、Windows 安装 EXE、Android 原签名 APK 必须齐备并校验摘要后才能公开。319 的旧仓库地址无法远程修复，提供完整覆盖安装说明。
+
+Mac 不允许在 App Translocation 中原位安装；不修改 quarantine、Gatekeeper 或资料目录。SQLite 为权威资料；升级前对当前数据库和草稿建立一致备份，勿拿陈旧 JSON 覆盖数据库。Web App 保留原域名、IndexedDB 名称和离线升级确认流程。

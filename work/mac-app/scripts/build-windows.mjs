@@ -83,7 +83,7 @@ async function prepare() {
   await mkdir(stage, { recursive: true });
   await mkdir(resourceStage, { recursive: true });
   await cp(path.join(macAppRoot, 'asar-src'), stage, { recursive: true });
-  for(const name of ['colored-rectangles.cjs','mark-colors.cjs','plugin-contract.cjs','plugin-model.cjs','universal-delete.cjs'])await cp(path.join(projectRoot,'lib',name),path.join(stage,name));
+  for(const name of ['stable-json.cjs','colored-rectangles.cjs','mark-colors.cjs','plugin-contract.cjs','plugin-model.cjs','universal-delete.cjs'])await cp(path.join(projectRoot,'lib',name),path.join(stage,name));
   await cp(path.join(projectRoot,'plugins/catalog.json'),path.join(resourceStage,'plugin-catalog.json'));
   await cp(path.join(projectRoot,'plugins/README.md'),path.join(resourceStage,'plugin-guide.md'));
   const kit=path.join(resourceStage,'plugin-devkit');

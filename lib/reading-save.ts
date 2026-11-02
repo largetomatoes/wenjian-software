@@ -1,6 +1,6 @@
 import type {Notebook} from './notebook';
 
-const same=(a:unknown,b:unknown)=>JSON.stringify(a)===JSON.stringify(b);
+import {sameJson as same} from './stable-json.cjs';
 const object=(value:unknown):value is Record<string,unknown>=>!!value&&typeof value==='object'&&!Array.isArray(value);
 const key=(value:unknown):string|undefined=>object(value)?typeof value.id==='string'?value.id:typeof value.libraryBookId==='string'&&typeof value.page==='number'?`${value.libraryBookId}:${value.page}`:typeof value.serverId==='string'&&typeof value.key==='string'?`${value.serverId}:${value.key}`:undefined:undefined;
 
@@ -18,7 +18,14 @@ export function rebaseReading(base:Notebook,edited:Notebook,current:Notebook):No
     if(old.has(id)&&!changed.has(id)){if(!same(old.get(id),value))throw Error('这条记录刚在另一处修改，请重新打开后再保存。');continue;}
     result.push(old.has(id)&&changed.has(id)?merge(old.get(id),changed.get(id),value,`${path}.${id}`):value);
    }
-   for(const [id,value] of changed)if(!old.has(id)&&!now.has(id))result.push(value);
+   for(const [id,value] of changed){
+    if(old.has(id)&&!now.has(id)&&!same(old.get(id),value)){
+     // Progress-only changes to a removed book are disposable; actual authored edits are not.
+     const prior=old.get(id);const progressOnly=path==='notebook.libraryBooks'&&object(prior)&&object(value)&&same({...prior,progress:undefined},{...value,progress:undefined});
+     if(!progressOnly)throw Error('这条记录已被归档或删除，当前编辑仍保留，请核对后另存。');
+    }
+    if(!old.has(id)&&!now.has(id))result.push(value);
+   }
    // A stale progress update must never resurrect a removed book or note.
    return result;
   }

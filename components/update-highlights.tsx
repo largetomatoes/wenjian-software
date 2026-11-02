@@ -6,12 +6,12 @@ import {SettingsRow} from './settings-row';
 import {isMobileReader} from '@/lib/reader-platform';
 import {readDraft,writeDraft} from '@/lib/draft-storage';
 import './update-highlights.css';
-const revision='reading-dialogue-345-2026-11-02',key='update-guide:'+revision;
+const revision='reading-save-346-2026-11-03',key='update-guide:'+revision;
 const slides=[
- {title:'本书的每一篇，都能直接找到',text:'点击阅读上方的“写笔记”，再点“本书笔记 · 数量”，按标题切换本书全部笔记。新建会另开一篇；切换前先保存，每篇各自记住光标和滚动位置。',image:new URL('./update-guide-assets/book-notes.png',import.meta.url).href,alt:'虚构书籍的本书笔记列表，分别显示两篇标题和当前篇勾选'},
+ {title:'本书的每一篇，都能直接找到',text:'本次更新改进持续输入、保存失败后的重试和草稿恢复。点击阅读上方的“写笔记”，再点“本书笔记 · 数量”，按标题切换本书全部笔记。新建会另开一篇；切换前先保存，每篇各自记住光标和滚动位置。',image:new URL('./update-guide-assets/book-notes.png',import.meta.url).href,alt:'虚构书籍的本书笔记列表，分别显示两篇标题和当前篇勾选'},
  {title:'按书目、标题和自己的主题查找',text:'“查找笔记”是辅助入口，可以搜索标题、正文和摘录，也可以添加或筛选自己的主题。章节放在“更多筛选”，不把一篇跨章节思考拆散。',image:new URL('./update-guide-assets/note-lookup.png',import.meta.url).href,alt:'虚构资料展示笔记标题与书目、主题及辅助章节筛选'},
  {title:'边读边写，摘录放进自己的话里',text:'点击阅读上方的“写笔记”，在右侧持续写作。选中书里的文字，拖到正文需要的位置；PDF 与 EPUB 都保留原文位置。',image:new URL('./update-guide-assets/board.png',import.meta.url).href,alt:'虚构样书：左侧阅读，右侧笔记板，关键词摘录嵌入自己的句子'},
- {title:'摘录显示哪些字，由你决定',text:'点击正文中的摘录，查看完整原文。选取原文中的几个字，再点“用这段文字显示”或“追加显示词”。自动选词在本机完成，也可手动调整。',image:new URL('./update-guide-assets/keywords.png',import.meta.url).href,alt:'点击摘录后展开原文，可以选择摘录的显示文字'},
+ {title:'高亮与摘录，重新选取更方便',text:'点击已有的普通高亮或过程笔记高亮，会选中这次高亮的整段原文；拖动仍可另选片段。点击正文中的摘录，查看完整原文。选取原文中的几个字，再点“用这段文字显示”或“追加显示词”。自动选词在本机完成，也可手动调整。',image:new URL('./update-guide-assets/keywords.png',import.meta.url).href,alt:'点击摘录后展开原文，可以选择摘录的显示文字'},
  {title:'把几处摘录联系起来',text:'点击“梳理联系”，选择两处或多处摘录，写下你对它们关系的理解。正文中的连接可以展开查看，后来也可修改；此前的记录仍保留。',image:new URL('./update-guide-assets/relation.png',import.meta.url).href,alt:'正文内的摘录连接与读者自己写下的联系说明'},
  {title:'收起侧栏，或退出阅读',text:'“收起笔记”只收起右侧写作区，“退出阅读”返回问题图。设置中的“自动同步”可选手动、5、15、30、60 分钟；默认 15 分钟，本机保存继续进行。',image:new URL('./update-guide-assets/controls.png',import.meta.url).href,alt:'阅读区的退出阅读与侧栏收起笔记板按钮分开显示'}
 ];
