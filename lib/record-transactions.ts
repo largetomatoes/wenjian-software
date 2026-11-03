@@ -1,4 +1,4 @@
-import {packHistory} from './history-wire';
+import {packHistory,unpackHistoryRecords,type HistoryRecord} from './history-wire';
 import {localRequest} from './local-request';
 import {readDraft,writeDraft} from './draft-storage';
 import {stableJson} from './stable-json.cjs';
@@ -33,16 +33,37 @@ export async function saveRecordChanges(before:Notebook,after:Notebook,version:n
  if(previous&&previous.fingerprint!==fingerprint){
   // Resolve the older uncertain intent before preparing a different write to the same records.
   const old=await localRequest('/api/architecture/records',{method:'POST',headers:{'Content-Type':'application/json'},body:previous.body});
-  if(!old.ok)throw new RecordSaveError('先前提交需要核对，当前草稿已保留。',old.status);
+  if(!old.ok){
+   if(old.status===409){
+    const detail:unknown=await old.json().catch(()=>null);
+    const conflict=detail&&typeof detail==='object'&&'error' in detail&&typeof detail.error==='string'?detail.error:'版本冲突';
+    // A confirmed conflict is terminal, not an uncertain network response.
+    // Archive the exact authored request before freeing the live intent slot.
+    const mutationId=JSON.parse(previous.body).mutationId;
+    await writeDraft('record-conflict:'+mutationId,{...previous,at:new Date().toISOString(),error:conflict});
+    await writeDraft(intentKey,null);
+    throw new RecordSaveError('先前提交已有版本冲突，原提交已单独保留。请核对最新版本后重试；当前草稿仍保留。',409);
+   }
+   throw new RecordSaveError('先前提交需要核对，当前草稿已保留。',old.status);
+  }
   await writeDraft(intentKey,null);throw new RecordSaveError('先前内容已确认保存，请核对最新版本后继续。',409);
  }
- const mutationId=previous?JSON.parse(previous.body).mutationId:crypto.randomUUID(),body=previous?.body||JSON.stringify({mutationId,version,changes});
+ const mutationId=previous?JSON.parse(previous.body).mutationId:crypto.randomUUID(),body=previous?.body||JSON.stringify({mutationId,version,changes,responseProtocol:1});
  await writeDraft(intentKey,{fingerprint,body});
  const start=performance.now();let response:Response|undefined;
  for(let attempt=0;attempt<2;attempt++){try{response=await localRequest('/api/architecture/records',{method:'POST',headers:{'Content-Type':'application/json'},body});break;}catch(error){if(attempt)throw error;}}
  if(!response)throw Error('提交结果尚待核对，草稿仍保留。');
- const result=await response.json() as {version:number;error?:string;records?:Array<{collection:string;id:string;value:unknown}>};
+ let result=await response.json() as {version:number;error?:string;records?:HistoryRecord[]};
  if(!response.ok){if(response.status===409)await writeDraft(intentKey,null);throw new RecordSaveError(result.error||'修改尚未保存，草稿仍保留。',response.status);}
+ if(result.records?.some(record=>record.history)){
+  try{result={...result,records:await unpackHistoryRecords(result.records,raw)};}
+  catch{
+   // Ask for this exact immutable receipt, not the possibly newer live record.
+   const full=await localRequest('/api/architecture/records',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({...JSON.parse(body),responseProtocol:0})});
+   if(!full.ok)throw new RecordSaveError('保存已提交，完整确认仍需核对，草稿继续保留。',full.status);
+   result=await full.json();if(result.records?.some(record=>record.history))throw Error('完整保存确认尚未返回，草稿继续保留。');
+  }
+ }
  await writeDraft(intentKey,null);
  window.dispatchEvent(new CustomEvent('wenjian:performance-sample',{detail:{kind:'save',ms:performance.now()-start,bytes:new Blob([body]).size}}));return result;
 }

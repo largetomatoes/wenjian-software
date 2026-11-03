@@ -10,7 +10,7 @@ $stage=Join-Path $job.directory ('stage-'+$job.nonce)
 $moved=$false
 $app=$null
 function Write-UpdateStatus($state,$message){
- $value=@{state=$state;version=$job.version};if($message){$value.error=$message}
+ $value=@{state=$state;version=$job.version;build=$job.build;nonce=$job.nonce};if($message){$value.error=$message}
  $file=Join-Path $job.directory 'status.json';$tmp=$file+'.helper-new'
  [IO.File]::WriteAllText($tmp,($value|ConvertTo-Json -Compress),[Text.UTF8Encoding]::new($false))
  Move-Item -LiteralPath $tmp -Destination $file -Force

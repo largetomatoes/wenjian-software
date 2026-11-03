@@ -7,8 +7,8 @@
   "dependencies": {
     "pdf-lib": "1.17.1"
   },
-  "buildVersion": "346",
+  "buildVersion": "347",
   "organizationTrial": false,
-  "displayBuild": "346",
+  "displayBuild": "347",
   "recordStorage": true
 }

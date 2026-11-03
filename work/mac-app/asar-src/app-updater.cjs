@@ -67,16 +67,16 @@ function createUpdater(options){
    if(options.platform==='darwin'&&!names.some(name=>name.startsWith('问间.app/Contents/')))throw Error('Mac应用目录不匹配。');
    if(options.platform==='win32'&&!names.some(name=>name.endsWith('/Wenjian.exe')))throw Error('Windows应用目录不匹配。');
    const target=await checkInstallLocation({platform:options.platform,exePath:options.exePath});
-   await options.protect();
+   const safeguard=await options.protect();
    const nonce=crypto.randomUUID(),config=path.join(directory,'install-'+nonce+'.json');
-   const spec={directory,zip:state.file,target,pid:process.pid,platform:options.platform,exe:options.exePath,bundleId:options.bundleId,version:state.version,build:manifest.build,nonce,confirmation:path.join(directory,'boot-'+nonce+'.json')};
+   const spec={directory,zip:state.file,target,pid:process.pid,platform:options.platform,exe:options.exePath,bundleId:options.bundleId,version:state.version,build:manifest.build,previousBuild:options.build,safeguard,nonce,confirmation:path.join(directory,'boot-'+nonce+'.json')};
    await atomic(config,spec);await atomic(path.join(directory,'pending-install.json'),spec);
    let child;
    if(options.platform==='darwin'){const helper=path.join(directory,'update-installer.cjs');await fs.copyFile(path.join(__dirname,'update-installer.cjs'),helper);child=cp.spawn(options.exePath,[helper,config],{detached:true,stdio:'ignore',env:{...process.env,ELECTRON_RUN_AS_NODE:'1'}});}
    else {const script=path.join(directory,'update-installer.ps1');await fs.copyFile(path.join(__dirname,'update-installer.ps1'),script);child=cp.spawn('powershell.exe',['-NoProfile','-ExecutionPolicy','Bypass','-File',script,'-Config',config],{detached:true,stdio:'ignore',windowsHide:true});}
    await new Promise((resolve,reject)=>{child.once('spawn',resolve);child.once('error',reject);});child.unref();state={state:'installing',version:state.version};await persist();return {...state};
   },
-  async confirmBoot(){try{const spec=JSON.parse(await fs.readFile(path.join(directory,'pending-install.json'),'utf8'));if(spec.build===options.build){await atomic(spec.confirmation,{build:options.build,nonce:spec.nonce});await fs.rm(path.join(directory,'pending-install.json'),{force:true});state={state:'verifying',version:options.version};void(async()=>{for(let i=0;i<300;i++){await new Promise(resolve=>setTimeout(resolve,200));try{const result=JSON.parse((await fs.readFile(path.join(directory,'status.json'),'utf8')).replace(/^\uFEFF/,''));if(['succeeded','failed','rolledBack'].includes(result.state)){state=result;return;}}catch{}}state={state:'failed',version:options.version,error:'更新未完成最终核验，原应用副本已保留。'};})();}}catch{}}
+  async confirmBoot(){try{const spec=JSON.parse(await fs.readFile(path.join(directory,'pending-install.json'),'utf8'));if(spec.build===options.build){await atomic(spec.confirmation,{build:options.build,nonce:spec.nonce});await fs.rm(path.join(directory,'pending-install.json'),{force:true});state={state:'verifying',version:options.version};void(async()=>{for(let i=0;i<300;i++){await new Promise(resolve=>setTimeout(resolve,200));try{const result=JSON.parse((await fs.readFile(path.join(directory,'status.json'),'utf8')).replace(/^\uFEFF/,''));if(['succeeded','failed','rolledBack'].includes(result.state)){state=result;if(result.state==='succeeded')void require('./update-retention.cjs').recordConfirmedUpdate(options,spec).catch(e=>console.warn('更新副本整理暂缓：',e.message));return;}}catch{}}state={state:'failed',version:options.version,error:'更新未完成最终核验，原应用副本已保留。'};})();}return;}catch{}void require('./update-retention.cjs').maintainUpdateCache(options).catch(e=>console.warn('更新副本整理暂缓：',e.message));}
  };
 }
 module.exports={createUpdater,verifyManifest,hashFile,zipEntries,trustedUrl};

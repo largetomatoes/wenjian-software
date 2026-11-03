@@ -52,10 +52,26 @@ export async function readDraft<T>(key: string, fallback: T): Promise<T> {
 
 /** Persist a JSON-serializable draft; reject so the UI can report any failure. */
 const pendingDraftWrites=new Set<Promise<void>>();
-const draftWriteErrors=new Map<string,unknown>(),draftRetries=new Map<string,unknown>(),queues=new Map<string,Promise<void>>();
+type DraftAttempt={sequence:number;value:unknown};
+const draftWriteErrors=new Map<string,unknown>(),draftRetries=new Map<string,DraftAttempt>(),queues=new Map<string,Promise<void>>(),latestDraftSequence=new Map<string,number>();
+let draftSequence=0;
+function enqueueDraft(key:string,attempt:DraftAttempt,retry=false):Promise<void>{
+ const job=(queues.get(key)||Promise.resolve()).catch(()=>{}).then(async()=>{
+  // A retry can become obsolete while it waits behind an in-flight write.
+  if(retry&&latestDraftSequence.get(key)!==attempt.sequence)return;
+  try{await persistDraft(key,attempt.value);if(latestDraftSequence.get(key)===attempt.sequence){draftWriteErrors.delete(key);draftRetries.delete(key);}}
+  catch(error){if(latestDraftSequence.get(key)===attempt.sequence){draftWriteErrors.set(key,error);draftRetries.set(key,attempt);}throw error;}
+ });
+ queues.set(key,job);pendingDraftWrites.add(job);
+ void job.then(()=>{},()=>{}).finally(()=>{pendingDraftWrites.delete(job);if(queues.get(key)===job)queues.delete(key);});return job;
+}
 export async function flushDraftWrites(){
- await Promise.all([...draftRetries].map(([key,value])=>writeDraft(key,value)));
- while(pendingDraftWrites.size)await Promise.all([...pendingDraftWrites]);
+ // Let the newest queued writes settle first; a stale failed value must never
+ // be appended after them. Retry each current failure once per flush call.
+ while(pendingDraftWrites.size)await Promise.allSettled([...pendingDraftWrites]);
+ const retry=[...draftRetries].filter(([key,attempt])=>latestDraftSequence.get(key)===attempt.sequence);
+ await Promise.allSettled(retry.map(([key,attempt])=>enqueueDraft(key,attempt,true)));
+ while(pendingDraftWrites.size)await Promise.allSettled([...pendingDraftWrites]);
  if(draftWriteErrors.size)throw draftWriteErrors.values().next().value;
 }
 export function writeDraft(key:string,value:unknown):Promise<void>{
@@ -69,8 +85,8 @@ export function writeDraft(key:string,value:unknown):Promise<void>{
  }
  const captured=JSON.parse(JSON.stringify(source));for(const h of histories){let obj=captured;for(const segment of h.path)obj=obj[segment];obj[h.field]=h.value;}
 
- const job=(queues.get(key)||Promise.resolve()).catch(()=>{}).then(()=>persistDraft(key,captured));queues.set(key,job);pendingDraftWrites.add(job);
- void job.then(()=>{draftWriteErrors.delete(key);draftRetries.delete(key);},error=>{draftWriteErrors.set(key,error);draftRetries.set(key,captured);}).finally(()=>{pendingDraftWrites.delete(job);if(queues.get(key)===job)queues.delete(key);});return job;
+ const attempt={sequence:++draftSequence,value:captured};latestDraftSequence.set(key,attempt.sequence);
+ draftWriteErrors.delete(key);draftRetries.delete(key);return enqueueDraft(key,attempt);
 }
 export async function listDrafts(bookId?:string):Promise<Record<string,unknown>>{
  const response=await localRequest(API_PATH+(bookId?'?recoveries=1&bookId='+encodeURIComponent(bookId):''),{cache:'no-store'});if(unsupported(response.status)){const result:Record<string,unknown>={};for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k?.startsWith(LOCAL_PREFIX))result[k.slice(LOCAL_PREFIX.length)]=JSON.parse(localStorage.getItem(k)!);}return result;}

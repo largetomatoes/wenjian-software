@@ -7,7 +7,7 @@ function verify(bundle){cp.execFileSync('/usr/bin/codesign',['--verify','--deep'
  const config=path.resolve(process.argv[2]),spec=JSON.parse(await fs.readFile(config,'utf8'));
  if(spec.platform!=='darwin'||path.dirname(config)!==spec.directory||path.extname(spec.target)!=='.app'||path.dirname(spec.zip)!==spec.directory||!Number.isInteger(spec.pid)||typeof spec.nonce!=='string'||!/^[-a-zA-Z0-9]+$/.test(spec.nonce))throw Error('Invalid installer specification');
  const backup=spec.target+'.wenjian-previous-'+spec.nonce,failed=spec.target+'.wenjian-failed-'+spec.nonce,stage=path.join(spec.directory,'stage-'+spec.nonce);let moved=false,newPid=null;
- const finish=async(state,error)=>{const dest=path.join(spec.directory,'status.json'),tmp=dest+'.helper-new';await fs.writeFile(tmp,JSON.stringify({state,error,version:spec.version}),{mode:0o600});await fs.rename(tmp,dest);};
+ const finish=async(state,error)=>{const dest=path.join(spec.directory,'status.json'),tmp=dest+'.helper-new';await fs.writeFile(tmp,JSON.stringify({state,error,version:spec.version,build:spec.build,nonce:spec.nonce}),{mode:0o600});await fs.rename(tmp,dest);};
  try{
   for(let i=0;i<300;i++){let alive=true;try{process.kill(spec.pid,0);}catch{alive=false;}if(!alive)break;if(i===299)throw Error('Application is still running');await wait(200);}
   if(await exists(backup)||await exists(failed)||await exists(stage))throw Error('Recovery path already exists; no files changed');

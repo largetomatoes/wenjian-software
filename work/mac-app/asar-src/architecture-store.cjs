@@ -117,9 +117,22 @@ function createStore({file,draftsFile,database=file+'.sqlite3',validateTransitio
  }catch(error){db.close();throw error;}
  function normalizeImported(){if(!normalizeNotebook||getMeta('normalizedModel')===1)return;const before=snapshot(),data=normalizeNotebook(before.data);if(stable(data)!==stable(before.data))operation('write',{value:{...before,version:before.version+1,data}});meta('normalizedModel',1);}
  normalizeImported();
+ function clientReceipt(receipt,changes,protocol){
+  if(protocol!==1||!receipt.records)return receipt;
+  const requested=new Map(changes.map(c=>[c.collection+':'+c.id,c]));
+  return {...receipt,records:receipt.records.map(row=>{
+   if(!row.value)return row;const refs=requested.get(row.collection+':'+row.id)?.history;if(!refs)return row;
+   const value={...row.value},history={};
+   for(const [field,ref]of Object.entries(refs)){
+    const all=value[field];if(!historyFields.includes(field)||!Array.isArray(all)||all.length<ref.length||hash(all.slice(0,ref.length))!==ref.hash)continue;
+    history[field]={length:ref.length,hash:ref.hash,append:all.slice(ref.length)};delete value[field];
+   }
+   return Object.keys(history).length?{...row,value,history}:row;
+  })};
+ }
  function patch(input){
   if(!input||typeof input.mutationId!=='string'||!/^[a-zA-Z0-9_-]{8,100}$/.test(input.mutationId)||!Array.isArray(input.changes)||input.changes.length>10000)throw Error('记录事务格式不正确。');
-  const requestHash=hash(input.changes),previous=q('SELECT * FROM receipts WHERE id=?').get(input.mutationId);if(previous){if(previous.request_hash!==requestHash)throw Error('操作编号重复但内容不同。');const saved=JSON.parse(previous.json);if(saved.recordBlobs){saved.records=saved.recordBlobs.map(r=>({collection:r.collection,id:r.id,value:r.blob===null?null:readBlob(r.blob)}));delete saved.recordBlobs;}return saved;}
+  const responseProtocol=input.responseProtocol,requestHash=hash(input.changes),previous=q('SELECT * FROM receipts WHERE id=?').get(input.mutationId);if(previous){if(previous.request_hash!==requestHash)throw Error('操作编号重复但内容不同。');const saved=JSON.parse(previous.json);if(saved.recordBlobs){saved.records=saved.recordBlobs.map(r=>({collection:r.collection,id:r.id,value:r.blob===null?null:readBlob(r.blob)}));delete saved.recordBlobs;}return clientReceipt(saved,input.changes,responseProtocol);}
   const wireChanges=input.changes;
   input={...input,changes:wireChanges.map(c=>{if(!c.history)return c;const base=get(c.collection,c.id);return {...c,before:expandHistory(c.before,c.history,base,'before'),after:expandHistory(c.after,c.history,base,'after')};})};
   let committedLight;const receipt=transaction(()=>{
@@ -145,7 +158,7 @@ function createStore({file,draftsFile,database=file+'.sqlite3',validateTransitio
     q('INSERT INTO outbox(mutation_id,collection,record_id,before_hash,after_hash,at) VALUES(?,?,?,?,?,?)').run(input.mutationId,collection,id,before===null?null:putBlob(before),after===null?null:putBlob(after),at);
    }
    meta('dataKeys',[...new Set([...getMeta('dataKeys',[]),...applied.map(c=>c.collection==='settings'||c.collection==='order'?c.id:c.collection)])]);meta('version',version);const result={version,mutationId:input.mutationId,savedAt:at,changed:applied.map(c=>({collection:c.collection,id:c.id})),records:input.changes.filter(c=>collections.has(c.collection)).map(c=>({collection:c.collection,id:c.id,value:get(c.collection,c.id)}))};const durable={...result,records:undefined,recordBlobs:result.records.map(r=>({collection:r.collection,id:r.id,blob:r.value===null?null:putBlob(r.value)}))};q('INSERT INTO receipts VALUES(?,?,?)').run(input.mutationId,requestHash,JSON.stringify(durable));committedLight=next;return result;
-  });cachedLight=committedLight;return receipt;
+  });cachedLight=committedLight;return clientReceipt(receipt,wireChanges,responseProtocol);
  }
  function operation(type,input={}){
   if(type==='read')return snapshot();

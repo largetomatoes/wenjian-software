@@ -801,7 +801,7 @@ function appUpdater(){
   platform:process.platform,arch:process.arch,exePath:process.execPath,bundleId:'site.chatgpt.liyibo2432023353.question-atlas-notes',
   releases:()=>cachedPublicReleases(path.join(app.getPath('userData'),'update-check-cache.json'),true),
   protect:async()=>{if(mainWindow&&!mainWindow.isDestroyed()){const ready=await mainWindow.webContents.executeJavaScript('window.__wenjianPrepareClose ? window.__wenjianPrepareClose() : Promise.resolve(true)');if(ready===false)throw Error('草稿尚未保存，请完成保存后再更新。');}await notebookQueue;await draftQueue;restoringBackup=true;
-   await require('./update-safeguard.cjs').protectUpdateData({directory:path.join(app.getPath('userData'),'update-cache'),checkpoint:checkpointLocalData,exportRecords:architectureData?()=>windowsData.call('export'):undefined,readNotebook:readStore,readDrafts,validate:validNotebookData});
+   return require('./update-safeguard.cjs').protectUpdateData({directory:path.join(app.getPath('userData'),'update-cache'),checkpoint:checkpointLocalData,exportRecords:architectureData?()=>windowsData.call('export'):undefined,readNotebook:readStore,readDrafts,validate:validNotebookData});
   }
  });return applicationUpdater;
 }
