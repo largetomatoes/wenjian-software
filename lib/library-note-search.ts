@@ -13,7 +13,7 @@ export function zoteroAnnotationChapter(book:LibraryBook,annotation:ZoteroAnnota
 }
 export function bookNoteContent(entry:BookNote,replies:Map<string,string>=new Map()){
  const note=entry.note,source=entry.kind==='reading'?entry.source:undefined;
- return [entry.kind==='process'?entry.note.interpretation:entry.note.text,entry.kind==='process'?processSources(entry.note).filter(s=>s.libraryBookId===entry.note.libraryBookId&&(s.chapter||'')===entry.note.chapter).map(s=>s.quote).join('\n'):source?.quote||note.quote,source?.noteText,entry.kind==='process'?note.chapter:source?.chapter||note.chapter,entry.kind==='process'?note.locator:source?.locator||note.locator,...(note.thoughts||[]).flatMap(t=>[t.text,t.reason,replies.get(t.id)])].filter(Boolean).join('\n');
+ return [entry.kind==='process'?entry.note.interpretation:entry.note.text,entry.kind==='process'?processSources(entry.note).filter(s=>s.libraryBookId===entry.note.libraryBookId&&(s.chapter||'')===entry.note.chapter).map(s=>s.quote).join('\n'):source?.quote||note.quote,source?.noteText,...(entry.kind==='reading'?entry.note.tags||[]:[]),entry.kind==='process'?note.chapter:source?.chapter||note.chapter,entry.kind==='process'?note.locator:source?.locator||note.locator,...(note.thoughts||[]).flatMap(t=>[t.text,t.reason,replies.get(t.id)])].filter(Boolean).join('\n');
 }
 export function libraryNoteIndex(data:Notebook):LibraryNoteHit[]{
  const hits:LibraryNoteHit[]=[],replies=new Map<string,string>();
@@ -26,7 +26,25 @@ export function libraryNoteIndex(data:Notebook):LibraryNoteHit[]{
   hits.push({key:JSON.stringify([book.id,entry.kind,entry.note.id,chapterKey]),kind:entry.kind,id:entry.note.id,bookId:book.id,bookTitle:shown.title,chapter:chapter|| (whole?'全书思考':'未标章节'),chapterKey,locator:source?.locator||entry.note.locator,sourceLocation:source?.sourceLocation||entry.note.sourceLocation,content,preview:tidy(preview)});
  };
  for(const note of data.readingNotes.flatMap(processEntries))add({kind:'process',note});
- for(const note of data.bookThoughts){if(note.composition){for(const paragraph of note.composition.paragraphs){const source=note.sources?.find(s=>paragraph.sourceIds.includes(s.id));const book=data.libraryBooks.find(b=>b.id===note.composition!.homeBookId);if(book)hits.push({key:'paragraph:'+note.id+':'+paragraph.id,kind:'reading',id:note.id,paragraphId:paragraph.id,bookId:book.id,bookTitle:book.title,chapter:source?.chapter||'全书思考',chapterKey:source?.chapter?'chapter:'+source.chapter:'whole',locator:source?.locator||'',sourceLocation:source?.sourceLocation,content:[note.composition.paper?note.text:paragraph.text,...(note.sources||[]).filter(s=>paragraph.sourceIds.includes(s.id)).flatMap(s=>[s.quote,s.noteText,s.chapter])].join('\n'),preview:paragraph.text});}}else for(const entry of thoughtEntries(note))add(entry);}
+ for(const note of data.bookThoughts){if(note.composition){
+  const composition=note.composition;
+  for(const paragraph of composition.paragraphs){
+   const refs=(note.sources||[]).filter(s=>paragraph.sourceIds.includes(s.id));
+   const locations=new Map<string,{bookId:string;chapter:string;whole:boolean;refs:typeof refs}>();
+   for(const source of refs){
+    if(!source.libraryBookId)continue;
+    const chapter=tidy(source.chapter),key=JSON.stringify([source.libraryBookId,chapter]);
+    if(!locations.has(key))locations.set(key,{bookId:source.libraryBookId,chapter,whole:false,refs:[]});
+    locations.get(key)!.refs.push(source);
+   }
+   if(![...locations.values()].some(location=>location.bookId===composition.homeBookId))locations.set('home',{bookId:composition.homeBookId,chapter:tidy(note.chapter),whole:note.scope==='book',refs:[]});
+   for(const location of locations.values()){
+    const raw=data.libraryBooks.find(b=>b.id===location.bookId);if(!raw)continue;
+    const book=displayBook(raw),source=location.refs[0],chapterKey=location.chapter?'chapter:'+location.chapter:location.whole?'whole':'unfiled';
+    hits.push({key:JSON.stringify([book.id,'reading',note.id,chapterKey,paragraph.id]),kind:'reading',id:note.id,paragraphId:paragraph.id,bookId:book.id,bookTitle:book.title,chapter:location.chapter||(location.whole?'全书思考':'未标章节'),chapterKey,locator:source?.locator||'',sourceLocation:source?.sourceLocation,content:[composition.title,composition.paper?note.text:paragraph.text,...(note.tags||[]),...(note.thoughts||[]).flatMap(t=>[t.text,t.reason,replies.get(t.id)]),...location.refs.flatMap(s=>[s.quote,s.noteText,s.chapter])].filter(Boolean).join('\n'),preview:paragraph.text});
+   }
+  }
+ }else for(const entry of thoughtEntries(note))add(entry);}
  for(const book of data.libraryBooks)for(const annotation of visibleZoteroAnnotations(book)){
   const chapter=zoteroAnnotationChapter(book,annotation);
   hits.push({key:JSON.stringify([book.id,'zotero',annotation.attachmentKey,annotation.key]),kind:'zotero',id:annotation.key,bookId:book.id,bookTitle:displayBook(book).title,chapter:chapter||'未标章节',chapterKey:chapter?'chapter:'+chapter:'unfiled',locator:annotation.pageLabel?'第 '+annotation.pageLabel+' 页':annotation.page?'第 '+annotation.page+' 页':'',content:[annotation.text,annotation.comment,chapter].join('\n'),preview:tidy(annotation.comment||annotation.text)});
@@ -36,7 +54,9 @@ export function libraryNoteIndex(data:Notebook):LibraryNoteHit[]{
 }
 export function searchLibraryNotes(index:LibraryNoteHit[],query:string,bookIds:Set<string>,chapterKey=''){
  if(!query.trim())return [];
- return index.filter(hit=>bookIds.has(hit.bookId)&&(!chapterKey||hit.chapterKey===chapterKey)&&matchesNoteText(hit.content,query));
+ const unique=new Map<string,LibraryNoteHit>();
+ for(const hit of index){if(!bookIds.has(hit.bookId)||chapterKey&&hit.chapterKey!==chapterKey||!matchesNoteText(hit.content,query))continue;const key=JSON.stringify([hit.bookId,hit.kind,hit.id,hit.chapterKey]);if(!unique.has(key))unique.set(key,hit);}
+ return [...unique.values()];
 }
 export function noteSearchPreview(hit:LibraryNoteHit,query:string){
  const text=tidy(hit.content),first=normalize(tidy(query)).split(/\s+/).find(Boolean)||'',at=normalize(text).indexOf(first);
