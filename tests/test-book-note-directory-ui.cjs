@@ -7,13 +7,13 @@ data.bookThoughts=[note('across-chapters','跨章节的一个判断'),note('shar
 for(let i=1;i<=35;i++)data.bookThoughts.push(note('directory-'+i,'目录示例 '+String(i).padStart(2,'0'),[]));
 data.bookThoughts[0].tags=['诚实'];data.bookThoughts[0].modifiedAt='2026-10-29T11:00:00Z';data.bookThoughts[1].tags=['语言'];
 const epubOnly=note('epub-only','另一本书的对话',[sources[2]]);epubOnly.libraryBookId='reading-epub';epubOnly.bookTitle='阅读联动 EPUB 样书';epubOnly.composition.homeBookId='reading-epub';epubOnly.text=composition.flattenComposition(epubOnly.composition);epubOnly.tags=['诚实','语言'];epubOnly.modifiedAt='2026-10-29T11:00:00Z';data.bookThoughts.push(epubOnly);
-fs.writeFileSync(path.join(dir,'notebook.json'),JSON.stringify(seed));const drafts=JSON.parse(fs.readFileSync(path.join(dir,'drafts.json')));drafts['update-guide:reading-dialogue-344-2026-10-30']={seenAt:now};fs.writeFileSync(path.join(dir,'drafts.json'),JSON.stringify(drafts));
+fs.writeFileSync(path.join(dir,'notebook.json'),JSON.stringify(seed));const drafts=JSON.parse(fs.readFileSync(path.join(dir,'drafts.json')));drafts['update-guide:writing-workspace-347-2026-11-03']={seenAt:now};fs.writeFileSync(path.join(dir,'drafts.json'),JSON.stringify(drafts));
 (async()=>{let app;const checks=[],errors=[];try{
  app=await _electron.launch({executablePath:path.join(bundle,'Contents/MacOS/问间'),env:{...process.env,WENJIAN_TEST_DATA_DIR:dir,WENJIAN_TEST_HEADLESS:'1'},timeout:30000});const page=await app.firstWindow();page.on('pageerror',e=>errors.push(e.message));
  const saved=()=>page.evaluate(()=>fetch('/api/notebook',{cache:'no-store'}).then(r=>r.json()));
  async function waitSaved(test){for(let i=0;i<100;i++){const v=await saved();if(test(v.data))return v.data;await page.waitForTimeout(100);}throw Error('Expected writing/lookup change was not saved');}
  const body=()=>page.getByRole('textbox',{name:'笔记正文',exact:true}),title=()=>page.getByRole('textbox',{name:'笔记标题',exact:true}),row=id=>page.locator('[data-directory-note="'+id+'"]');
- const lookup=()=>page.locator('.reader-primary-row').getByRole('button',{name:'查找笔记',exact:true});
+ const lookup=()=>page.getByRole('button',{name:'查找本书笔记',exact:true});
  async function back(){await page.getByRole('button',{name:'‹ 返回写作',exact:true}).click();await body().waitFor({state:'visible'});}
  async function menu(id,item){await row(id).getByRole('button',{name:/^整理笔记 /}).click();await page.getByRole('menuitem',{name:item,exact:true}).click();}
  await page.getByRole('button',{name:'进入问间',exact:true}).click();await page.getByRole('button',{name:'书库',exact:true}).click();await page.getByRole('button',{name:'读书',exact:true}).click();await page.getByRole('button').filter({has:page.getByText('阅读联动 PDF 样书',{exact:true})}).first().click();await page.waitForFunction(()=>document.querySelector('.textLayer')?.textContent.includes('Page 1'));

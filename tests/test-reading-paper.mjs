@@ -13,4 +13,10 @@ assert.throws(()=>p.setRelation(c,['cite-a'],'','',sources),/两处/);const corr
 const only= p.removeSource(c,'a',sources);assert.equal(only.paper.citations.length,1);assert(only.paper.relations[0].unresolved);
 // Editing the marker itself removes that live reference rather than silently moving it.
 const q=c.paper.citations[0],changed=p.replaceBody(c,c.paper.body.slice(0,q.start)+'普通正文'+c.paper.body.slice(q.end),sources);assert.equal(changed.paper.citations.length,1);assert(changed.paper.relations[0].unresolved);
-console.log('PASS: continuous prose, inline footnotes, cursor insertion, edits around references, user-defined multi-reference relations, relabeling, missing references, quote display and complete revision preservation');
+const stored=JSON.parse(require('../lib/stable-json.cjs').stableJson(note)),storedBefore=JSON.stringify(stored);
+assert.equal(m.validateComposition(stored),'','stable storage key order must not invalidate a correct paper');
+const renamed=m.withComposition(stored,{...stored.composition,title:'读取后修改标题'},stored.sources);
+assert.equal(m.validateComposition(renamed),'');assert.equal(renamed.composition.paper.body,stored.composition.paper.body);assert.deepEqual(renamed.sources,stored.sources);assert.equal(renamed.revisions.at(-1).text,stored.text);assert.equal(JSON.stringify(stored),storedBefore);
+const wrongParagraph=structuredClone(stored);wrongParagraph.composition.paragraphs[0].text+='不该有的内容';assert(m.validateComposition(wrongParagraph),'real paragraph/body mismatch is still rejected');
+const wrongOrder=structuredClone(stored);wrongOrder.composition.paragraphs[0].sourceIds.reverse();assert(m.validateComposition(wrongOrder),'source order must still match the live citation order');
+console.log('PASS: continuous prose, inline footnotes, cursor insertion, edits around references, user-defined multi-reference relations, relabeling, missing references, quote display, stable-storage key order and complete revision preservation');

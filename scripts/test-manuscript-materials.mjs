@@ -48,3 +48,18 @@ assert.equal(plan.next.manuscripts[0].blocks[0].links.length,0,'removed sentence
 const html=exported.readOnlyHtml(data);assert.ok(html.includes('&lt;script&gt;不能执行&lt;/script&gt;'));assert.ok(!html.includes('<script>不能执行</script>'));assert.ok(html.includes('manuscript-source'));assert.ok(html.includes('第 12 页'));
 data.manuscripts=[];assert.equal(JSON.stringify(data),before,'collection leaves all original records unchanged');
 console.log('PASS: exact originals, scope order, no inferred links, source snapshots, editable/reordered paragraphs, sentence link boundaries, deletion preservation and export');
+
+const {projectPaper,insertCitation}=load('lib/reading-paper.cjs'),{flattenComposition,validateComposition}=load('lib/reading-composition.cjs');
+const sample=structuredClone(data);sample.libraryBooks.push({...sample.libraryBooks[0],id:'other-book',title:'另一本书'});
+const composition=projectPaper({schema:1,homeBookId:'book',title:'纯思考的标题',paragraphs:[{id:'p',text:'',sourceIds:[]}]},{version:1,body:'没有摘录也没有关联问题的原话。',citations:[],relations:[]},[]);
+const plain={id:'plain',libraryBookId:'book',bookTitle:'一本书',scope:'book',locator:'',at:'2026-11-03T00:00:00Z',questionIds:[],thoughts:[],sources:[],composition,text:flattenComposition(composition)};
+assert.equal(validateComposition(plain),'');sample.bookThoughts=[plain];const unchanged=JSON.stringify(sample),plainCatalog=materials.buildManuscriptMaterials(sample);
+assert.equal(materials.collectMaterials(plainCatalog,['book:book']).filter(m=>m.targetId==='plain').length,1,'plain board remains selectable under its home book');
+assert.equal(materials.collectMaterials(plainCatalog,['book:book:chapter:'+encodeURIComponent('全书/未分章')]).filter(m=>m.targetId==='plain').length,1);
+const sources=[{id:'s',libraryBookId:'other-book',bookTitle:'另一本书',chapter:'第二章',locator:'第 3 页',sourceLocation:'pdf:3',quote:'另一本书的原文'}],crossComposition=insertCitation(composition,'s',composition.paper.body.length,sources).composition;
+const sharedPaper={...plain,id:'shared-paper',sources,composition:crossComposition,text:flattenComposition(crossComposition)};
+const sharedCatalog=materials.buildManuscriptMaterials({...sample,bookThoughts:[sharedPaper]});
+assert(materials.collectMaterials(sharedCatalog,['book:book']).some(m=>m.targetId==='shared-paper'&&m.kind==='understanding'));
+assert(materials.collectMaterials(sharedCatalog,['book:other-book']).some(m=>m.targetId==='shared-paper'&&m.kind==='understanding'));
+const both=materials.collectMaterials(sharedCatalog,['book:book','book:other-book']);assert.equal(both.filter(m=>m.targetId==='shared-paper'&&m.kind==='understanding').length,1,'one material snapshot, two book entrances');
+assert.equal(JSON.stringify(sample),unchanged);console.log('PASS: unlinked writing, home-book chapters and shared-paper material membership without copies.');

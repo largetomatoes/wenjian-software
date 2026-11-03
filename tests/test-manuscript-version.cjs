@@ -1,0 +1,11 @@
+const assert=require('node:assert/strict'),{load}=require('./load-ts.cjs');
+const {manuscriptVersionMatches}=load('lib/manuscript-version.ts'),{rebaseReading}=load('lib/reading-save.ts');
+const original={id:'m',title:'标题',body:'原始正文',links:[],at:'2026-11-01',updatedAt:'2026-11-01',revisions:[]},copy=JSON.parse(JSON.stringify(original));
+assert(manuscriptVersionMatches(original,copy));
+assert(!manuscriptVersionMatches(original,{...copy,body:'同步正文'}),'changed text is detected even if a sender kept the same timestamp');
+assert(!manuscriptVersionMatches(original,{...copy,title:'同步标题'}));
+assert(!manuscriptVersionMatches(original,{...copy,revisions:[{body:'更早的表述'}]}));
+assert(!manuscriptVersionMatches(original,undefined));assert(!manuscriptVersionMatches(null,original));
+const base={manuscripts:[original]},edited={manuscripts:[{...original,body:'本机编辑'}]},latest={manuscripts:[{...original,body:'同时同步进来的编辑'}]};
+assert.throws(()=>rebaseReading(base,edited,latest),/草稿已保留/,'a version arriving after the editor check must still hit the parent save guard');
+assert.equal(original.body,'原始正文');console.log('PASS: full manuscript baselines, deleted versions, same-time changes and late parent-save conflicts.');
