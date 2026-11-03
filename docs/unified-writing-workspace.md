@@ -48,3 +48,11 @@
 - 主工程、移动共享代码与 Web 共享代码 TypeScript 检查通过。Mac 候选包签名验证通过。
 
 所有交互验收使用单独的虚构资料目录并禁用外部连接，没有访问真实云端。新增图示只包含虚构书目和文字。安装与真实资料核对结果单独记录在本地交付目录，不加入仓库。
+
+## Follow-up edge-flow regression (2026-11-03)
+
+The local follow-up fixes three reproduced integration bugs: new manuscript duplication after committed responses are lost; opening a second-book source without continuing the originating shared note; and parent close flushing a discarded draft back into active storage. Creation identity and authored candidate content are persisted before submission. Retry and restart reconcile that same creation, and newer typing stays a draft of the same record. Discarded wording remains in recoveries without being reactivated.
+
+Topic and chapter filters expand inside the scroll column. Routine highlight pending strips and save/color success feedback are suppressed, while failed marks retain their warning, preserved draft and retry action.
+
+Validation: 9 new isolated native edge-flow checks, 14 existing workspace UI checks, 31 save/model/backup tests, TypeScript and the Mac build/signature check passed. See tests/test-writing-workspace-edge-ui.cjs. The read/Zotero folder sidebar redesign is still a visual proposal; it is not implemented in this patch. No installed application replacement or remote release occurred.

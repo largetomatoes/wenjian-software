@@ -19,11 +19,13 @@ import {flattenManuscriptBlocks,validManuscriptBlocks} from '@/lib/manuscript-do
 
 type Props={embedded?:boolean;open:boolean;initialId:string|null;onOpenChange:(open:boolean)=>void;data:Notebook;saving:boolean;save:(next:Notebook,feedback:string,base?:Notebook)=>Promise<boolean>;onOpenQuestion:(id:string)=>void;onOpenReading:(id:string)=>void;onOpenSource:(source:ManuscriptSourceSnapshot)=>void};
 type TextSelection={blockId?:string;start:number;end:number;quote:string;left:number;top:number};
-type ManuscriptDraft={kind:'manuscript';baseUpdatedAt:string|null;title:string;body:string;links:ManuscriptLink[];blocks?:ManuscriptBlock[];savedAt:string};
+type PendingCreation={record:Manuscript;copy:boolean};
+type ManuscriptDraft={pendingCreation?:PendingCreation;kind:'manuscript';baseUpdatedAt:string|null;title:string;body:string;links:ManuscriptLink[];blocks?:ManuscriptBlock[];savedAt:string};
 const draftKey=(id:string|null)=>`manuscript:${id||'new'}`;
 const ACTIVE_DRAFT_KEY='manuscript:active';
+function validCreation(value:unknown):value is PendingCreation {if(!value||typeof value!=='object')return false;const p=value as PendingCreation,r=p.record;return typeof p.copy==='boolean'&&!!r&&typeof r.id==='string'&&!!r.id&&typeof r.title==='string'&&typeof r.body==='string'&&Array.isArray(r.links)&&Array.isArray(r.revisions)&&typeof r.at==='string'&&(!r.blocks||validManuscriptBlocks(r.blocks));}
 const baseUpdatedAt=(manuscript?:Manuscript)=>manuscript?.updatedAt||manuscript?.at||null;
-function validDraft(value:unknown):value is ManuscriptDraft{return !!value&&typeof value==='object'&&'kind' in value&&value.kind==='manuscript'&&'title' in value&&typeof value.title==='string'&&'body' in value&&typeof value.body==='string'&&'links' in value&&Array.isArray(value.links)&&value.links.every((link:unknown)=>!!link&&typeof link==='object'&&'id' in link&&typeof link.id==='string'&&'quote' in link&&typeof link.quote==='string'&&'start' in link&&typeof link.start==='number'&&'end' in link&&typeof link.end==='number')&&'baseUpdatedAt' in value&&(typeof value.baseUpdatedAt==='string'||value.baseUpdatedAt===null)&&(!('blocks' in value)||value.blocks===undefined||validManuscriptBlocks(value.blocks));}
+function validDraft(value:unknown):value is ManuscriptDraft{return !!value&&typeof value==='object'&&'kind' in value&&value.kind==='manuscript'&&'title' in value&&typeof value.title==='string'&&'body' in value&&typeof value.body==='string'&&'links' in value&&Array.isArray(value.links)&&value.links.every((link:unknown)=>!!link&&typeof link==='object'&&'id' in link&&typeof link.id==='string'&&'quote' in link&&typeof link.quote==='string'&&'start' in link&&typeof link.start==='number'&&'end' in link&&typeof link.end==='number')&&'baseUpdatedAt' in value&&(typeof value.baseUpdatedAt==='string'||value.baseUpdatedAt===null)&&(!('blocks' in value)||value.blocks===undefined||validManuscriptBlocks(value.blocks))&&(!('pendingCreation' in value)||value.pendingCreation===undefined||validCreation(value.pendingCreation));}
 function resolveLinks(text:string,editor:HTMLDivElement|null,links:ManuscriptLink[]){return links.map(link=>{const mark=[...(editor?.querySelectorAll<HTMLElement>('[data-link-ids]')||[])].find(element=>element.dataset.linkIds?.split(',').includes(link.id));if(mark&&editor){const before=document.createRange();before.selectNodeContents(editor);before.setEndBefore(mark);const start=before.toString().length,quote=mark.textContent||'';if(quote)return {...link,start,end:start+quote.length,quote,prefix:text.slice(Math.max(0,start-24),start),suffix:text.slice(start+quote.length,start+quote.length+24),unresolved:false};}const first=text.indexOf(link.quote),last=text.lastIndexOf(link.quote);if(link.quote&&first>=0&&first===last)return {...link,start:first,end:first+link.quote.length,prefix:text.slice(Math.max(0,first-24),first),suffix:text.slice(first+link.quote.length,first+link.quote.length+24),unresolved:false};return {...link,unresolved:true};});}
 
 export function Manuscripts({embedded=false,open,initialId,onOpenChange,data,saving,save,onOpenQuestion,onOpenReading,onOpenSource}:Props){
@@ -31,6 +33,7 @@ export function Manuscripts({embedded=false,open,initialId,onOpenChange,data,sav
  const [draftReady,setDraftReady]=useState(false),[draftStatus,setDraftStatus]=useState<'idle'|'pending'|'saving'|'saved'|'error'>('idle'),[draftError,setDraftError]=useState(''),[staleDraft,setStaleDraft]=useState<ManuscriptDraft|null>(null);
  const [blocks,setBlocks]=useState<ManuscriptBlock[]|undefined>(undefined),[materialsOpen,setMaterialsOpen]=useState(false);
  const [conflict,setConflict]=useState(false),[recoveries,setRecoveries]=useState<ManuscriptDraft[]>([]);
+ const pendingCreation=useRef<PendingCreation|null>(null),discardedDraft=useRef<ManuscriptDraft|null>(null);
  const openedBase=useRef<Manuscript|null>(null),liveData=useRef(data),submission=useRef<Promise<void>|null>(null);liveData.current=data;
  const [submitting,setSubmitting]=useState(false);const submittingRef=useRef(false);const busy=saving||submitting;
  const blockUndo=useRef<ManuscriptBlock[][]>([]),blockRedo=useRef<ManuscriptBlock[][]>([]),lastEdit=useRef('');
@@ -48,10 +51,10 @@ export function Manuscripts({embedded=false,open,initialId,onOpenChange,data,sav
 
  function editorText(){return blocks?flattenManuscriptBlocks(blocks).body:(editorRef.current?.innerText||'').replace(/\r/g,'');}
  function queueDraft(key:string,value:unknown){const next=draftWrites.current.catch(()=>{}).then(()=>writeDraft(key,value));draftWrites.current=next;return next;}
- function draftSnapshot():ManuscriptDraft{return {kind:'manuscript',baseUpdatedAt:baseVersionRef.current,title,body,links:editorRef.current&&editorText()===body?resolveLinks(body,editorRef.current,draftLinks):draftLinks,blocks,savedAt:new Date().toISOString()};}
- async function persistDraft(){if(!draftReady||!dirty)return true;if(draftTimer.current){clearTimeout(draftTimer.current);draftTimer.current=null;}setDraftStatus('saving');try{await queueDraft(draftKey(selectedId),draftSnapshot());setDraftStatus('saved');setDraftError('');return true;}catch(error){const detail=(error as Error).message||'未知错误';setDraftStatus('error');setDraftError(`草稿保存失败：${detail}。请先正式保存文稿。`);return false;}}
+ function draftSnapshot():ManuscriptDraft{return {pendingCreation:pendingCreation.current||undefined,kind:'manuscript',baseUpdatedAt:baseVersionRef.current,title,body,links:editorRef.current&&editorText()===body?resolveLinks(body,editorRef.current,draftLinks):draftLinks,blocks,savedAt:new Date().toISOString()};}
+ async function persistDraft(){if(!draftReady||!dirty)return true;const snapshot=draftSnapshot();if(discardedDraft.current&&sameJson({...discardedDraft.current,savedAt:undefined},{...snapshot,savedAt:undefined}))return true;if(draftTimer.current){clearTimeout(draftTimer.current);draftTimer.current=null;}setDraftStatus('saving');try{await queueDraft(draftKey(selectedId),snapshot);setDraftStatus('saved');setDraftError('');return true;}catch(error){const detail=(error as Error).message||'未知错误';setDraftStatus('error');setDraftError(`草稿保存失败：${detail}。请先正式保存文稿。`);return false;}}
  async function load(manuscript?:Manuscript,initialError=''){
-  const ticket=++loadTicket.current;
+  const ticket=++loadTicket.current;pendingCreation.current=null;discardedDraft.current=null;
   if(draftTimer.current){clearTimeout(draftTimer.current);draftTimer.current=null;}
   openedBase.current=manuscript||null;setConflict(false);
   baseVersionRef.current=baseUpdatedAt(manuscript);
@@ -65,16 +68,16 @@ export function Manuscripts({embedded=false,open,initialId,onOpenChange,data,sav
    void queueDraft(ACTIVE_DRAFT_KEY,manuscript?.id||'new').catch(error=>setDraftError(`无法记录上次打开的文稿：${(error as Error).message||'未知错误'}。`));
    if(saved!==null&&!validDraft(saved)){setDraftError('草稿格式无法读取，当前显示已保存的文稿。');setDraftReady(true);return;}
    if(saved&&saved.baseUpdatedAt!==baseUpdatedAt(manuscript)){setStaleDraft(saved);setIssue('发现另一版本留下的草稿。请选择恢复或继续使用当前文稿。');return;}
-   if(saved){setBlocks(saved.blocks);setTitle(saved.title);setBody(saved.body);setDraftLinks(saved.links);setRenderKey(key=>key+1);setIssue('已恢复上次未保存的草稿。');setDraftStatus('saved');}
+   if(saved){pendingCreation.current=saved.pendingCreation||null;setBlocks(saved.blocks);setTitle(saved.title);setBody(saved.body);setDraftLinks(saved.links);setRenderKey(key=>key+1);setIssue('已恢复上次未保存的草稿。');setDraftStatus('saved');}
    setDraftReady(true);
   }catch(error){if(ticket!==loadTicket.current)return;setDraftError(`草稿读取失败：${(error as Error).message||'未知错误'}。仍可正式保存文稿。`);setDraftReady(true);}
  }
  async function requestLoad(manuscript?:Manuscript){if(!draftReady||submittingRef.current)return;if(dirty&&!await persistDraft())return;void load(manuscript);}
  async function closeWithDraft(afterClose?:()=>void){if(submittingRef.current)return;if(dirty&&!await persistDraft())return;onOpenChange(false);afterClose?.();}
  function requestClose(opened:boolean){if(opened){onOpenChange(true);return;}void closeWithDraft();}
- async function discardAndClose(){if(draftTimer.current){clearTimeout(draftTimer.current);draftTimer.current=null;}try{if(dirty)await keepRecovery(draftSnapshot());await queueDraft(draftKey(selectedId),null);setDraftError('');onOpenChange(false);}catch(error){setDraftError(`草稿删除失败：${(error as Error).message||'未知错误'}。请重试。`);}}
+ async function discardAndClose(){if(draftTimer.current){clearTimeout(draftTimer.current);draftTimer.current=null;}try{const abandoned=draftSnapshot();if(dirty)await keepRecovery(abandoned);await queueDraft(draftKey(selectedId),null);discardedDraft.current=abandoned;setDraftError('');onOpenChange(false);}catch(error){setDraftError(`草稿删除失败：${(error as Error).message||'未知错误'}。请重试。`);}}
  async function ignoreStaleDraft(){try{if(staleDraft)await keepRecovery(staleDraft);await queueDraft(draftKey(selectedId),null);setStaleDraft(null);setIssue('');setDraftReady(true);}catch(error){setDraftError(`旧草稿删除失败：${(error as Error).message||'未知错误'}。`);}}
- function restoreStaleDraft(){if(!staleDraft)return;setBlocks(staleDraft.blocks);setTitle(staleDraft.title);setBody(staleDraft.body);setDraftLinks(staleDraft.links);setStaleDraft(null);setIssue('已恢复旧草稿，请核对后再保存。');setDraftReady(true);setRenderKey(key=>key+1);}
+ function restoreStaleDraft(){if(!staleDraft)return;pendingCreation.current=staleDraft.pendingCreation||null;setBlocks(staleDraft.blocks);setTitle(staleDraft.title);setBody(staleDraft.body);setDraftLinks(staleDraft.links);setStaleDraft(null);setIssue('已恢复旧草稿，请核对后再保存。');setDraftReady(true);setRenderKey(key=>key+1);}
  useEffect(()=>{manuscriptsRef.current=data.manuscripts;selectedIdRef.current=selectedId;renderBodyRef.current=body;renderLinksRef.current=draftLinks;persistDraftRef.current=persistDraft;loadRef.current=load;});
  useEffect(()=>{if(!open){loadTicket.current++;return;}const manuscripts=manuscriptsRef.current;if(initialId){void loadRef.current(manuscripts.find(m=>m.id===initialId)||manuscripts[0]);return;}const ticket=++loadTicket.current;setDraftReady(false);void (async()=>{try{await draftWrites.current.catch(()=>{});const active=await readDraft<string|null>(ACTIVE_DRAFT_KEY,null);if(ticket!==loadTicket.current)return;const requested=active==='new'?undefined:manuscripts.find(m=>m.id===active)||manuscripts.find(m=>m.id===selectedIdRef.current)||manuscripts[0];void loadRef.current(requested);}catch(error){if(ticket!==loadTicket.current)return;void loadRef.current(manuscripts.find(m=>m.id===selectedIdRef.current)||manuscripts[0],`上次打开的文稿位置读取失败：${(error as Error).message||'未知错误'}。`);}})();},[open,initialId]);
  useEffect(()=>{if(!open||!draftReady)return;const flush=(event:Event)=>{const task=submission.current; (event as CustomEvent<{jobs:Promise<unknown>[]}>).detail.jobs.push(task?task.then(()=>draftWrites.current):persistDraftRef.current().then(saved=>{if(saved===false)throw Error('文稿草稿未保存');}));};window.addEventListener('wenjian:flush-drafts',flush);return()=>window.removeEventListener('wenjian:flush-drafts',flush);});
@@ -109,24 +112,32 @@ export function Manuscripts({embedded=false,open,initialId,onOpenChange,data,sav
  }
  async function openIncoming(){const current=liveData.current.manuscripts.find(m=>m.id===selectedIdRef.current);if(!current)return;try{await keepRecovery(draftSnapshot());await queueDraft(draftKey(selectedId),null);await load(current);setIssue('已打开同步版本，原先编辑的内容保留在下方草稿中。');}catch(e){setDraftError((e as Error).message);}}
  async function useLocal(){const current=liveData.current.manuscripts.find(m=>m.id===selectedIdRef.current);if(!current)return;openedBase.current=current;baseVersionRef.current=baseUpdatedAt(current);setConflict(false);setIssue('已选择当前草稿；保存时会保留另一版本的完整历史。');await persistDraft();}
- async function restoreRecovery(draft:ManuscriptDraft){try{if(dirty)await keepRecovery(draftSnapshot());openedBase.current=liveData.current.manuscripts.find(m=>m.id===selectedIdRef.current)||null;baseVersionRef.current=baseUpdatedAt(openedBase.current||undefined);setTitle(draft.title);setBody(draft.body);setBlocks(draft.blocks);setDraftLinks(draft.links);setDraftReady(true);setConflict(false);setRenderKey(key=>key+1);setIssue('已载入保留的草稿，请核对后保存。');}catch(e){setDraftError((e as Error).message);}}
+ async function restoreRecovery(draft:ManuscriptDraft){try{if(dirty)await keepRecovery(draftSnapshot());openedBase.current=liveData.current.manuscripts.find(m=>m.id===selectedIdRef.current)||null;baseVersionRef.current=baseUpdatedAt(openedBase.current||undefined);pendingCreation.current=draft.pendingCreation||null;setTitle(draft.title);setBody(draft.body);setBlocks(draft.blocks);setDraftLinks(draft.links);setDraftReady(true);setConflict(false);setRenderKey(key=>key+1);setIssue('已载入保留的草稿，请核对后保存。');}catch(e){setDraftError((e as Error).message);}}
  async function performSubmit(copy=false){
   if(submittingRef.current||saving||!draftReady)return;
   const text=editorText();if(!title.trim()||!text.trim())return;
   submittingRef.current=true;setSubmitting(true);setSelection(null);setPicking(false);
-  const links=collectLinks(text),key=draftKey(selectedId),snapshot:ManuscriptDraft={kind:'manuscript',baseUpdatedAt:baseVersionRef.current,title,body:text,links,blocks,savedAt:new Date().toISOString()};
+  const links=collectLinks(text),key=draftKey(selectedId);
+  // A creation is one durable operation, even if its successful receipt is lost.
+  if(!pendingCreation.current&&(copy||!selectedId)){const now=new Date().toISOString();pendingCreation.current={copy,record:{id:crypto.randomUUID(),title:copy&&title.trim().length<290?title.trim()+'（草稿副本）':title.trim(),body:text,links,blocks,at:now,updatedAt:now,revisions:[]}};}
+  const creation=pendingCreation.current,snapshot:ManuscriptDraft={pendingCreation:creation||undefined,kind:'manuscript',baseUpdatedAt:baseVersionRef.current,title,body:text,links,blocks,savedAt:new Date().toISOString()};
   if(draftTimer.current){clearTimeout(draftTimer.current);draftTimer.current=null;}
   try{
-   try{await queueDraft(key,snapshot);setDraftError('');}catch(error){setDraftError(`草稿保存失败：${(error as Error).message||'未知错误'}。正在尝试正式保存文稿。`);}
+   try{await queueDraft(key,snapshot);setDraftError('');}catch(error){if(creation)throw Error('新文稿的恢复信息尚未保存，暂未提交；请保留窗口后重试。');setDraftError(`草稿保存失败：${(error as Error).message||'未知错误'}。正在尝试正式保存文稿。`);}
    const base=liveData.current,current=base.manuscripts.find(m=>m.id===selectedId);
-   if(!copy&&selectedId&&!manuscriptVersionMatches(openedBase.current,current)){setConflict(true);setIssue('');return;}
-   const now=new Date().toISOString();let next:Manuscript;
-   if(!copy&&selectedId&&current){const changed=current.title!==title.trim()||current.body!==text||!sameJson(current.links,links)||!sameJson(current.blocks,blocks);next={...current,title:title.trim(),body:text,links,blocks,updatedAt:changed?now:current.updatedAt,revisions:changed?[...current.revisions,{title:current.title,body:current.body,links:current.links,blocks:current.blocks,at:current.updatedAt||current.at}]:current.revisions};}
-   else next={id:crypto.randomUUID(),title:copy&&title.trim().length<290?title.trim()+'（草稿副本）':title.trim(),body:text,links,blocks,at:now,updatedAt:now,revisions:[]};
-   const manuscripts=!copy&&selectedId?base.manuscripts.map(m=>m.id===next.id?next:m):[...base.manuscripts,next];
-   if(await save({...base,manuscripts},copy?'当前草稿已另存为文稿':selectedId?'文稿已更新':'文稿已创建',base)){
-    openedBase.current=next;baseVersionRef.current=baseUpdatedAt(next);if(copy||!selectedId)setRecoveries([]);setConflict(false);setSelectedId(next.id);setTitle(next.title);setBody(next.body);setBlocks(next.blocks);setDraftLinks(next.links);setDraftStatus('idle');setRenderKey(key=>key+1);
-    try{await queueDraft(key,null);await queueDraft(ACTIVE_DRAFT_KEY,next.id);setDraftError('');}catch(error){setDraftError(`文稿已保存，但草稿记录清理失败：${(error as Error).message||'未知错误'}。`);}
+   if(!creation&&selectedId&&!manuscriptVersionMatches(openedBase.current,current)){setConflict(true);setIssue('');return;}
+   const now=new Date().toISOString();let next:Manuscript,alreadySaved=false;
+   if(creation){next=creation.record;const confirmed=base.manuscripts.find(m=>m.id===next.id);if(confirmed){if(!sameJson(confirmed,next))throw Error('此前创建的文稿已有其他修改，当前草稿仍保留；请从列表核对该文稿。');alreadySaved=true;}}
+   else if(selectedId&&current){const changed=current.title!==title.trim()||current.body!==text||!sameJson(current.links,links)||!sameJson(current.blocks,blocks);next={...current,title:title.trim(),body:text,links,blocks,updatedAt:changed?now:current.updatedAt,revisions:changed?[...current.revisions,{title:current.title,body:current.body,links:current.links,blocks:current.blocks,at:current.updatedAt||current.at}]:current.revisions};}
+   else throw Error('文稿身份需要重新核对，当前草稿仍保留。');
+   const manuscripts=creation?[...base.manuscripts,next]:base.manuscripts.map(m=>m.id===next.id?next:m);
+   if(alreadySaved||await save({...base,manuscripts},creation?.copy?'当前草稿已另存为文稿':creation?'文稿已创建':'文稿已更新',base)){
+    // New typing after an uncertain save remains a draft of that same record.
+    const intendedTitle=creation?.copy&&snapshot.title.trim().length<290?snapshot.title.trim()+'（草稿副本）':snapshot.title.trim();
+    const newer=!!creation&&(intendedTitle!==next.title||text!==next.body||!sameJson(links,next.links)||!sameJson(blocks,next.blocks));
+    const continuing:ManuscriptDraft={...snapshot,pendingCreation:undefined,baseUpdatedAt:baseUpdatedAt(next),title:intendedTitle};
+    openedBase.current=next;baseVersionRef.current=baseUpdatedAt(next);pendingCreation.current=null;discardedDraft.current=null;if(creation)setRecoveries([]);setConflict(false);setSelectedId(next.id);setTitle(newer?intendedTitle:next.title);setBody(newer?text:next.body);setBlocks(newer?blocks:next.blocks);setDraftLinks(newer?links:next.links);setDraftStatus(newer?'saved':'idle');setRenderKey(key=>key+1);setIssue(newer?'此前版本已确认保存；后续输入已保留为这篇文稿的草稿，请继续保存。':'');
+    try{await queueDraft(draftKey(next.id),newer?continuing:null);if(key!==draftKey(next.id))await queueDraft(key,null);await queueDraft(ACTIVE_DRAFT_KEY,next.id);setDraftError('');}catch(error){setDraftError(`文稿已保存，但草稿记录清理失败：${(error as Error).message||'未知错误'}。`);}
    }else setIssue('正式保存未完成；草稿仍保留，请核对最新版本后重试。');
   }catch(error){setIssue(`正式保存未完成：${(error as Error).message||'未知错误'}。请保留此窗口后重试。`);}
   finally{submittingRef.current=false;setSubmitting(false);}
