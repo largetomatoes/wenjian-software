@@ -1,6 +1,6 @@
-> 当前版本：**问间 3.141（344）· 阅读笔记板与全平台统一更新**。Mac、Windows、Android 安装包及 iPhone／iPad Web App 入口：[完整发布页](https://github.com/largetomatoes/wenjian-software/releases/tag/v3.141-build343) · [改动说明](RELEASE_NOTES_3.141_343.md) · [构建说明](BUILDING.md)。
+> 当前版本：**问间 3.14159（348）· 文稿、阅读笔记与分类查找**。Mac、Windows、Android 与 iPhone/iPad Web App：[完整发布页](https://github.com/largetomatoes/wenjian-software/releases/tag/v3.14159) · [改动说明](RELEASE_NOTES_3.14159_348.md) · [构建说明](docs/building-348.md)。
 
-# 问间 · 3.141
+# 问间 · 3.14159
 
 问间是围绕使用者自己的核心问题组织问题、回答、卡片、阅读笔记和文稿的本地应用。想法可以先留在卡片集中，之后再连接到一个或多个问题；搜索可以直接找到某条思考、回应或书中的笔记。
 
@@ -35,7 +35,7 @@ Copyright (C) 2026 西林sirens。原版本：[largetomatoes/wenjian-software](h
 
 ## 下载与安装
 
-3.141（343）提供 Mac、可选择安装磁盘的 Windows 安装版、便携 ZIP 和同证书签名的 Android 安装包；iPhone / iPad 使用 [Web App](https://reader.wenjian-app.workers.dev/read/)。变更及验证范围见 [本次发布说明](RELEASE_NOTES_3.141_343.md)。
+3.14159（348）提供 Mac、可选择安装磁盘的 Windows 安装版、便携 ZIP 和同证书签名的 Android 安装包；iPhone / iPad 使用 [Web App](https://reader.wenjian-app.workers.dev/read/)。变更及验证范围见 [本次发布说明](RELEASE_NOTES_3.14159_348.md)。
 
 从仓库的 **Releases** 下载对应系统的安装包。Mac（Apple 芯片）使用 `Wenjian-*-macOS-arm64.zip`，解压后把“问间”拖入“应用程序”；Windows x64 推荐使用 `Wenjian-*-Windows-x64-Setup.exe` 安装，也可使用 `Wenjian-*-Windows-x64.zip`，解压后运行 `Wenjian.exe`。Android 8.0+ 使用 `Wenjian-*-Android.apk`，移动版以阅读和笔记为主；PDF 需要 WebView 111+。当前构建没有 Apple 公证或 Windows 商业代码签名，系统首次启动时可能要求手动允许。
 
@@ -51,6 +51,7 @@ Copyright (C) 2026 西林sirens。原版本：[largetomatoes/wenjian-software](h
 
 ## 日常使用与备份
 
+- 电脑端主界面的“文稿”可按读书/Zotero、原文件夹和标题找回阅读笔记，并继续写作或整理成文。手机和平板的“查找笔记”使用相同分类；原书移除后的笔记仍可从“未归属书目”打开。
 - 问题树、回答、交叉思考、卡片集和修改记录保留思考的来源与形成过程。
 - 全局搜索能按记得的大意寻找思考、回应、读书笔记、书籍思考和文稿，并打开对应记录。
 - 未正式保存的卡片、问题页、读书笔记和文稿草稿会保存在本机；文稿修改时会检查版本冲突。

@@ -26,9 +26,7 @@ export function isRecordStorage(){return typeof document!=='undefined'&&(documen
 export class RecordSaveError extends Error {constructor(message:string,public status:number,public current?:unknown){super(message);}}
 export async function saveRecordChanges(before:Notebook,after:Notebook,version:number){
  const raw=recordChanges(before,after);const changes=await Promise.all(raw.map(async c=>{if(c.collection==='settings'||c.collection==='order')return c;const packed=await packHistory(c.before as Record<string,unknown>|null,c.after as Record<string,unknown>|null);return Object.keys(packed.history).length?{...c,...packed}:c;}));if(!changes.length)return {version};
- const fingerprint=stableJson(changes),key='record-intent:'+changes.map(c=>c.collection+':'+c.id).sort().join('|');
- // Short stable key without exposing content. Hashing identifies the record set; exact request is checked below.
- const bytes=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(key)),intentKey='intent:'+Array.from(new Uint8Array(bytes),b=>b.toString(16).padStart(2,'0')).join('');
+ const fingerprint=stableJson(changes),intentKey=await recordIntentKey(changes);
  const previous=await readDraft<{fingerprint:string;body:string}|null>(intentKey,null);
  if(previous&&previous.fingerprint!==fingerprint){
   // Resolve the older uncertain intent before preparing a different write to the same records.
@@ -66,4 +64,19 @@ export async function saveRecordChanges(before:Notebook,after:Notebook,version:n
  }
  await writeDraft(intentKey,null);
  window.dispatchEvent(new CustomEvent('wenjian:performance-sample',{detail:{kind:'save',ms:performance.now()-start,bytes:new Blob([body]).size}}));return result;
+}
+
+async function recordIntentKey(changes:Pick<RecordChange,'collection'|'id'>[]){
+ const key='record-intent:'+changes.map(c=>c.collection+':'+c.id).sort().join('|');
+ const bytes=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(key));
+ return 'intent:'+Array.from(new Uint8Array(bytes),b=>b.toString(16).padStart(2,'0')).join('');
+}
+/** The fresh snapshot may already contain a creation whose response was lost.
+ * Confirm its exact durable receipt so the next edit has no stale live intent.
+ * Never issue a new create when there is no unresolved request to replay. */
+export async function confirmManuscriptCreation(record:Notebook['manuscripts'][number]){
+ if(!isRecordStorage())return;
+ const key=await recordIntentKey([{collection:'manuscripts',id:record.id}]);
+ if(!await readDraft(key,null))return;
+ await saveRecordChanges({manuscripts:[]} as unknown as Notebook,{manuscripts:[record]} as unknown as Notebook,0);
 }

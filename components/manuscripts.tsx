@@ -2,7 +2,7 @@
 import {UniversalDeleteButton} from './universal-delete';
 
 import {QuestionLinkPicker} from './question-link-picker';
-import {useEffect,useMemo,useRef,useState} from 'react';
+import {useEffect,useLayoutEffect,useMemo,useRef,useState} from 'react';
 import {Check,FilePlus2,FileText,Link2,Unlink,ListPlus,Undo2,Redo2} from 'lucide-react';
 import {Button} from '@/components/ui/button';
 import {Dialog,DialogContent,DialogDescription,DialogTitle} from '@/components/ui/dialog';
@@ -15,6 +15,7 @@ import {ManuscriptAssembly} from '@/components/manuscript-assembly';
 import {buildManuscriptMaterials,createManuscriptBlocks,type ManuscriptBlock,type ManuscriptSourceSnapshot,type Material} from '@/lib/manuscript-materials';
 import {sameJson} from '@/lib/stable-json.cjs';
 import {manuscriptVersionMatches} from '@/lib/manuscript-version';
+import {confirmManuscriptCreation} from '@/lib/record-transactions';
 import {flattenManuscriptBlocks,validManuscriptBlocks} from '@/lib/manuscript-document';
 
 type Props={embedded?:boolean;open:boolean;initialId:string|null;onOpenChange:(open:boolean)=>void;data:Notebook;saving:boolean;save:(next:Notebook,feedback:string,base?:Notebook)=>Promise<boolean>;onOpenQuestion:(id:string)=>void;onOpenReading:(id:string)=>void;onOpenSource:(source:ManuscriptSourceSnapshot)=>void};
@@ -42,7 +43,7 @@ export function Manuscripts({embedded=false,open,initialId,onOpenChange,data,sav
  const editorRef=useRef<HTMLDivElement>(null);
  const caretAfterRef=useRef<number|null>(null);
  const loadTicket=useRef(0),draftWrites=useRef<Promise<void>>(Promise.resolve()),draftTimer=useRef<ReturnType<typeof setTimeout>|null>(null),baseVersionRef=useRef<string|null>(null);
- const manuscriptsRef=useRef(data.manuscripts),selectedIdRef=useRef(selectedId),renderBodyRef=useRef(body),renderLinksRef=useRef(draftLinks),persistDraftRef=useRef<()=>Promise<boolean>>(async()=>true),loadRef=useRef<(manuscript?:Manuscript,initialError?:string)=>Promise<void>>(async()=>{});
+ const manuscriptsRef=useRef(data.manuscripts),selectedIdRef=useRef(selectedId),persistDraftRef=useRef<()=>Promise<boolean>>(async()=>true),loadRef=useRef<(manuscript?:Manuscript,initialError?:string)=>Promise<void>>(async()=>{});
  const selected=data.manuscripts.find(m=>m.id===selectedId);
  const questions=data.notes.filter(n=>n.kind==='question');
  const activeLinks=draftLinks.filter(link=>activeIds.includes(link.id)&&!link.unresolved);
@@ -78,11 +79,12 @@ export function Manuscripts({embedded=false,open,initialId,onOpenChange,data,sav
  async function discardAndClose(){if(draftTimer.current){clearTimeout(draftTimer.current);draftTimer.current=null;}try{const abandoned=draftSnapshot();if(dirty)await keepRecovery(abandoned);await queueDraft(draftKey(selectedId),null);discardedDraft.current=abandoned;setDraftError('');onOpenChange(false);}catch(error){setDraftError(`草稿删除失败：${(error as Error).message||'未知错误'}。请重试。`);}}
  async function ignoreStaleDraft(){try{if(staleDraft)await keepRecovery(staleDraft);await queueDraft(draftKey(selectedId),null);setStaleDraft(null);setIssue('');setDraftReady(true);}catch(error){setDraftError(`旧草稿删除失败：${(error as Error).message||'未知错误'}。`);}}
  function restoreStaleDraft(){if(!staleDraft)return;pendingCreation.current=staleDraft.pendingCreation||null;setBlocks(staleDraft.blocks);setTitle(staleDraft.title);setBody(staleDraft.body);setDraftLinks(staleDraft.links);setStaleDraft(null);setIssue('已恢复旧草稿，请核对后再保存。');setDraftReady(true);setRenderKey(key=>key+1);}
- useEffect(()=>{manuscriptsRef.current=data.manuscripts;selectedIdRef.current=selectedId;renderBodyRef.current=body;renderLinksRef.current=draftLinks;persistDraftRef.current=persistDraft;loadRef.current=load;});
+ useEffect(()=>{manuscriptsRef.current=data.manuscripts;selectedIdRef.current=selectedId;persistDraftRef.current=persistDraft;loadRef.current=load;});
  useEffect(()=>{if(!open){loadTicket.current++;return;}const manuscripts=manuscriptsRef.current;if(initialId){void loadRef.current(manuscripts.find(m=>m.id===initialId)||manuscripts[0]);return;}const ticket=++loadTicket.current;setDraftReady(false);void (async()=>{try{await draftWrites.current.catch(()=>{});const active=await readDraft<string|null>(ACTIVE_DRAFT_KEY,null);if(ticket!==loadTicket.current)return;const requested=active==='new'?undefined:manuscripts.find(m=>m.id===active)||manuscripts.find(m=>m.id===selectedIdRef.current)||manuscripts[0];void loadRef.current(requested);}catch(error){if(ticket!==loadTicket.current)return;void loadRef.current(manuscripts.find(m=>m.id===selectedIdRef.current)||manuscripts[0],`上次打开的文稿位置读取失败：${(error as Error).message||'未知错误'}。`);}})();},[open,initialId]);
  useEffect(()=>{if(!open||!draftReady)return;const flush=(event:Event)=>{const task=submission.current; (event as CustomEvent<{jobs:Promise<unknown>[]}>).detail.jobs.push(task?task.then(()=>draftWrites.current):persistDraftRef.current().then(saved=>{if(saved===false)throw Error('文稿草稿未保存');}));};window.addEventListener('wenjian:flush-drafts',flush);return()=>window.removeEventListener('wenjian:flush-drafts',flush);});
  useEffect(()=>{if(!open||!draftReady||!dirty||submitting)return;setDraftStatus('pending');draftTimer.current=setTimeout(()=>{draftTimer.current=null;void persistDraftRef.current();},450);return()=>{if(draftTimer.current){clearTimeout(draftTimer.current);draftTimer.current=null;}};},[open,draftReady,selectedId,title,body,draftLinks,blocks,dirty,submitting]);
- useEffect(()=>{if(!open)return;const frame=requestAnimationFrame(()=>{const editor=editorRef.current;if(!editor)return;const currentBody=renderBodyRef.current,currentLinks=renderLinksRef.current;editor.replaceChildren();const groups=new Map<string,ManuscriptLink[]>();for(const link of currentLinks){if(link.unresolved||link.start<0||link.end>currentBody.length||link.start>=link.end)continue;const key=`${link.start}:${link.end}`;groups.set(key,[...(groups.get(key)||[]),link]);}const ordered=[...groups.values()].sort((a,b)=>a[0].start-b[0].start);let cursor=0,caretTarget:HTMLElement|null=null;for(const links of ordered){const {start,end}=links[0];if(start<cursor)continue;editor.appendChild(document.createTextNode(currentBody.slice(cursor,start)));const mark=document.createElement('span');mark.className='linked-sentence';mark.dataset.linkIds=links.map(link=>link.id).join(',');mark.contentEditable='false';mark.textContent=currentBody.slice(start,end);editor.appendChild(mark);if(caretAfterRef.current===end)caretTarget=mark;cursor=end;}editor.appendChild(document.createTextNode(currentBody.slice(cursor)));if(caretTarget){const range=document.createRange(),rangeSelection=window.getSelection();range.setStartAfter(caretTarget);range.collapse(true);rangeSelection?.removeAllRanges();rangeSelection?.addRange(range);editor.focus();caretAfterRef.current=null;}});return()=>cancelAnimationFrame(frame);},[open,selectedId,renderKey]);
+ // Initialize explicit document switches before the editor becomes interactive; typing keeps its native DOM.
+ useLayoutEffect(()=>{if(!open)return;const editor=editorRef.current;if(!editor)return;const currentBody=body,currentLinks=draftLinks;editor.replaceChildren();const groups=new Map<string,ManuscriptLink[]>();for(const link of currentLinks){if(link.unresolved||link.start<0||link.end>currentBody.length||link.start>=link.end)continue;const key=`${link.start}:${link.end}`;groups.set(key,[...(groups.get(key)||[]),link]);}const ordered=[...groups.values()].sort((a,b)=>a[0].start-b[0].start);let cursor=0,caretTarget:HTMLElement|null=null;for(const links of ordered){const {start,end}=links[0];if(start<cursor)continue;editor.appendChild(document.createTextNode(currentBody.slice(cursor,start)));const mark=document.createElement('span');mark.className='linked-sentence';mark.dataset.linkIds=links.map(link=>link.id).join(',');mark.contentEditable='false';mark.textContent=currentBody.slice(start,end);editor.appendChild(mark);if(caretAfterRef.current===end)caretTarget=mark;cursor=end;}editor.appendChild(document.createTextNode(currentBody.slice(cursor)));if(caretTarget){const range=document.createRange(),rangeSelection=window.getSelection();range.setStartAfter(caretTarget);range.collapse(true);rangeSelection?.removeAllRanges();rangeSelection?.addRange(range);editor.focus();caretAfterRef.current=null;}},[open,selectedId,renderKey]);
 
  function changeBlocks(next:ManuscriptBlock[],group=''){
   if(submittingRef.current)return false;
@@ -127,7 +129,7 @@ export function Manuscripts({embedded=false,open,initialId,onOpenChange,data,sav
    const base=liveData.current,current=base.manuscripts.find(m=>m.id===selectedId);
    if(!creation&&selectedId&&!manuscriptVersionMatches(openedBase.current,current)){setConflict(true);setIssue('');return;}
    const now=new Date().toISOString();let next:Manuscript,alreadySaved=false;
-   if(creation){next=creation.record;const confirmed=base.manuscripts.find(m=>m.id===next.id);if(confirmed){if(!sameJson(confirmed,next))throw Error('此前创建的文稿已有其他修改，当前草稿仍保留；请从列表核对该文稿。');alreadySaved=true;}}
+   if(creation){next=creation.record;const confirmed=base.manuscripts.find(m=>m.id===next.id);if(confirmed){if(!sameJson(confirmed,next))throw Error('此前创建的文稿已有其他修改，当前草稿仍保留；请从列表核对该文稿。');await confirmManuscriptCreation(confirmed);alreadySaved=true;}}
    else if(selectedId&&current){const changed=current.title!==title.trim()||current.body!==text||!sameJson(current.links,links)||!sameJson(current.blocks,blocks);next={...current,title:title.trim(),body:text,links,blocks,updatedAt:changed?now:current.updatedAt,revisions:changed?[...current.revisions,{title:current.title,body:current.body,links:current.links,blocks:current.blocks,at:current.updatedAt||current.at}]:current.revisions};}
    else throw Error('文稿身份需要重新核对，当前草稿仍保留。');
    const manuscripts=creation?[...base.manuscripts,next]:base.manuscripts.map(m=>m.id===next.id?next:m);
