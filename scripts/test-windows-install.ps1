@@ -115,7 +115,9 @@ try{
  $cleanupDeadline=(Get-Date).AddSeconds(90)
  while(((Test-Path (Join-Path $installed 'Wenjian.exe')) -or (Test-Path 'HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\Wenjian')) -and (Get-Date) -lt $cleanupDeadline){Start-Sleep -Milliseconds 500}
  if(Test-Path (Join-Path $installed 'Wenjian.exe')){
-  Get-CimInstance Win32_Process|Where-Object {$_.Name -eq 'Wenjian.exe' -or $_.Name -like '*Au_.exe'}|Select-Object ProcessId,ParentProcessId,Name,ExecutablePath|ConvertTo-Json|Set-Content (Join-Path $artifacts 'windows-uninstall-process-report.json')
+   $processes=@(Get-CimInstance Win32_Process|Where-Object {$_.Name -eq 'Wenjian.exe' -or $_.Name -like '*Au_.exe'}|Select-Object ProcessId,ParentProcessId,Name,ExecutablePath)
+  [IO.File]::WriteAllText((Join-Path $artifacts 'windows-uninstall-process-report.json'),(ConvertTo-Json -InputObject $processes -Depth 10),[Text.UTF8Encoding]::new($false))
+  Get-ChildItem -LiteralPath $installed -Recurse -Force|Select-Object FullName,Attributes|ConvertTo-Json|Set-Content (Join-Path $artifacts 'windows-uninstall-remaining-report.json')
  }
  Check ($uninstall.ExitCode -eq 0) 'Uninstaller exits successfully'
  Check (-not(Test-Path (Join-Path $installed 'Wenjian.exe'))) 'Uninstall removes the program from the selected directory'

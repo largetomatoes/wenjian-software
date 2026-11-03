@@ -199,24 +199,51 @@ Section "问间" SEC_MAIN
 SectionEnd
 Function un.onInit
  SetShellVarContext current
+ StrCpy $1 0
  retry:
  IfFileExists "$INSTDIR\Wenjian.exe" 0 done
  System::Call 'kernel32::CreateFileW(w "$INSTDIR\Wenjian.exe", i 0x80000000, i 0, p 0, i 3, i 0, p 0) p.r0'
  ${If} $0 == -1
+  ; Chromium children and antivirus may briefly retain an executable handle.
+  ; Wait for release without terminating any process or deleting on reboot.
+  IntOp $1 $1 + 1
+  ${If} $1 < 80
+   Sleep 250
+   Goto retry
+  ${EndIf}
+  StrCpy $1 0
+  SetErrorLevel 1
   MessageBox MB_RETRYCANCEL|MB_ICONEXCLAMATION "请先保存并退出问间，再卸载。资料将保留在本机。" /SD IDCANCEL IDRETRY retry
   Abort
  ${EndIf}
  System::Call 'kernel32::CloseHandle(p r0)'
  done:
+ SetErrorLevel 0
 FunctionEnd
 Section "Uninstall"
  SetOutPath "$TEMP"
  SetRegView 64
  SetShellVarContext current
  ; Only remove installed program files. Never remove AppData, cloud or external books.
+ ; Retain registration when cleanup fails so the user can retry uninstalling.
+ StrCpy $1 0
+ cleanup_retry:
+ ClearErrors
+ RMDir /r "$INSTDIR"
+ IfFileExists "$INSTDIR\*.*" cleanup_wait cleanup_done
+ cleanup_wait:
+ IntOp $1 $1 + 1
+ ${If} $1 < 80
+  Sleep 250
+  Goto cleanup_retry
+ ${EndIf}
+ SetErrorLevel 1
+ MessageBox MB_ICONEXCLAMATION "程序文件仍被占用，卸载未完成。请等待问间完全退出后重试，本机笔记和书籍已保留。" /SD IDOK
+ Abort
+ cleanup_done:
+ SetErrorLevel 0
  Delete "$SMPROGRAMS\问间\问间.lnk"
  RMDir "$SMPROGRAMS\问间"
  Delete "$DESKTOP\问间.lnk"
  DeleteRegKey HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\Wenjian"
- RMDir /r "$INSTDIR"
 SectionEnd

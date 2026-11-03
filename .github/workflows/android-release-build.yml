@@ -1,10 +1,16 @@
 name: Android unsigned release build
 on:
   workflow_dispatch:
+    inputs:
+      draft_release_id:
+        description: Optional unpublished release ID for temporary unsigned-package transfer
+        required: false
 permissions:
   contents: read
 jobs:
   android:
+    permissions:
+      contents: write
     runs-on: ubuntu-latest
     timeout-minutes: 25
     steps:
@@ -43,3 +49,13 @@ jobs:
           name: android-unsigned-release
           path: unsigned-release/
           retention-days: 7
+      # Optional transfer avoids Actions artifact-storage outages. Only an unpublished,
+      # matching-source release may receive this unsigned intermediate, never a public release.
+      - name: Stage unsigned intermediate in the matching unpublished release
+        if: inputs.draft_release_id != ''
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          DRAFT_RELEASE_ID: ${{ inputs.draft_release_id }}
+        run: |
+          node scripts/stage-unsigned-android.mjs
